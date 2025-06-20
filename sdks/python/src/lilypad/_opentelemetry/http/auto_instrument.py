@@ -1,324 +1,253 @@
-"""Automatic instrumentation for HTTP clients to enable transparent distributed tracing.
-
-This module provides automatic instrumentation that patches HTTP client libraries
-to inject trace context without requiring code changes.
-
-Example:
-    Enable automatic instrumentation:
-
-    ```python
-    # At the start of your application
-    import lilypad
-
-    # Enable automatic trace propagation for all HTTP calls
-    lilypad.instrument_http_clients()
-
-    # Now all HTTP calls will automatically propagate trace context
-    import requests
-
-
-    @trace()
-    def my_function():
-        # This request automatically includes trace headers!
-        response = requests.get("https://api.example.com/data")
-        return response.json()
-    ```
-"""
+"""HTTP client instrumentation using OpenTelemetry standard pattern."""
 
 from __future__ import annotations
 
-from contextlib import suppress
+from typing import Any, Callable
+from collections.abc import Collection
 
-import functools
-from typing import Any
+from wrapt import wrap_function_wrapper
+from opentelemetry.instrumentation.utils import unwrap
+from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 
 from ..._utils.context_propagation import _inject_context
 
-# Track if we've already instrumented to avoid double-patching
-_INSTRUMENTED = False
 
-# Store original methods for restoration
-_ORIGINAL_METHODS: dict[str, Any] = {}
+def _wrap_request_method(
+    wrapped: Callable[..., Any], instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> Any:
+    """Wrapper for HTTP request methods to inject trace context."""
+    # Get or create headers
+    headers = kwargs.get("headers", {})
+    if headers is None:
+        headers = {}
 
+    # Inject trace context
+    _inject_context(headers)
+    kwargs["headers"] = headers
 
-def _patch_requests() -> None:
-    """Patch the requests library to automatically inject trace context."""
-    with suppress(ImportError):
-        import requests
-        from requests import Session
-
-        # Check if already patched
-        if "requests.Session.request" in _ORIGINAL_METHODS:
-            return
-
-        # Store original method
-        _original_request = Session.request
-        _ORIGINAL_METHODS["requests.Session.request"] = _original_request
-
-        @functools.wraps(_original_request)
-        def _traced_request(self: Session, method: str, url: str, **kwargs: Any) -> requests.Response:
-            # Get or create headers
-            headers = kwargs.get("headers", {})
-            if headers is None:
-                headers = {}
-
-            # Inject trace context
-            _inject_context(headers)
-            kwargs["headers"] = headers
-
-            # Call original method
-            return _original_request(self, method, url, **kwargs)
-
-        # Patch the method
-        Session.request = _traced_request
+    # Call original method
+    return wrapped(*args, **kwargs)
 
 
-def _patch_httpx() -> None:
-    """Patch the httpx library to automatically inject trace context."""
-    with suppress(ImportError):
-        import httpx
+async def _wrap_async_request_method(
+    wrapped: Callable[..., Any], instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> Any:
+    """Async wrapper for HTTP request methods to inject trace context."""
+    # Get or create headers
+    headers = kwargs.get("headers", {})
+    if headers is None:
+        headers = {}
 
-        # Check if already patched
-        if "httpx.Client.request" in _ORIGINAL_METHODS:
-            return
+    # Inject trace context
+    _inject_context(headers)
+    kwargs["headers"] = headers
 
-        # Patch sync client
-        _original_request = httpx.Client.request
-        _ORIGINAL_METHODS["httpx.Client.request"] = _original_request
-
-        @functools.wraps(_original_request)
-        def _traced_request(self: httpx.Client, method: str, url: Any, **kwargs: Any) -> httpx.Response:
-            headers = kwargs.get("headers", {})
-            if headers is None:
-                headers = {}
-            _inject_context(headers)
-            kwargs["headers"] = headers
-            return _original_request(self, method, url, **kwargs)
-
-        httpx.Client.request = _traced_request
-
-        # Patch async client
-        _original_async_request = httpx.AsyncClient.request
-        _ORIGINAL_METHODS["httpx.AsyncClient.request"] = _original_async_request
-
-        @functools.wraps(_original_async_request)
-        async def _traced_async_request(
-            self: httpx.AsyncClient, method: str, url: Any, **kwargs: Any
-        ) -> httpx.Response:
-            headers = kwargs.get("headers", {})
-            if headers is None:
-                headers = {}
-            _inject_context(headers)
-            kwargs["headers"] = headers
-            return await _original_async_request(self, method, url, **kwargs)
-
-        httpx.AsyncClient.request = _traced_async_request
+    # Call original method
+    return await wrapped(*args, **kwargs)
 
 
-def _patch_aiohttp() -> None:
-    """Patch the aiohttp library to automatically inject trace context."""
-    with suppress(ImportError):
-        import aiohttp
+class RequestsInstrumentor(BaseInstrumentor):
+    """Instrumentor for requests library."""
 
-        # Check if already patched
-        if "aiohttp.ClientSession._request" in _ORIGINAL_METHODS:
-            return
+    def instrumentation_dependencies(self) -> Collection[str]:
+        return ("requests>=2.0",)
 
-        _original_request = aiohttp.ClientSession._request
-        _ORIGINAL_METHODS["aiohttp.ClientSession._request"] = _original_request
+    def _instrument(self, **kwargs: Any) -> None:
+        """Enable requests instrumentation."""
+        wrap_function_wrapper(module="requests", name="Session.request", wrapper=_wrap_request_method)
 
-        @functools.wraps(_original_request)
-        async def _traced_request(
-            self: aiohttp.ClientSession, method: str, str_or_url: Any, **kwargs: Any
-        ) -> aiohttp.ClientResponse:
-            headers = kwargs.get("headers", {})
-            if headers is None:
-                headers = {}
-            _inject_context(headers)
-            kwargs["headers"] = headers
-            return await _original_request(self, method, str_or_url, **kwargs)
+    def _uninstrument(self, **kwargs: Any) -> None:
+        """Disable requests instrumentation."""
+        try:
+            import requests
 
-        aiohttp.ClientSession._request = _traced_request
+            unwrap(requests.Session, "request")
+        except (ImportError, AttributeError):
+            pass
 
 
-def _patch_urllib3() -> None:
-    """Patch urllib3 to automatically inject trace context."""
-    with suppress(ImportError):
-        import urllib3
+class HTTPXInstrumentor(BaseInstrumentor):
+    """Instrumentor for httpx library."""
 
-        # Check if already patched
-        if "urllib3.HTTPConnectionPool.urlopen" in _ORIGINAL_METHODS:
-            return
+    def instrumentation_dependencies(self) -> Collection[str]:
+        return ("httpx>=0.23.0",)
 
-        _original_urlopen = urllib3.HTTPConnectionPool.urlopen
-        _ORIGINAL_METHODS["urllib3.HTTPConnectionPool.urlopen"] = _original_urlopen
+    def _instrument(self, **kwargs: Any) -> None:
+        """Enable httpx instrumentation."""
+        # Sync client
+        wrap_function_wrapper(module="httpx", name="Client.request", wrapper=_wrap_request_method)
 
-        @functools.wraps(_original_urlopen)
-        def _traced_urlopen(self: urllib3.HTTPConnectionPool, method: str, url: str, **kwargs: Any) -> Any:
-            headers = kwargs.get("headers", {})
-            if headers is None:
-                headers = {}
-            _inject_context(headers)
-            kwargs["headers"] = headers
-            return _original_urlopen(self, method, url, **kwargs)
+        # Async client
+        wrap_function_wrapper(module="httpx", name="AsyncClient.request", wrapper=_wrap_async_request_method)
 
-        urllib3.HTTPConnectionPool.urlopen = _traced_urlopen
+    def _uninstrument(self, **kwargs: Any) -> None:
+        """Disable httpx instrumentation."""
+        try:
+            import httpx
 
-
-def instrument_http_clients() -> None:
-    """Automatically instrument all available HTTP client libraries.
-
-    This function patches common HTTP client libraries to automatically
-    inject OpenTelemetry trace context into all outgoing requests.
-    This enables transparent distributed tracing without code changes.
-
-    Supported libraries:
-    - requests
-    - httpx (sync and async)
-    - aiohttp
-    - urllib3
-
-    Example:
-        Basic usage:
-
-        ```python
-        # Enable at application startup
-        import lilypad
-
-        lilypad.instrument_http_clients()
-
-        # Now use HTTP clients normally
-        import requests
-        from lilypad import trace
+            unwrap(httpx.Client, "request")
+            unwrap(httpx.AsyncClient, "request")
+        except (ImportError, AttributeError):
+            pass
 
 
-        @trace()
-        def fetch_data():
-            # Trace context is automatically added!
-            response = requests.get("https://api.example.com/data")
-            return response.json()
-        ```
+class AIOHTTPInstrumentor(BaseInstrumentor):
+    """Instrumentor for aiohttp library."""
 
-        With RPC clients:
+    def instrumentation_dependencies(self) -> Collection[str]:
+        return ("aiohttp>=3.0",)
 
-        ```python
-        # Enable instrumentation
-        instrument_http_clients()
+    def _instrument(self, **kwargs: Any) -> None:
+        """Enable aiohttp instrumentation."""
+        wrap_function_wrapper(module="aiohttp", name="ClientSession._request", wrapper=_wrap_async_request_method)
 
-        # Your RPC client that uses requests/httpx internally
-        from my_api import Client
+    def _uninstrument(self, **kwargs: Any) -> None:
+        """Disable aiohttp instrumentation."""
+        try:
+            import aiohttp
 
-
-        @trace()
-        def call_remote_service():
-            client = Client("https://api.example.com")
-            # The underlying HTTP calls will include trace context
-            result = client.remote_function("param1", "param2")
-            return result
-        ```
-
-        Complete distributed system example:
-
-        ```python
-        # Service A
-        instrument_http_clients()
+            unwrap(aiohttp.ClientSession, "_request")
+        except (ImportError, AttributeError):
+            pass
 
 
-        @trace()
-        def process_request(data):
-            # Call Service B - trace context propagated automatically
-            response = requests.post("http://service-b/process", json=data)
-            return response.json()
+class URLLib3Instrumentor(BaseInstrumentor):
+    """Instrumentor for urllib3 library."""
+
+    def instrumentation_dependencies(self) -> Collection[str]:
+        return ("urllib3>=1.0",)
+
+    def _instrument(self, **kwargs: Any) -> None:
+        """Enable urllib3 instrumentation."""
+        wrap_function_wrapper(module="urllib3", name="HTTPConnectionPool.urlopen", wrapper=_wrap_request_method)
+
+    def _uninstrument(self, **kwargs: Any) -> None:
+        """Disable urllib3 instrumentation."""
+        try:
+            import urllib3
+
+            unwrap(urllib3.HTTPConnectionPool, "urlopen")
+        except (ImportError, AttributeError):
+            pass
 
 
-        # Service B
-        instrument_http_clients()
-
-
-        @app.route("/process", methods=["POST"])
-        def handle_process():
-            # Extract trace context from headers
-            @trace(extract_from=request.headers)
-            def process(data):
-                # This span is a child of Service A's span
-                return {"processed": True, "data": data}
-
-            return process(request.json)
-        ```
-
-    Note:
-        - Call this function once at application startup
-        - It will only patch libraries that are already imported
-        - Safe to call multiple times (idempotent)
-        - Works with any HTTP-based RPC library
-    """
-    global _INSTRUMENTED
-
-    if _INSTRUMENTED:
-        return
-
-    _patch_requests()
-    _patch_httpx()
-    _patch_aiohttp()
-    _patch_urllib3()
-
-    _INSTRUMENTED = True
+# Global instances
+_requests_instrumentor = RequestsInstrumentor()
+_httpx_instrumentor = HTTPXInstrumentor()
+_aiohttp_instrumentor = AIOHTTPInstrumentor()
+_urllib3_instrumentor = URLLib3Instrumentor()
 
 
 def instrument_requests() -> None:
-    """Instrument only the requests library.
+    """Instrument the requests library to inject trace context.
+
+    This function enables automatic trace context propagation for all HTTP
+    requests made using the requests library. It works regardless of import
+    order - requests can be imported before or after this call.
+
+    The instrumentation is idempotent - calling this multiple times has no
+    additional effect after the first call.
 
     Example:
         ```python
         import lilypad
 
         lilypad.instrument_requests()
+
+        # Now all requests will include trace context
+        import requests
+
+        response = requests.get("https://api.example.com")
         ```
     """
-    _patch_requests()
+    _requests_instrumentor.instrument()
 
 
 def instrument_httpx() -> None:
-    """Instrument only the httpx library (both sync and async).
+    """Instrument the httpx library to inject trace context.
+
+    This function enables automatic trace context propagation for all HTTP
+    requests made using the httpx library (both sync and async clients).
+    It works regardless of import order.
+
+    The instrumentation is idempotent - calling this multiple times has no
+    additional effect after the first call.
 
     Example:
         ```python
         import lilypad
 
         lilypad.instrument_httpx()
+
+        import httpx
+
+        # Sync client
+        with httpx.Client() as client:
+            response = client.get("https://api.example.com")
+
+        # Async client
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://api.example.com")
         ```
     """
-    _patch_httpx()
+    _httpx_instrumentor.instrument()
 
 
 def instrument_aiohttp() -> None:
-    """Instrument only the aiohttp library.
+    """Instrument the aiohttp library to inject trace context.
+
+    This function enables automatic trace context propagation for all HTTP
+    requests made using the aiohttp library. It works regardless of import order.
+
+    The instrumentation is idempotent - calling this multiple times has no
+    additional effect after the first call.
 
     Example:
         ```python
         import lilypad
 
         lilypad.instrument_aiohttp()
+
+        import aiohttp
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.example.com") as response:
+                data = await response.text()
         ```
     """
-    _patch_aiohttp()
+    _aiohttp_instrumentor.instrument()
 
 
 def instrument_urllib3() -> None:
-    """Instrument only the urllib3 library.
+    """Instrument the urllib3 library to inject trace context.
+
+    This function enables automatic trace context propagation for all HTTP
+    requests made using the urllib3 library. It works regardless of import order.
+
+    The instrumentation is idempotent - calling this multiple times has no
+    additional effect after the first call.
 
     Example:
         ```python
         import lilypad
 
         lilypad.instrument_urllib3()
+
+        import urllib3
+
+        http = urllib3.PoolManager()
+        response = http.request("GET", "https://api.example.com")
         ```
     """
-    _patch_urllib3()
+    _urllib3_instrumentor.instrument()
 
 
 def uninstrument_requests() -> None:
     """Remove instrumentation from the requests library.
+
+    This restores the original behavior of the requests library, removing
+    automatic trace context injection. Safe to call even if the library
+    was never instrumented.
 
     Example:
         ```python
@@ -328,15 +257,15 @@ def uninstrument_requests() -> None:
         lilypad.uninstrument_requests()
         ```
     """
-    with suppress(ImportError, KeyError):
-        from requests import Session
-
-        if "requests.Session.request" in _ORIGINAL_METHODS:
-            Session.request = _ORIGINAL_METHODS.pop("requests.Session.request")
+    _requests_instrumentor.uninstrument()
 
 
 def uninstrument_httpx() -> None:
-    """Remove instrumentation from the httpx library (both sync and async).
+    """Remove instrumentation from the httpx library.
+
+    This restores the original behavior of both sync and async httpx clients,
+    removing automatic trace context injection. Safe to call even if the
+    library was never instrumented.
 
     Example:
         ```python
@@ -346,18 +275,14 @@ def uninstrument_httpx() -> None:
         lilypad.uninstrument_httpx()
         ```
     """
-    with suppress(ImportError, KeyError):
-        import httpx
-
-        if "httpx.Client.request" in _ORIGINAL_METHODS:
-            httpx.Client.request = _ORIGINAL_METHODS.pop("httpx.Client.request")
-
-        if "httpx.AsyncClient.request" in _ORIGINAL_METHODS:
-            httpx.AsyncClient.request = _ORIGINAL_METHODS.pop("httpx.AsyncClient.request")
+    _httpx_instrumentor.uninstrument()
 
 
 def uninstrument_aiohttp() -> None:
     """Remove instrumentation from the aiohttp library.
+
+    This restores the original behavior of aiohttp, removing automatic trace
+    context injection. Safe to call even if the library was never instrumented.
 
     Example:
         ```python
@@ -367,15 +292,14 @@ def uninstrument_aiohttp() -> None:
         lilypad.uninstrument_aiohttp()
         ```
     """
-    with suppress(ImportError, KeyError):
-        import aiohttp
-
-        if "aiohttp.ClientSession._request" in _ORIGINAL_METHODS:
-            aiohttp.ClientSession._request = _ORIGINAL_METHODS.pop("aiohttp.ClientSession._request")
+    _aiohttp_instrumentor.uninstrument()
 
 
 def uninstrument_urllib3() -> None:
     """Remove instrumentation from the urllib3 library.
+
+    This restores the original behavior of urllib3, removing automatic trace
+    context injection. Safe to call even if the library was never instrumented.
 
     Example:
         ```python
@@ -385,38 +309,4 @@ def uninstrument_urllib3() -> None:
         lilypad.uninstrument_urllib3()
         ```
     """
-    with suppress(ImportError, KeyError):
-        import urllib3
-
-        if "urllib3.HTTPConnectionPool.urlopen" in _ORIGINAL_METHODS:
-            urllib3.HTTPConnectionPool.urlopen = _ORIGINAL_METHODS.pop("urllib3.HTTPConnectionPool.urlopen")
-
-
-def uninstrument_http_clients() -> None:
-    """Remove instrumentation from all HTTP client libraries.
-
-    This function removes the automatic trace context injection from all
-    previously instrumented HTTP client libraries, restoring their original
-    behavior.
-
-    Example:
-        ```python
-        import lilypad
-
-        # Remove all HTTP client instrumentation
-        lilypad.uninstrument_http_clients()
-        ```
-
-    Note:
-        This will only remove instrumentation from libraries that were
-        previously instrumented. It's safe to call even if no libraries
-        were instrumented.
-    """
-    global _INSTRUMENTED
-
-    uninstrument_requests()
-    uninstrument_httpx()
-    uninstrument_aiohttp()
-    uninstrument_urllib3()
-
-    _INSTRUMENTED = False
+    _urllib3_instrumentor.uninstrument()
