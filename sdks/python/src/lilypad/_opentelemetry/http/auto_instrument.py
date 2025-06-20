@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
+
 from typing import Any, Callable
 from collections.abc import Collection
 
@@ -58,12 +60,10 @@ class RequestsInstrumentor(BaseInstrumentor):
 
     def _uninstrument(self, **kwargs: Any) -> None:
         """Disable requests instrumentation."""
-        try:
+        with suppress(ImportError, AttributeError):
             import requests
 
             unwrap(requests.Session, "request")
-        except (ImportError, AttributeError):
-            pass
 
 
 class HTTPXInstrumentor(BaseInstrumentor):
@@ -82,13 +82,11 @@ class HTTPXInstrumentor(BaseInstrumentor):
 
     def _uninstrument(self, **kwargs: Any) -> None:
         """Disable httpx instrumentation."""
-        try:
+        with suppress(ImportError, AttributeError):
             import httpx
 
             unwrap(httpx.Client, "request")
             unwrap(httpx.AsyncClient, "request")
-        except (ImportError, AttributeError):
-            pass
 
 
 class AIOHTTPInstrumentor(BaseInstrumentor):
@@ -103,12 +101,10 @@ class AIOHTTPInstrumentor(BaseInstrumentor):
 
     def _uninstrument(self, **kwargs: Any) -> None:
         """Disable aiohttp instrumentation."""
-        try:
+        with suppress(ImportError, AttributeError):
             import aiohttp
 
             unwrap(aiohttp.ClientSession, "_request")
-        except (ImportError, AttributeError):
-            pass
 
 
 class URLLib3Instrumentor(BaseInstrumentor):
@@ -123,12 +119,10 @@ class URLLib3Instrumentor(BaseInstrumentor):
 
     def _uninstrument(self, **kwargs: Any) -> None:
         """Disable urllib3 instrumentation."""
-        try:
+        with suppress(ImportError, AttributeError):
             import urllib3
 
             unwrap(urllib3.HTTPConnectionPool, "urlopen")
-        except (ImportError, AttributeError):
-            pass
 
 
 def instrument_requests() -> None:
