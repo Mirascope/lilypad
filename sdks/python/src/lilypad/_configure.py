@@ -271,18 +271,26 @@ def configure(
 
     # Handle HTTP instrumentation
     if auto_http:
-        from ._opentelemetry.http import (
-            instrument_requests,
-            instrument_httpx,
-            instrument_aiohttp,
-            instrument_urllib3,
-        )
+        # Check and instrument each HTTP client library if available
+        if importlib.util.find_spec("requests") is not None:
+            from ._opentelemetry.http import instrument_requests
 
-        # Instrument all HTTP clients (handles both already-imported and future imports)
-        instrument_requests()
-        instrument_httpx()
-        instrument_aiohttp()
-        instrument_urllib3()
+            instrument_requests()
+
+        if importlib.util.find_spec("httpx") is not None:
+            from ._opentelemetry.http import instrument_httpx
+
+            instrument_httpx()
+
+        if importlib.util.find_spec("aiohttp") is not None:
+            from ._opentelemetry.http import instrument_aiohttp
+
+            instrument_aiohttp()
+
+        if importlib.util.find_spec("urllib3") is not None:
+            from ._opentelemetry.http import instrument_urllib3
+
+            instrument_urllib3()
 
     if not auto_llm:
         return
