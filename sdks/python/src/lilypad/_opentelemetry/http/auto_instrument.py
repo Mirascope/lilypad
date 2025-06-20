@@ -131,13 +131,6 @@ class URLLib3Instrumentor(BaseInstrumentor):
             pass
 
 
-# Global instances
-_requests_instrumentor = RequestsInstrumentor()
-_httpx_instrumentor = HTTPXInstrumentor()
-_aiohttp_instrumentor = AIOHTTPInstrumentor()
-_urllib3_instrumentor = URLLib3Instrumentor()
-
-
 def instrument_requests() -> None:
     """Instrument the requests library to inject trace context.
 
@@ -160,7 +153,7 @@ def instrument_requests() -> None:
         response = requests.get("https://api.example.com")
         ```
     """
-    _requests_instrumentor.instrument()
+    RequestsInstrumentor().instrument()
 
 
 def instrument_httpx() -> None:
@@ -190,7 +183,7 @@ def instrument_httpx() -> None:
             response = await client.get("https://api.example.com")
         ```
     """
-    _httpx_instrumentor.instrument()
+    HTTPXInstrumentor().instrument()
 
 
 def instrument_aiohttp() -> None:
@@ -215,7 +208,7 @@ def instrument_aiohttp() -> None:
                 data = await response.text()
         ```
     """
-    _aiohttp_instrumentor.instrument()
+    AIOHTTPInstrumentor().instrument()
 
 
 def instrument_urllib3() -> None:
@@ -239,7 +232,7 @@ def instrument_urllib3() -> None:
         response = http.request("GET", "https://api.example.com")
         ```
     """
-    _urllib3_instrumentor.instrument()
+    URLLib3Instrumentor().instrument()
 
 
 def uninstrument_requests() -> None:
@@ -257,7 +250,7 @@ def uninstrument_requests() -> None:
         lilypad.uninstrument_requests()
         ```
     """
-    _requests_instrumentor.uninstrument()
+    RequestsInstrumentor().uninstrument()
 
 
 def uninstrument_httpx() -> None:
@@ -275,7 +268,7 @@ def uninstrument_httpx() -> None:
         lilypad.uninstrument_httpx()
         ```
     """
-    _httpx_instrumentor.uninstrument()
+    HTTPXInstrumentor().uninstrument()
 
 
 def uninstrument_aiohttp() -> None:
@@ -292,7 +285,7 @@ def uninstrument_aiohttp() -> None:
         lilypad.uninstrument_aiohttp()
         ```
     """
-    _aiohttp_instrumentor.uninstrument()
+    AIOHTTPInstrumentor().uninstrument()
 
 
 def uninstrument_urllib3() -> None:
@@ -309,4 +302,4 @@ def uninstrument_urllib3() -> None:
         lilypad.uninstrument_urllib3()
         ```
     """
-    _urllib3_instrumentor.uninstrument()
+    URLLib3Instrumentor().uninstrument()
