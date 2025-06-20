@@ -45,7 +45,7 @@ def propagated_context(
     if parent and extract_from:
         raise ValueError("Cannot specify both parent and extract_from")
 
-    if extract_from:
+    if extract_from is not None:
         # Extract context from carrier
         ctx = _extract_context(extract_from)
         token = otel_context.attach(ctx)
