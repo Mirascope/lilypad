@@ -5,6 +5,7 @@ This example shows how trace context is automatically propagated without any cod
 
 from typing import List, Any
 import lilypad
+import requests
 
 # Configure Lilypad with auto-instrumentation
 lilypad.configure(
@@ -13,8 +14,6 @@ lilypad.configure(
     auto_http=True  # Enable auto-instrumentation for HTTP libraries
 )
 
-# Now import HTTP libraries - they will be automatically instrumented
-import requests
 
 
 class Document:

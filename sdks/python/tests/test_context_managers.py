@@ -4,11 +4,11 @@ from unittest.mock import Mock, patch
 import pytest
 from opentelemetry import context as otel_context
 
-from lilypad.context_managers import propagated_context, context
+from lilypad import context
 
 
-def test_propagated_context_extracts_and_attaches():
-    """Test that propagated_context extracts and attaches context."""
+def test_context_extracts_and_attaches_from_headers():
+    """Test that context extracts and attaches context from headers."""
     # Mock headers with trace context
     headers = {"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"}
 
@@ -25,7 +25,7 @@ def test_propagated_context_extracts_and_attaches():
         mock_attach.return_value = mock_token
 
         # Use the context manager
-        with propagated_context(headers):
+        with context(extract_from=headers):
             # Verify context was extracted
             mock_extract.assert_called_once_with(headers)
             # Verify context was attached
@@ -35,8 +35,8 @@ def test_propagated_context_extracts_and_attaches():
         mock_detach.assert_called_once_with(mock_token)
 
 
-def test_propagated_context_with_empty_headers():
-    """Test propagated_context with empty headers."""
+def test_context_with_empty_headers():
+    """Test context with empty headers."""
     headers = {}
 
     mock_context = Mock()
@@ -50,7 +50,7 @@ def test_propagated_context_with_empty_headers():
         mock_extract.return_value = mock_context
         mock_attach.return_value = mock_token
 
-        with propagated_context(headers):
+        with context(extract_from=headers):
             pass
 
         # Still should extract, attach, and detach
@@ -59,7 +59,7 @@ def test_propagated_context_with_empty_headers():
         mock_detach.assert_called_once_with(mock_token)
 
 
-def test_propagated_context_detaches_on_exception():
+def test_context_detaches_on_exception_with_extract_from():
     """Test that context is detached even if exception occurs."""
     headers = {"traceparent": "00-test-test-01"}
     mock_token = Mock()
@@ -69,7 +69,7 @@ def test_propagated_context_detaches_on_exception():
         patch.object(otel_context, "attach", return_value=mock_token),
         patch.object(otel_context, "detach") as mock_detach,
     ):
-        with pytest.raises(ValueError), propagated_context(headers):
+        with pytest.raises(ValueError), context(extract_from=headers):
             raise ValueError("test error")
 
         # Context should still be detached

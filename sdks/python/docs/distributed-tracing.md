@@ -107,7 +107,7 @@ async def process_data(data: dict) -> dict:
 @app.post("/api/process")
 async def process_request(request: Request, data: dict):
     # Use context manager to propagate trace context
-    with lilypad.propagated_context(dict(request.headers)):
+    with lilypad.context(extract_from=dict(request.headers)):
         # process_data will be a child of the upstream service's span
         # Note: Without FastAPI instrumentation, process_request itself won't be traced
         return await process_data(data)
@@ -124,6 +124,7 @@ Here's a complete example showing automatic trace propagation across services:
 ```python
 # main_app.py
 import lilypad
+import requests
 
 # Configure with automatic HTTP instrumentation
 lilypad.configure(
@@ -131,8 +132,6 @@ lilypad.configure(
     project_id="your-project",
     auto_http=True  # Enable automatic HTTP instrumentation
 )
-
-import requests  # Can be imported before or after configure()
 
 # Your API client that uses requests/httpx internally
 class RetrievalClient:
@@ -211,7 +210,7 @@ def retrieve_endpoint():
     data = request.json
     
     # Extract trace context using context manager
-    with lilypad.propagated_context(dict(request.headers)):
+    with lilypad.context(extract_from=dict(request.headers)):
         documents = handle_retrieve(data["query"], data["k"])
     
     return jsonify({
@@ -242,12 +241,12 @@ All trace context propagation happens automatically!
 While automatic instrumentation handles context injection, you may need to manually extract context in special cases. Use Lilypad's context managers for this:
 
 ```python
-# Use Lilypad's context managers for extraction
-with lilypad.propagated_context(dict(request.headers)):
+# Use Lilypad's context manager for extraction
+with lilypad.context(extract_from=dict(request.headers)):
     # Your traced functions here will be children of the incoming trace
     process_data(data)
 
-# Or for more control
+# Or for custom message headers
 with lilypad.context(extract_from=message["headers"]):
     # Extract context from custom message headers
     handle_message(data)
@@ -361,7 +360,7 @@ lilypad.instrument_urllib3()     # Just urllib3
 1. **Use Automatic Instrumentation**: Enable `auto_http=True` in configure for transparent tracing
 2. **Define Traced Functions at Module Level**: Don't define traced functions inside request handlers
 3. **Consistent Propagation**: Use the same propagation format across all services
-4. **Use Context Managers**: Use `propagated_context()` and `context()` for manual context management
+4. **Use Context Manager**: Use `context()` for manual context management
 5. **Rely on Automatic Instrumentation**: Let Lilypad handle context propagation automatically
 6. **Performance**: Context propagation adds minimal overhead (typically < 1ms)
 
@@ -400,18 +399,6 @@ In these cases, automatic instrumentation may not work. Consider:
 1. Using a supported HTTP client (requests, httpx, aiohttp, urllib3)
 2. Wrapping your custom client with a supported HTTP client
 
-Note: As of the latest version, import order no longer matters! HTTP libraries can be imported before or after `lilypad.configure()`:
-```python
-# Both of these work now:
-
-# Option 1: Import before configure
-import requests
-lilypad.configure(auto_http=True)
-
-# Option 2: Import after configure
-lilypad.configure(auto_http=True)
-import requests
-```
 
 ## Environment Variables
 
@@ -441,7 +428,7 @@ async def process_request(data: dict):
     return await process_data(data)
 ```
 
-Until this feature is available, use the `propagated_context()` context manager as shown in the examples above.
+Until this feature is available, use the `context()` context manager as shown in the examples above.
 
 ## Example: Complete RAG System
 

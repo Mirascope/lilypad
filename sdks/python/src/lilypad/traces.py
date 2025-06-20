@@ -716,7 +716,7 @@ def trace(
 
         ```python
         from fastapi import FastAPI, Request
-        from lilypad import trace, propagated_context
+        from lilypad import trace, context
 
         app = FastAPI()
 
@@ -731,7 +731,7 @@ def trace(
         @app.post("/process")
         async def api_endpoint(request: Request, data: dict):
             # Use context manager to propagate trace context
-            with propagated_context(dict(request.headers)):
+            with context(extract_from=dict(request.headers)):
                 # process_request will be a child of the incoming trace
                 return await process_request(data)
         ```
@@ -785,7 +785,7 @@ def trace(
         ```
 
     Note:
-        - For distributed tracing, use the `propagated_context` or `context` context managers
+        - For distributed tracing, use the `context` context manager with `extract_from` parameter
         - Context extraction supports multiple propagation formats (W3C, B3, Jaeger)
         - Configure propagation format using `lilypad.configure(propagator="...")`
     """

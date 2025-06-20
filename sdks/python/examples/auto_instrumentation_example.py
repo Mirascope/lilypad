@@ -9,6 +9,7 @@ import asyncio
 from typing import List, Any
 
 import lilypad
+import requests
 
 # Configure Lilypad with automatic HTTP instrumentation
 lilypad.configure(
@@ -17,8 +18,6 @@ lilypad.configure(
     auto_http=True  # Enable automatic trace propagation for ALL HTTP calls
 )
 
-# Import HTTP libraries after configuration for auto-instrumentation
-import requests
 
 
 # Example: Document retrieval service (runs on separate server)
@@ -184,7 +183,7 @@ async def retrieve_endpoint(request: Request, data: RetrieveRequest) -> dict[str
     """Server endpoint that extracts trace context from headers."""
 
     # Use context manager to extract trace context from incoming headers
-    with lilypad.propagated_context(dict(request.headers)):
+    with lilypad.context(extract_from=dict(request.headers)):
         docs = handle_retrieve(data.query, data.k)
 
     return {"documents": [{"id": doc.id, "content": doc.content, "score": doc.score} for doc in docs]}
