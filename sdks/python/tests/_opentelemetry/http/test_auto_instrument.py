@@ -656,12 +656,6 @@ def test_selective_http_instrumentation(monkeypatch):
 
     trace._TRACER_PROVIDER = None
 
-    # Mock the instrument functions
-    mock_instrument_requests = MagicMock()
-    mock_instrument_httpx = MagicMock()
-    mock_instrument_aiohttp = MagicMock()
-    mock_instrument_urllib3 = MagicMock()
-
     # Mock find_spec to control which libraries are "available"
     original_find_spec = importlib.util.find_spec
 
@@ -675,31 +669,21 @@ def test_selective_http_instrumentation(monkeypatch):
 
     monkeypatch.setattr(importlib.util, "find_spec", mock_find_spec)
 
-    # Mock the HTTP instrumentation module
-    mock_http_module = MagicMock()
-    mock_http_module.instrument_requests = mock_instrument_requests
-    mock_http_module.instrument_httpx = mock_instrument_httpx
-    mock_http_module.instrument_aiohttp = mock_instrument_aiohttp
-    mock_http_module.instrument_urllib3 = mock_instrument_urllib3
+    from lilypad import configure
 
-    # Patch the module import
-    with patch.dict(sys.modules, {"lilypad._opentelemetry.http": mock_http_module}):
-        # Clear any cached imports
-        if "lilypad" in sys.modules:
-            del sys.modules["lilypad"]
-        if "lilypad._configure" in sys.modules:
-            del sys.modules["lilypad._configure"]
+    with (
+        patch("lilypad._utils.client.get_sync_client"),
+        patch("lilypad._opentelemetry.http.instrument_requests") as mock_requests,
+        patch("lilypad._opentelemetry.http.instrument_httpx") as mock_httpx,
+        patch("lilypad._opentelemetry.http.instrument_aiohttp") as mock_aiohttp,
+        patch("lilypad._opentelemetry.http.instrument_urllib3") as mock_urllib3,
+    ):
+        configure(api_key="test-key", project_id="test-project", auto_http=True)
 
-        import lilypad
-
-        with patch("lilypad._utils.client.get_sync_client"):
-            lilypad.configure(api_key="test-key", project_id="test-project", auto_http=True)
-
-    # Verify only available libraries were instrumented
-    mock_instrument_requests.assert_called_once()
-    mock_instrument_urllib3.assert_called_once()
-    mock_instrument_httpx.assert_not_called()
-    mock_instrument_aiohttp.assert_not_called()
+        mock_requests.assert_called_once()
+        mock_urllib3.assert_called_once()
+        mock_httpx.assert_not_called()
+        mock_aiohttp.assert_not_called()
 
 
 def test_http_instrumentation_import_error_handling():
