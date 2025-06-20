@@ -19,7 +19,6 @@ lilypad.configure(
 )
 
 
-
 # Example: Document retrieval service (runs on separate server)
 class Document:
     def __init__(self, id: str, content: str, score: float = 0.0):

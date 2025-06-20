@@ -29,11 +29,11 @@ def context(
         # Extract from HTTP request headers
         with lilypad.context(extract_from=dict(request.headers)):
             process_data()
-        
+
         # Cross-thread propagation
         with lilypad.context(parent=parent_ctx):
             process_in_thread()
-        
+
         # Extract from custom message headers
         with lilypad.context(extract_from=message["headers"]):
             handle_message(message["data"])
