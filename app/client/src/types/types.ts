@@ -1140,6 +1140,8 @@ export interface SpanMoreDetails {
 export interface SpanPublic {
   /** Span Id */
   span_id: string;
+  /** Trace Id */
+  trace_id: string | null;
   /** Function Uuid */
   function_uuid?: string | null;
   type?: SpanType | null;

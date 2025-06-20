@@ -31,10 +31,14 @@ logger = logging.getLogger(__name__)
 class TraceBuffer:
     """Buffer for storing spans belonging to a single trace."""
 
-    def __init__(self, trace_id: str) -> None:
+    def __init__(self, trace_id: str, session: Session | None = None) -> None:
         self.trace_id = trace_id
         self.spans: dict[str, dict[str, Any]] = {}  # span_id -> span data
         self.created_at = time.time()
+        self._session = session
+        # Create instance-specific cache to avoid memory leaks and ensure isolation
+        self._parent_cache: dict[str, bool] = {}
+        self._max_cache_size = 1000
 
     def add_span(self, span_data: dict[str, Any]) -> None:
         """Add a span to the buffer."""
@@ -54,12 +58,59 @@ class TraceBuffer:
         for span_data in self.spans.values():
             parent_id = span_data.get("parent_span_id")
             if parent_id and parent_id not in span_ids:
+                if self._parent_exists_in_db(parent_id):
+                    logger.debug(
+                        f"Parent {parent_id} exists in DB for span {span_data.get('span_id')}"
+                    )
+                    continue
+
                 logger.debug(
                     f"Trace {self.trace_id} incomplete: span {span_data.get('span_id')} "
                     f"waiting for parent {parent_id}"
                 )
                 return False  # Missing parent
         return True
+
+    def _has_existing_spans_in_db(self) -> bool:
+        """Check if this trace already has spans in the database."""
+        if not self._session:
+            return False
+
+        # Check if any spans exist for this trace_id
+        stmt = select(SpanTable).where(SpanTable.trace_id == self.trace_id).limit(1)
+        result = self._session.exec(stmt).first()
+        exists = result is not None
+
+        return exists
+
+    def _parent_exists_in_db(self, parent_span_id: str) -> bool:
+        """Check if a parent span exists in the database."""
+        # Check cache first
+        if parent_span_id in self._parent_cache:
+            return self._parent_cache[parent_span_id]
+
+        if not self._session:
+            return False
+
+        # Query database
+        stmt = (
+            select(SpanTable)
+            .where(
+                SpanTable.trace_id == self.trace_id, SpanTable.span_id == parent_span_id
+            )
+            .limit(1)
+        )
+        result = self._session.exec(stmt).first()
+        exists = result is not None
+
+        # Add to cache with size limit
+        if len(self._parent_cache) >= self._max_cache_size:
+            # Remove oldest entry (FIFO)
+            oldest_key = next(iter(self._parent_cache))
+            del self._parent_cache[oldest_key]
+
+        self._parent_cache[parent_span_id] = exists
+        return exists
 
     def get_dependency_order(self) -> list[dict[str, Any]]:
         """Get spans in dependency order (parents before children)."""
@@ -368,7 +419,7 @@ class SpanQueueProcessor:
                         # Mark that we need to force process oldest trace
                         force_process_oldest = True
 
-                    self.trace_buffers[trace_id] = TraceBuffer(trace_id)
+                    self.trace_buffers[trace_id] = TraceBuffer(trace_id, self._session)
 
                 buffer = self.trace_buffers[trace_id]
 
@@ -612,11 +663,17 @@ class SpanQueueProcessor:
             for span_data in buffer.spans.values():
                 parent_id = span_data.get("parent_span_id")
                 if parent_id and parent_id not in span_ids:
-                    logger.warning(
-                        f"Setting missing parent {parent_id} to null for span {span_data.get('span_id')} "
-                        f"in trace {trace_id}"
-                    )
-                    span_data["parent_span_id"] = None
+                    if buffer._parent_exists_in_db(parent_id):
+                        logger.info(
+                            f"Parent {parent_id} found in DB for span {span_data.get('span_id')}, "
+                            f"keeping parent_span_id"
+                        )
+                    else:
+                        logger.warning(
+                            f"Setting missing parent {parent_id} to null for span {span_data.get('span_id')} "
+                            f"in trace {trace_id} - parent not found in buffer or DB"
+                        )
+                        span_data["parent_span_id"] = None
 
             # Remove buffer while still under lock
             buffer_to_process = self.trace_buffers.pop(trace_id, None)

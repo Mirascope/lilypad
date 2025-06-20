@@ -60,6 +60,7 @@ def test_span(
 
     span = SpanTable(
         span_id="test_span_1",
+        trace_id="test_trace_1",
         organization_uuid=test_project.organization_uuid,
         project_uuid=test_project.uuid,
         function_uuid=test_function.uuid,
@@ -128,6 +129,7 @@ def test_post_traces(
         trace_data = [
             {
                 "span_id": "test_span_2",
+                "trace_id": "test_trace_2",
                 "instrumentation_scope": {"name": "lilypad"},
                 "start_time": current_time,
                 "end_time": current_time + 100,
@@ -180,6 +182,7 @@ async def test_process_lilypad_span():
     """Test processing a lilypad span with no children"""
     trace = {
         "span_id": "span1",
+        "trace_id": "trace1",
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
@@ -205,10 +208,37 @@ async def test_process_lilypad_span():
 
 
 @pytest.mark.asyncio
+async def test_process_span_without_trace_id():
+    """Test processing a span without trace_id (legacy span)"""
+    trace = {
+        "span_id": "span-legacy",
+        # Note: trace_id is intentionally missing
+        "start_time": 1000,
+        "end_time": 2000,
+        "attributes": {
+            "lilypad.type": "function",
+        },
+        "instrumentation_scope": {"name": "lilypad"},
+    }
+    parent_to_children = {"span-legacy": []}
+    span_creates = []
+
+    result = await _process_span(trace, parent_to_children, span_creates)
+
+    assert result.span_id == "span-legacy"
+    assert result.trace_id is None  # Should handle missing trace_id gracefully
+    assert result.type == "function"
+    assert result.scope == Scope.LILYPAD
+    assert result.duration_ms == 1000
+    assert len(span_creates) == 1
+
+
+@pytest.mark.asyncio
 async def test_process_llm_span_with_openrouter():
     """Test processing an LLM span using openrouter"""
     trace = {
         "span_id": "span1",
+        "trace_id": "trace1",
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
@@ -239,6 +269,7 @@ async def test_process_llm_span_with_other_system():
     """Test processing an LLM span using a non-openrouter system"""
     trace = {
         "span_id": "span1",
+        "trace_id": "trace1",
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
@@ -265,6 +296,7 @@ async def test_process_span_with_children():
     """Test processing a span with child spans"""
     parent_trace = {
         "span_id": "parent",
+        "trace_id": "trace1",
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {},
@@ -273,6 +305,7 @@ async def test_process_span_with_children():
 
     child_trace = {
         "span_id": "child",
+        "trace_id": "trace1",
         "start_time": 1200,
         "end_time": 1800,
         "attributes": {
@@ -303,6 +336,7 @@ async def test_process_span_with_invalid_uuids():
     """Test processing a span with invalid UUID strings"""
     trace = {
         "span_id": "span1",
+        "trace_id": "trace1",
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
@@ -323,6 +357,7 @@ async def test_process_span_without_cost_calculation():
     """Test processing an LLM span without sufficient attributes for cost calculation"""
     trace = {
         "span_id": "span1",
+        "trace_id": "trace1",
         "start_time": 1000,
         "end_time": 2000,
         "attributes": {
