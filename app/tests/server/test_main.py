@@ -12,6 +12,7 @@ from lilypad.server.main import (
     SPAStaticFiles,
     app,
     health,
+    is_lilypad_cloud_deployment,
     lifespan,
     log_exceptions,
     run_migrations,
@@ -54,6 +55,52 @@ class TestRunMigrations:
 
         mock_subprocess_run.assert_called_once()
         mock_log.error.assert_called_once_with("Migration failed: Migration error")
+
+
+class TestIsLilypadCloudDeployment:
+    """Test is_lilypad_cloud_deployment function."""
+
+    @patch("lilypad.server.main.settings")
+    def test_is_cloud_with_mirascope_domain(self, mock_settings):
+        """Test detection with mirascope.com domain."""
+        mock_settings.remote_client_hostname = "lilypad.mirascope.com"
+        assert is_lilypad_cloud_deployment() is True
+
+    @patch("lilypad.server.main.settings")
+    def test_is_cloud_with_lilypad_domain(self, mock_settings):
+        """Test detection with lilypad.so domain."""
+        mock_settings.remote_client_hostname = "app.lilypad.so"
+        assert is_lilypad_cloud_deployment() is True
+
+    @patch("lilypad.server.main.settings")
+    def test_is_cloud_with_exact_domain(self, mock_settings):
+        """Test detection with exact domain match."""
+        mock_settings.remote_client_hostname = "mirascope.com"
+        assert is_lilypad_cloud_deployment() is True
+
+    @patch("lilypad.server.main.settings")
+    def test_not_cloud_with_different_domain(self, mock_settings):
+        """Test detection with non-cloud domain."""
+        mock_settings.remote_client_hostname = "example.com"
+        assert is_lilypad_cloud_deployment() is False
+
+    @patch("lilypad.server.main.settings")
+    def test_not_cloud_with_empty_hostname(self, mock_settings):
+        """Test detection with empty hostname."""
+        mock_settings.remote_client_hostname = ""
+        assert is_lilypad_cloud_deployment() is False
+
+    @patch("lilypad.server.main.settings")
+    def test_not_cloud_with_none_hostname(self, mock_settings):
+        """Test detection with None hostname."""
+        mock_settings.remote_client_hostname = None
+        assert is_lilypad_cloud_deployment() is False
+
+    @patch("lilypad.server.main.settings")
+    def test_not_cloud_with_fake_domain(self, mock_settings):
+        """Test detection prevents fake domain attacks."""
+        mock_settings.remote_client_hostname = "fakemirascope.com"
+        assert is_lilypad_cloud_deployment() is False
 
 
 class TestLifespan:
@@ -328,6 +375,102 @@ class TestLifespan:
 
         # Should call get_running_loop after AttributeError
         mock_get_loop.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.main.run_migrations")
+    @patch("lilypad.server.main.settings")
+    @patch("lilypad.server.main.is_lilypad_cloud_deployment")
+    @patch("lilypad.server.main.get_retention_scheduler")
+    @patch("lilypad.server.main.close_kafka_producer")
+    async def test_lifespan_with_data_retention_scheduler_cloud(
+        self,
+        mock_close_kafka_producer,
+        mock_get_retention_scheduler,
+        mock_is_cloud,
+        mock_settings,
+        mock_run_migrations,
+    ):
+        """Test lifespan starts data retention scheduler on cloud deployment."""
+        mock_settings.kafka_auto_setup_topics = False
+        mock_settings.kafka_bootstrap_servers = None
+        mock_is_cloud.return_value = True
+
+        # Mock retention scheduler
+        mock_scheduler = AsyncMock()
+        mock_get_retention_scheduler.return_value = mock_scheduler
+
+        app_mock = Mock(spec=FastAPI)
+
+        with patch("lilypad.server.main.log") as mock_log:
+            async with lifespan(app_mock):
+                pass
+
+        mock_scheduler.start.assert_called_once_with(run_immediately=True)
+        mock_scheduler.stop.assert_called_once()
+        mock_log.info.assert_any_call(
+            "Detected Lilypad Cloud deployment - starting data retention scheduler"
+        )
+        mock_log.info.assert_any_call(
+            "Data retention scheduler started successfully (runs daily at 2 AM UTC, initial run in 5 minutes)"
+        )
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.main.run_migrations")
+    @patch("lilypad.server.main.settings")
+    @patch("lilypad.server.main.is_lilypad_cloud_deployment")
+    @patch("lilypad.server.main.get_retention_scheduler")
+    async def test_lifespan_with_data_retention_scheduler_failure(
+        self,
+        mock_get_retention_scheduler,
+        mock_is_cloud,
+        mock_settings,
+        mock_run_migrations,
+    ):
+        """Test lifespan handles data retention scheduler failure gracefully."""
+        mock_settings.kafka_auto_setup_topics = False
+        mock_settings.kafka_bootstrap_servers = None
+        mock_is_cloud.return_value = True
+
+        # Mock retention scheduler failure
+        mock_scheduler = AsyncMock()
+        mock_scheduler.start.side_effect = Exception("Scheduler start failed")
+        mock_get_retention_scheduler.return_value = mock_scheduler
+
+        app_mock = Mock(spec=FastAPI)
+
+        with patch("lilypad.server.main.log") as mock_log:
+            async with lifespan(app_mock):
+                pass
+
+        mock_log.error.assert_any_call(
+            "Failed to start data retention scheduler (non-fatal): Scheduler start failed",
+            exc_info=True,
+        )
+
+    @pytest.mark.asyncio
+    @patch("lilypad.server.main.run_migrations")
+    @patch("lilypad.server.main.settings")
+    @patch("lilypad.server.main.is_lilypad_cloud_deployment")
+    async def test_lifespan_skip_retention_scheduler_non_cloud(
+        self,
+        mock_is_cloud,
+        mock_settings,
+        mock_run_migrations,
+    ):
+        """Test lifespan skips data retention scheduler on non-cloud deployment."""
+        mock_settings.kafka_auto_setup_topics = False
+        mock_settings.kafka_bootstrap_servers = None
+        mock_is_cloud.return_value = False
+
+        app_mock = Mock(spec=FastAPI)
+
+        with patch("lilypad.server.main.log") as mock_log:
+            async with lifespan(app_mock):
+                pass
+
+        mock_log.info.assert_any_call(
+            "Not a Lilypad Cloud deployment - skipping data retention scheduler"
+        )
 
 
 class TestLogExceptionsMiddleware:

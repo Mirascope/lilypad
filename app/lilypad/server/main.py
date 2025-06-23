@@ -22,6 +22,7 @@ from starlette.types import Scope as StarletteScope
 
 from lilypad.server._utils.posthog import setup_posthog_middleware
 from lilypad.server.logging_config import setup_logging
+from lilypad.server.services.data_retention_service import get_retention_scheduler
 from lilypad.server.services.kafka_producer import (
     close_kafka_producer,
     get_kafka_producer,
@@ -52,6 +53,23 @@ def run_migrations() -> None:
         log.info(f"Migration output: {result.stdout}")
     except subprocess.CalledProcessError as e:
         log.error(f"Migration failed: {e.stderr}")
+
+
+def is_lilypad_cloud_deployment() -> bool:
+    """Check if this is a Lilypad Cloud deployment based on settings."""
+    from ..ee.server import ALT_HOST_NAME, HOST_NAME
+
+    remote_hostname = settings.remote_client_hostname
+    # Handle empty or None hostname
+    if not remote_hostname:
+        return False
+
+    # More strict domain validation to prevent subdomain attacks
+    return (
+        remote_hostname in (HOST_NAME, ALT_HOST_NAME)
+        or remote_hostname.endswith(f".{HOST_NAME}")
+        or remote_hostname.endswith(f".{ALT_HOST_NAME}")
+    )
 
 
 @asynccontextmanager
@@ -111,6 +129,25 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             )  # pragma: no cover
             # Continue startup even if processor fails
 
+    retention_scheduler = None
+    if is_lilypad_cloud_deployment():
+        log.info(
+            "Detected Lilypad Cloud deployment - starting data retention scheduler"
+        )
+        try:
+            retention_scheduler = get_retention_scheduler()
+            await retention_scheduler.start(run_immediately=True)
+            log.info(
+                "Data retention scheduler started successfully (runs daily at 2 AM UTC, initial run in 5 minutes)"
+            )
+        except Exception as e:
+            log.error(
+                f"Failed to start data retention scheduler (non-fatal): {e}",
+                exc_info=True,
+            )
+    else:
+        log.info("Not a Lilypad Cloud deployment - skipping data retention scheduler")
+
     yield
 
     # Cleanup on shutdown
@@ -132,6 +169,14 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             log.info("Stripe queue processor stopped successfully")
         except Exception as e:  # pragma: no cover
             log.error(f"Error stopping stripe queue processor: {e}")  # pragma: no cover
+
+    if retention_scheduler:
+        log.info("Stopping data retention scheduler")
+        try:
+            await retention_scheduler.stop()
+            log.info("Data retention scheduler stopped successfully")
+        except Exception as e:
+            log.error(f"Error stopping data retention scheduler: {e}", exc_info=True)
 
     # Give more time for pending tasks to complete
     log.info("Waiting for pending tasks to complete...")
