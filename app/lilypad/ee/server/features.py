@@ -18,7 +18,7 @@ cloud_features = {
     Tier.FREE: FeatureSettings(
         num_users_per_organization=2,
         traces_per_month=30_000,
-        data_retention_days=30,
+        data_retention_days=90,
     ),
     Tier.PRO: FeatureSettings(
         num_users_per_organization=10,
