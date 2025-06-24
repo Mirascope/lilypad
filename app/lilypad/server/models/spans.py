@@ -77,6 +77,13 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
             "project_uuid",
             postgresql_where=text("parent_span_id IS NULL"),
         ),
+        # Index for data retention performance
+        Index(
+            "idx_spans_org_created",
+            "organization_uuid",
+            "created_at",
+            postgresql_using="btree",
+        ),
     )
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"

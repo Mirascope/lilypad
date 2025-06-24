@@ -698,3 +698,55 @@ class TestAppInitialization:
         from fastapi.exceptions import RequestValidationError
 
         assert RequestValidationError in app.exception_handlers
+
+
+class TestLifespanDataRetentionShutdownError:
+    """Test data retention scheduler shutdown error handling."""
+
+    @pytest.mark.asyncio
+    async def test_retention_scheduler_stop_error(self):
+        """Test error handling when stopping retention scheduler fails."""
+        # Create a mock app
+        mock_app = FastAPI()
+
+        # Create a mock retention scheduler
+        mock_retention_scheduler = AsyncMock()
+        mock_retention_scheduler.stop.side_effect = Exception("Stop failed")
+
+        # Patch all the dependencies
+        with (
+            patch("lilypad.server.main.settings") as mock_settings,
+            patch("lilypad.server.main.run_migrations"),
+            patch("lilypad.server.main.KafkaSetupService"),
+            patch(
+                "lilypad.server.main.get_span_queue_processor"
+            ) as mock_get_span_processor,
+            patch(
+                "lilypad.server.main.get_stripe_queue_processor"
+            ) as mock_get_stripe_processor,
+            patch("lilypad.server.main.is_lilypad_cloud_deployment", return_value=True),
+            patch(
+                "lilypad.server.main.get_retention_scheduler",
+                return_value=mock_retention_scheduler,
+            ),
+            patch("lilypad.server.main.log") as mock_log,
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
+            # Configure mocks
+            mock_settings.kafka_bootstrap_servers = "localhost:9092"
+            mock_settings.stripe_webhook_secret = "test_secret"
+            mock_settings.kafka_auto_setup_topics = False
+            mock_span_processor = AsyncMock()
+            mock_get_span_processor.return_value = mock_span_processor
+            mock_stripe_processor = AsyncMock()
+            mock_get_stripe_processor.return_value = mock_stripe_processor
+
+            # Run the lifespan context manager
+            async with lifespan(mock_app):
+                pass
+
+            # Verify retention scheduler stop was attempted and error was logged
+            mock_retention_scheduler.stop.assert_called_once()
+            mock_log.error.assert_any_call(
+                "Error stopping data retention scheduler: Stop failed", exc_info=True
+            )

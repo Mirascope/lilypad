@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Annotated, Optional
 from uuid import UUID
 
 from pydantic import AwareDatetime
-from sqlalchemy import func
+from sqlalchemy import Index, func
 from sqlmodel import DateTime, Field, Relationship, SQLModel
 
 from .base_organization_sql_model import BaseOrganizationSQLModel
@@ -49,6 +49,14 @@ class CommentTable(_CommentBase, BaseOrganizationSQLModel, table=True):
     """Comment Table Model."""
 
     __tablename__ = COMMENT_TABLE_NAME  # type: ignore
+    __table_args__ = (
+        # Index for cascade delete performance during data retention
+        Index(
+            "idx_comments_span_uuid",
+            "span_uuid",
+            postgresql_using="btree",
+        ),
+    )
     user: "UserTable" = Relationship(back_populates="comments")
     span: "SpanTable" = Relationship(back_populates="comments")
     child_comments: list["CommentTable"] = Relationship(
