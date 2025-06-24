@@ -14,13 +14,12 @@ from uuid import UUID
 from sqlalchemy import func, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import TimeoutError as SQLTimeoutError
-from sqlmodel import Session, col, desc, select
+from sqlmodel import Session, col, select
 
 from ee import Tier
 
 from ...ee.server.features import cloud_features
 from ..db.session import create_session
-from ..models.billing import BillingTable
 from ..models.organizations import OrganizationTable
 from ..settings import get_settings
 
@@ -160,28 +159,11 @@ class DataRetentionService:
 
     def _get_organization_tier(self, organization_uuid: UUID) -> Tier:
         """Get the tier for an organization from billing table."""
-        stmt = (
-            select(BillingTable)
-            .where(col(BillingTable.organization_uuid) == organization_uuid)
-            .order_by(desc(BillingTable.created_at))
-            .limit(1)
+        from .billing import BillingService
+
+        return BillingService.get_organization_tier_by_uuid(
+            self.session, organization_uuid
         )
-
-        billing = self.session.exec(stmt).first()  # pyright: ignore[reportCallIssue, reportArgumentType]
-
-        if not billing:
-            return Tier.FREE
-
-        if not billing.stripe_price_id:
-            return Tier.FREE
-
-        # Determine tier based on stripe_price_id (same logic as BillingService)
-        if billing.stripe_price_id == settings.stripe_cloud_team_flat_price_id:
-            return Tier.TEAM
-        elif billing.stripe_price_id == settings.stripe_cloud_pro_flat_price_id:
-            return Tier.PRO
-        else:
-            return Tier.FREE
 
     @classmethod
     def get_retention_days(cls, tier: Tier) -> int | None:

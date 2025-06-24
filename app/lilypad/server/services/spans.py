@@ -4,7 +4,8 @@ import logging
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
-from typing import Literal
+from functools import cached_property
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -12,9 +13,13 @@ from sqlalchemy import TextClause
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, asc, delete, func, select, text
 
+from ee import Tier
+
+from ...ee.server.constants import ALT_HOST_NAME, HOST_NAME
 from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
+from ..settings import get_settings
 from .base_organization import BaseOrganizationService
 from .tags import TagService
 
@@ -49,6 +54,61 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
 
+    @cached_property
+    def _display_tier(self) -> Tier:
+        """Get organization tier with request-scoped caching.
+
+        This property is cached for the lifetime of the SpanService instance,
+        which corresponds to a single request in FastAPI.
+
+        Returns:
+            The tier for the organization.
+        """
+        # Import here to avoid circular imports
+        from .billing import BillingService
+
+        return BillingService.get_organization_tier_by_uuid(
+            self.session, self.user.active_organization_uuid
+        )
+
+    def _apply_display_retention_filter(self, stmt: Any) -> Any:
+        """Apply display-level retention filtering based on user tier.
+
+        Args:
+            stmt: The SQLModel select statement to apply filters to
+
+        Returns:
+            The modified statement with display retention filters applied
+        """
+        # Check if we're on Lilypad Cloud using the same logic as require_license
+        settings = get_settings()
+        # This matches the logic in require_license.is_lilypad_cloud
+        is_lilypad_cloud = settings.remote_client_hostname.endswith(
+            HOST_NAME
+        ) or settings.remote_client_hostname.endswith(ALT_HOST_NAME)
+
+        # Skip filtering for self-hosted deployments
+        if not is_lilypad_cloud:
+            return stmt
+
+        # Get the user's organization tier (cached per request)
+        tier = self._display_tier
+
+        # Determine display retention days based on tier
+        if tier == Tier.FREE:
+            display_days = 30
+        elif tier == Tier.PRO:
+            display_days = 180
+        else:  # TEAM or ENTERPRISE
+            # No display filtering for unlimited tiers
+            return stmt
+
+        # Apply the date filter using PostgreSQL's date arithmetic with proper parameterization
+        # This ensures consistent timezone handling between app and DB
+        return stmt.where(
+            self.table.created_at >= func.current_timestamp() - text("INTERVAL :days")
+        ).params(days=f"{display_days} days")
+
     def count_no_parent_spans(self, project_uuid: UUID) -> int:
         """Return the *total* number of root‑level spans for a project.
 
@@ -75,13 +135,16 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         order: Literal["asc", "desc"] = "desc",
     ) -> Sequence[SpanTable]:
         """Find all root spans for a project."""
+        stmt = select(self.table).where(
+            self.table.project_uuid == project_uuid,
+            self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
+        )
+
+        # Apply display retention filtering
+        stmt = self._apply_display_retention_filter(stmt)
+
         stmt = (
-            select(self.table)
-            .where(
-                self.table.project_uuid == project_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
-            )
-            .order_by(
+            stmt.order_by(
                 self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
                 if order == "asc"
                 else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )
@@ -138,14 +201,17 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self, project_uuid: UUID, function_uuid: UUID
     ) -> Sequence[SpanTable]:
         """Find spans by version uuid"""
-        return self.session.exec(
-            select(self.table).where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
-                self.table.project_uuid == project_uuid,
-                self.table.function_uuid == function_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore
-            )
-        ).all()
+        stmt = select(self.table).where(
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+            self.table.function_uuid == function_uuid,
+            self.table.parent_span_id.is_(None),  # type: ignore
+        )
+
+        # Apply display retention filtering
+        stmt = self._apply_display_retention_filter(stmt)
+
+        return self.session.exec(stmt).all()
 
     def get_record_by_span_id(self, project_uuid: UUID, span_id: str) -> SpanTable:
         """Find spans by span id"""
@@ -168,13 +234,16 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self, project_uuid: UUID, function_uuid: UUID
     ) -> Sequence[SpanTable]:
         """Find spans by version uuid"""
-        return self.session.exec(
-            select(self.table).where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
-                self.table.project_uuid == project_uuid,
-                self.table.function_uuid == function_uuid,
-            )
-        ).all()
+        stmt = select(self.table).where(
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+            self.table.function_uuid == function_uuid,
+        )
+
+        # Apply display retention filtering
+        stmt = self._apply_display_retention_filter(stmt)
+
+        return self.session.exec(stmt).all()
 
     def get_aggregated_metrics(
         self,
@@ -237,6 +306,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
 
         # Build the final query
         query = select(*columns).where(*base_filters)
+
+        # Apply display retention filtering
+        query = self._apply_display_retention_filter(query)
 
         if group_by_columns:
             query = query.group_by(*group_by_columns)
@@ -303,6 +375,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.organization_uuid == self.user.active_organization_uuid,
             )
         )
+
+        # Apply display retention filtering
+        query = self._apply_display_retention_filter(query)
 
         count = self.session.exec(query).one()
         return count
@@ -373,20 +448,20 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         Returns:
             List of spans created since the timestamp
         """
-        stmt = (
-            select(self.table)
-            .where(
-                self.table.project_uuid == project_uuid,
-                self.table.created_at > since,
-                self.table.parent_span_id.is_(None),  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
-            )
-            .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
-            .options(
-                selectinload(
-                    self.table.child_spans,  # pyright: ignore [reportArgumentType]
-                    recursion_depth=-1,
-                )  # Load all children
-            )
+        stmt = select(self.table).where(
+            self.table.project_uuid == project_uuid,
+            self.table.created_at > since,
+            self.table.parent_span_id.is_(None),  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
+        )
+
+        # Apply display retention filtering
+        stmt = self._apply_display_retention_filter(stmt)
+
+        stmt = stmt.order_by(self.table.created_at.desc()).options(  # pyright: ignore [reportAttributeAccessIssue]
+            selectinload(
+                self.table.child_spans,  # pyright: ignore [reportArgumentType]
+                recursion_depth=-1,
+            )  # Load all children
         )
 
         return self.session.exec(stmt).all()
@@ -490,8 +565,13 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 text("data->>'trace_id' = :trace_id"),
             )
             .params(trace_id=trace_id)
-            .order_by(asc(self.table.created_at))
         )
+
+        # Apply display retention filtering
+        stmt = self._apply_display_retention_filter(stmt)
+
+        stmt = stmt.order_by(asc(self.table.created_at))
+
         return self.session.exec(stmt).all()
 
     def find_records_by_function_uuid_paged(
@@ -504,15 +584,18 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         order: str = "desc",
     ) -> Sequence[SpanTable]:
         """Find root-level spans for a function with pagination + dynamic sort."""
+        stmt = select(self.table).where(
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+            self.table.function_uuid == function_uuid,
+            self.table.parent_span_id.is_(None),  # type: ignore
+        )
+
+        # Apply display retention filtering
+        stmt = self._apply_display_retention_filter(stmt)
+
         stmt = (
-            select(self.table)
-            .where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
-                self.table.project_uuid == project_uuid,
-                self.table.function_uuid == function_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore
-            )
-            .order_by(
+            stmt.order_by(
                 self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
                 if order == "asc"
                 else self.table.created_at.desc()  # pyright: ignore [reportAttributeAccessIssue]                                         )

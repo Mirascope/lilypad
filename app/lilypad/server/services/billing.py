@@ -5,10 +5,11 @@ import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+from uuid import UUID
 
 import stripe
 from fastapi import HTTPException, status
-from sqlmodel import Session, desc, select, update
+from sqlmodel import Session, col, desc, select, update
 from stripe import InvalidRequestError, StripeError
 
 from ee import Tier
@@ -61,6 +62,45 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             .order_by(desc(self.table.created_at))
         ).first()
         if not billing or not billing.stripe_price_id:
+            return Tier.FREE
+
+        # Determine tier based on stripe_price_id
+        if billing.stripe_price_id == settings.stripe_cloud_team_flat_price_id:
+            return Tier.TEAM
+        elif billing.stripe_price_id == settings.stripe_cloud_pro_flat_price_id:
+            return Tier.PRO
+        else:
+            return Tier.FREE
+
+    @staticmethod
+    def get_organization_tier_by_uuid(
+        session: Session, organization_uuid: UUID
+    ) -> Tier:
+        """Get the tier for an organization from billing table (static method).
+
+        This static method can be used without user context, making it suitable
+        for background tasks and services that don't have a user.
+
+        Args:
+            session: Database session
+            organization_uuid: The organization UUID to check
+
+        Returns:
+            The tier for the organization
+        """
+        stmt = (
+            select(BillingTable)
+            .where(col(BillingTable.organization_uuid) == organization_uuid)
+            .order_by(desc(BillingTable.created_at))
+            .limit(1)
+        )
+
+        billing = session.exec(stmt).first()  # pyright: ignore[reportCallIssue, reportArgumentType]
+
+        if not billing:
+            return Tier.FREE
+
+        if not billing.stripe_price_id:
             return Tier.FREE
 
         # Determine tier based on stripe_price_id
