@@ -7,6 +7,7 @@ from sqlmodel import Session, col, desc, select
 
 from ee import Tier
 
+from ...ee.server.features import cloud_features
 from ..models.billing import BillingTable
 from ..settings import get_settings
 
@@ -72,15 +73,10 @@ def get_display_retention_days(tier: Tier) -> int | None:
     Returns:
         Number of days to retain display data, or None for unlimited
     """
-    # Define display retention separately from storage retention
-    # FREE users can see 30 days but data is kept for 90 days
-    # This creates an upgrade incentive
-    display_retention = {
-        Tier.FREE: 30,
-        Tier.PRO: 180,
-        Tier.TEAM: None,  # Unlimited
-        Tier.ENTERPRISE: None,  # Unlimited
-    }
-    return display_retention.get(tier)
+    feature_settings = cloud_features.get(tier)
+    if not feature_settings:
+        return None
 
-
+    # Convert float('inf') to None for unlimited retention
+    days = feature_settings.display_retention_days
+    return None if days == float("inf") else int(days)
