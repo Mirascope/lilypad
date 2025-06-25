@@ -1,5 +1,6 @@
 """Comprehensive tests for the API keys endpoints."""
 
+import hashlib
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
@@ -126,6 +127,7 @@ def test_create_api_key(
 
     # The API returns the raw key as a string
     raw_key = response.text.strip('"')  # Remove quotes from JSON string
+    api_key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     assert raw_key  # Should have received a key
 
     # Verify in database
@@ -144,7 +146,7 @@ def test_create_api_key(
     assert db_key.project_uuid == test_project.uuid
     assert db_key.environment_uuid == test_environment.uuid
     # The key_hash in DB should be the same as what was returned
-    assert db_key.key_hash == raw_key
+    assert db_key.key_hash == api_key_hash
 
 
 def test_create_api_key_invalid_project(
@@ -186,10 +188,9 @@ def test_create_api_key_invalid_environment(
     }
 
     response = client.post("/api-keys", json=api_key_data)
-    # The current implementation doesn't validate environment existence, so it succeeds
-    assert response.status_code == 200
+    assert response.status_code == 404
 
-    # Verify the key was created with the invalid environment UUID
+    # Verify the key was not created with the invalid environment UUID
     from sqlmodel import select
 
     created_keys = session.exec(
@@ -198,7 +199,7 @@ def test_create_api_key_invalid_environment(
             APIKeyTable.environment_uuid == UUID(invalid_env_uuid),
         )
     ).all()
-    assert len(created_keys) == 1
+    assert len(created_keys) == 0
 
 
 def test_create_api_key_with_expiration(

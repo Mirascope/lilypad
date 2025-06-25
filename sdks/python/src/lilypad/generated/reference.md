@@ -547,6 +547,7 @@ client = Lilypad(
 client.api_keys.create(
     name="name",
     project_uuid="project_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -579,7 +580,7 @@ client.api_keys.create(
 <dl>
 <dd>
 
-**expires_at:** `typing.Optional[dt.datetime]` 
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -587,7 +588,7 @@ client.api_keys.create(
 <dl>
 <dd>
 
-**environment_uuid:** `typing.Optional[str]` 
+**expires_at:** `typing.Optional[dt.datetime]` 
     
 </dd>
 </dl>
