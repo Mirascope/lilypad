@@ -96,9 +96,10 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             return stmt
 
         # Apply the date filter using PostgreSQL functions
+        # Add 1 day to be inclusive of the boundary day
         return stmt.where(
             self.table.created_at
-            >= func.now() - func.make_interval(0, 0, 0, display_days, 0, 0, 0)
+            >= func.now() - func.make_interval(0, 0, 0, display_days + 1, 0, 0, 0)
         )
 
     def count_no_parent_spans(self, project_uuid: UUID) -> int:
