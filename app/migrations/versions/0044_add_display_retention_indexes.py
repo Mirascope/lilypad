@@ -1,7 +1,7 @@
 """add display retention indexes for spans
 
-Revision ID: 0045
-Revises: 0044
+Revision ID: 0044
+Revises: 0043
 Create Date: 2025-01-25 12:00:00.000000
 
 """
