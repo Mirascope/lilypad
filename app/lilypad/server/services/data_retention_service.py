@@ -5,10 +5,12 @@ import contextlib
 import hashlib
 import json
 import logging
+import threading
 from collections.abc import AsyncIterator, Generator
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from time import time
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, text
@@ -23,6 +25,7 @@ from .._utils.tier import get_organization_tier
 from ..db.session import create_session
 from ..models.organizations import OrganizationTable
 from ..settings import get_settings
+from .opensearch import get_opensearch_service
 
 log = logging.getLogger(__name__)
 settings = get_settings()
@@ -38,6 +41,10 @@ class CleanupMetrics:
     spans_deleted: int = 0
     comments_deleted: int = 0
     annotations_deleted: int = 0
+    opensearch_deleted: int = 0
+    opensearch_skipped_large: bool = False
+    opensearch_timeout: bool = False
+    opensearch_error: bool = False
     error: str | None = None
     lock_acquired: bool = True
     dry_run: bool = False
@@ -311,7 +318,7 @@ class DataRetentionService:
             # Common CTE for both dry run and actual deletion
             base_cte = """
                 WITH target_spans AS (
-                    SELECT s.uuid
+                    SELECT s.uuid, s.project_uuid
                     FROM spans s
                     WHERE s.organization_uuid = :org_uuid
                     AND s.created_at < :cutoff_date
@@ -328,34 +335,46 @@ class DataRetentionService:
             """
 
             if dry_run:
-                # Dry run - just return counts and UUIDs
+                # Dry run - just return counts and UUIDs with project mapping
                 query = text(
                     base_cte
-                    + """
+                    + """,
+                    span_project_mapping AS (
+                        SELECT ts.uuid::text as span_uuid, ts.project_uuid::text as project_uuid
+                        FROM target_spans ts
+                        WHERE ts.project_uuid IS NOT NULL
+                    )
                     SELECT 
                         span_count,
                         comment_count,
                         annotation_count,
-                        ARRAY_AGG(DISTINCT ts.uuid) as span_uuids
+                        ARRAY_AGG(DISTINCT ts.uuid) as span_uuids,
+                        (SELECT json_object_agg(span_uuid, project_uuid) FROM span_project_mapping) as span_project_map
                     FROM target_spans ts, counts_before
                     GROUP BY span_count, comment_count, annotation_count
                 """
                 )
             else:
-                # Real deletion with atomic counts
+                # Real deletion with atomic counts and project mapping
                 query = text(
                     base_cte
                     + """,
                     deleted_spans AS (
                         DELETE FROM spans
                         WHERE uuid IN (SELECT uuid FROM target_spans)
-                        RETURNING uuid
+                        RETURNING uuid, project_uuid
+                    ),
+                    span_project_mapping AS (
+                        SELECT ds.uuid::text as span_uuid, ds.project_uuid::text as project_uuid
+                        FROM deleted_spans ds
+                        WHERE ds.project_uuid IS NOT NULL
                     )
                     SELECT 
                         (SELECT span_count FROM counts_before) as span_count,
                         (SELECT comment_count FROM counts_before) as comment_count,
                         (SELECT annotation_count FROM counts_before) as annotation_count,
-                        ARRAY_AGG(deleted_spans.uuid) as span_uuids
+                        ARRAY_AGG(deleted_spans.uuid) as span_uuids,
+                        (SELECT json_object_agg(span_uuid, project_uuid) FROM span_project_mapping) as span_project_map
                     FROM deleted_spans
                     GROUP BY (SELECT span_count FROM counts_before),
                              (SELECT comment_count FROM counts_before),
@@ -372,21 +391,149 @@ class DataRetentionService:
                 metrics.comments_deleted = result.comment_count or 0
                 metrics.annotations_deleted = result.annotation_count or 0
                 span_uuids = result.span_uuids or []
+                span_project_map = result.span_project_map or {}
             else:
                 span_uuids = []
+                span_project_map = {}
 
             # Audit log
             if span_uuids:
                 self._audit_deletion(organization, span_uuids, cutoff_date, dry_run)
 
+            # Clean up OpenSearch indices
+            opensearch_service = get_opensearch_service()
+            opensearch_enabled = opensearch_service.is_enabled
+
+            # Check size limit to prevent OOM (Task 1)
+            OPENSEARCH_SIZE_LIMIT = 5000  # Conservative limit
+
+            if not dry_run and opensearch_enabled and span_project_map:
+                if len(span_uuids) > OPENSEARCH_SIZE_LIMIT:
+                    # Skip OpenSearch deletion for large datasets (Task 1)
+                    log.warning(
+                        f"Skipping OpenSearch cleanup for organization {organization.uuid}: "
+                        f"{len(span_uuids)} spans exceeds limit of {OPENSEARCH_SIZE_LIMIT}"
+                    )
+                    metrics.opensearch_skipped_large = True
+                else:
+                    # Group spans by project for efficient deletion
+                    project_spans_map = {}
+                    for span_uuid_str, project_uuid_str in span_project_map.items():
+                        if project_uuid_str not in project_spans_map:
+                            project_spans_map[project_uuid_str] = []
+                        project_spans_map[project_uuid_str].append(UUID(span_uuid_str))
+
+                    # Actual deletion
+                    log.info(
+                        f"Cleaning up OpenSearch indices for {len(project_spans_map)} projects"
+                    )
+
+                    opensearch_deleted = 0
+                    for (
+                        project_uuid_str,
+                        project_span_uuids,
+                    ) in project_spans_map.items():
+                        # Wrapper function for threading timeout
+                        delete_result = {"success": False, "count": 0, "error": None}
+
+                        def delete_with_timeout(
+                            proj_uuid: str,
+                            span_uuids: list[UUID],
+                            result: dict[str, Any],
+                        ) -> None:
+                            try:
+                                success, count = (
+                                    opensearch_service.delete_traces_by_uuids(
+                                        UUID(proj_uuid), span_uuids
+                                    )
+                                )
+                                result["success"] = success
+                                result["count"] = count
+                            except Exception as e:
+                                result["error"] = e
+
+                        # Run deletion with timeout (Task 2)
+                        thread = threading.Thread(
+                            target=delete_with_timeout,
+                            args=(project_uuid_str, project_span_uuids, delete_result),
+                        )
+                        thread.daemon = True
+                        thread.start()
+                        thread.join(timeout=30.0)  # 30 seconds timeout
+
+                        if thread.is_alive():
+                            # Timeout occurred
+                            log.warning(
+                                f"OpenSearch deletion timed out for project {project_uuid_str} "
+                                f"after 30 seconds ({len(project_span_uuids)} spans)"
+                            )
+                            metrics.opensearch_timeout = True
+                        elif delete_result["error"]:
+                            # Error occurred (Task 3)
+                            log.warning(
+                                f"Failed to delete OpenSearch traces for project {project_uuid_str}: "
+                                f"{type(delete_result['error']).__name__}: {str(delete_result['error'])}"
+                            )
+                            metrics.opensearch_error = True
+                        elif delete_result["success"]:
+                            # Success
+                            opensearch_deleted += delete_result["count"]
+                        else:
+                            # Deletion returned False
+                            log.warning(
+                                f"OpenSearch deletion returned false for project {project_uuid_str}"
+                            )
+                            metrics.opensearch_error = True
+
+                    metrics.opensearch_deleted = opensearch_deleted
+
+            elif dry_run and opensearch_enabled and span_project_map:
+                # Dry run mode - just estimate
+                if len(span_uuids) > OPENSEARCH_SIZE_LIMIT:
+                    log.info(
+                        f"Would skip OpenSearch cleanup: {len(span_uuids)} spans "
+                        f"exceeds limit of {OPENSEARCH_SIZE_LIMIT}"
+                    )
+                    metrics.opensearch_skipped_large = True
+                else:
+                    metrics.opensearch_deleted = len(span_uuids)
+                    log.info(
+                        f"Would delete {len(span_uuids)} documents from OpenSearch"
+                    )
+
+            elif opensearch_enabled and not span_project_map and span_uuids:
+                # If there are spans without projects, we can't clean OpenSearch
+                log.warning(
+                    f"Found {len(span_uuids)} spans without project assignments, "
+                    "cannot clean OpenSearch indices"
+                )
+
             metrics.duration_seconds = time() - start_time
 
+            # Build log message
             action = "Would delete" if dry_run else "Deleted"
-            log.info(
-                f"{action} for organization {organization.uuid} ({organization.name}): "
-                f"{metrics.spans_deleted} spans, {metrics.comments_deleted} comments, "
-                f"{metrics.annotations_deleted} annotations in {metrics.duration_seconds:.2f}s"
-            )
+            deletion_parts = []
+
+            if metrics.spans_deleted > 0:
+                deletion_parts.append(f"{metrics.spans_deleted} spans")
+            if metrics.comments_deleted > 0:
+                deletion_parts.append(f"{metrics.comments_deleted} comments")
+            if metrics.annotations_deleted > 0:
+                deletion_parts.append(f"{metrics.annotations_deleted} annotations")
+            if opensearch_enabled and metrics.opensearch_deleted > 0:
+                deletion_parts.append(
+                    f"{metrics.opensearch_deleted} OpenSearch documents"
+                )
+
+            if deletion_parts:
+                log.info(
+                    f"{action} for organization {organization.uuid} ({organization.name}): "
+                    f"{', '.join(deletion_parts)} in {metrics.duration_seconds:.2f}s"
+                )
+            else:
+                log.info(
+                    f"No data to delete for organization {organization.uuid} ({organization.name})"
+                )
 
             return metrics
 

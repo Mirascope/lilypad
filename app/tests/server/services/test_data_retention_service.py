@@ -917,3 +917,377 @@ def test_get_retention_scheduler_singleton():
     # Second call returns same instance
     scheduler2 = get_retention_scheduler()
     assert scheduler1 is scheduler2
+
+
+def test_cleanup_with_opensearch_large_dataset(retention_service, mock_organization):
+    """Test OpenSearch cleanup is skipped for large datasets."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock large dataset result (>5000 spans)
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = MagicMock(
+        span_count=6000,
+        comment_count=100,
+        annotation_count=50,
+        span_uuids=[uuid4() for _ in range(6000)],
+        span_project_map={str(uuid4()): str(uuid4()) for _ in range(6000)},
+    )
+    retention_service.session.execute.return_value = mock_result
+
+    # Mock OpenSearch service
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = True
+
+    with (
+        patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
+        patch.object(retention_service, "_audit_deletion"),
+        patch(
+            "lilypad.server.services.data_retention_service.get_opensearch_service",
+            return_value=mock_opensearch_service,
+        ),
+        patch("lilypad.server.services.data_retention_service.log") as mock_log,
+    ):
+        metrics = retention_service._cleanup_with_counts(
+            mock_organization, cutoff_date, dry_run=False
+        )
+
+        # Check that OpenSearch cleanup was skipped
+        assert metrics.opensearch_skipped_large is True
+        assert metrics.opensearch_deleted == 0
+        mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+
+        # Check warning log was called
+        warning_calls = [
+            call
+            for call in mock_log.warning.call_args_list
+            if "exceeds limit" in str(call)
+        ]
+        assert len(warning_calls) == 1
+
+
+def test_cleanup_with_opensearch_timeout(retention_service, mock_organization):
+    """Test OpenSearch cleanup handles timeout correctly."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock result with moderate dataset
+    project_uuid = str(uuid4())
+    span_uuids = [uuid4() for _ in range(100)]
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = MagicMock(
+        span_count=100,
+        comment_count=10,
+        annotation_count=5,
+        span_uuids=span_uuids,
+        span_project_map={str(span_uuid): project_uuid for span_uuid in span_uuids},
+    )
+    retention_service.session.execute.return_value = mock_result
+
+    # Mock OpenSearch service that hangs
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = True
+
+    def slow_delete(*args, **kwargs):
+        import time
+
+        time.sleep(35)  # Longer than 30s timeout
+        return True, 100
+
+    mock_opensearch_service.delete_traces_by_uuids.side_effect = slow_delete
+
+    with (
+        patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
+        patch.object(retention_service, "_audit_deletion"),
+        patch(
+            "lilypad.server.services.data_retention_service.get_opensearch_service",
+            return_value=mock_opensearch_service,
+        ),
+        patch("lilypad.server.services.data_retention_service.log") as mock_log,
+    ):
+        metrics = retention_service._cleanup_with_counts(
+            mock_organization, cutoff_date, dry_run=False
+        )
+
+        # Check timeout was detected
+        assert metrics.opensearch_timeout is True
+        assert metrics.opensearch_deleted == 0
+
+        # Check warning log for timeout
+        warning_calls = [
+            call for call in mock_log.warning.call_args_list if "timed out" in str(call)
+        ]
+        assert len(warning_calls) == 1
+
+
+def test_cleanup_with_opensearch_error(retention_service, mock_organization):
+    """Test OpenSearch cleanup handles errors gracefully."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock result
+    project_uuid = str(uuid4())
+    span_uuids = [uuid4() for _ in range(50)]
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = MagicMock(
+        span_count=50,
+        comment_count=5,
+        annotation_count=2,
+        span_uuids=span_uuids,
+        span_project_map={str(span_uuid): project_uuid for span_uuid in span_uuids},
+    )
+    retention_service.session.execute.return_value = mock_result
+
+    # Mock OpenSearch service that raises error
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = True
+    mock_opensearch_service.delete_traces_by_uuids.side_effect = Exception(
+        "Connection error"
+    )
+
+    with (
+        patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
+        patch.object(retention_service, "_audit_deletion"),
+        patch(
+            "lilypad.server.services.data_retention_service.get_opensearch_service",
+            return_value=mock_opensearch_service,
+        ),
+        patch("lilypad.server.services.data_retention_service.log") as mock_log,
+    ):
+        metrics = retention_service._cleanup_with_counts(
+            mock_organization, cutoff_date, dry_run=False
+        )
+
+        # Check error was handled
+        assert metrics.opensearch_error is True
+        assert metrics.opensearch_deleted == 0
+
+        # Check warning log for error
+        warning_calls = [
+            call
+            for call in mock_log.warning.call_args_list
+            if "Failed to delete" in str(call)
+        ]
+        assert len(warning_calls) == 1
+
+
+def test_cleanup_with_opensearch_disabled(retention_service, mock_organization):
+    """Test cleanup when OpenSearch is disabled."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock result
+    span_uuids = [uuid4() for _ in range(50)]
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = MagicMock(
+        span_count=50,
+        comment_count=5,
+        annotation_count=2,
+        span_uuids=span_uuids,
+        span_project_map={str(uuid4()): str(uuid4()) for _ in range(50)},
+    )
+    retention_service.session.execute.return_value = mock_result
+
+    # Mock disabled OpenSearch service
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = False
+
+    with (
+        patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
+        patch.object(retention_service, "_audit_deletion"),
+        patch(
+            "lilypad.server.services.data_retention_service.get_opensearch_service",
+            return_value=mock_opensearch_service,
+        ),
+    ):
+        metrics = retention_service._cleanup_with_counts(
+            mock_organization, cutoff_date, dry_run=False
+        )
+
+        # Check OpenSearch wasn't called
+        mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+        assert metrics.opensearch_deleted == 0
+        assert metrics.opensearch_skipped_large is False
+
+
+def test_cleanup_with_opensearch_dry_run(retention_service, mock_organization):
+    """Test OpenSearch cleanup in dry run mode."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock result - test both small and large datasets
+    for span_count in [100, 6000]:
+        span_uuids = [uuid4() for _ in range(span_count)]
+        mock_result = MagicMock()
+        mock_result.fetchone.return_value = MagicMock(
+            span_count=span_count,
+            comment_count=10,
+            annotation_count=5,
+            span_uuids=span_uuids,
+            span_project_map={str(uuid4()): str(uuid4()) for _ in range(span_count)},
+        )
+        retention_service.session.execute.return_value = mock_result
+
+        # Mock OpenSearch service
+        mock_opensearch_service = MagicMock()
+        mock_opensearch_service.is_enabled = True
+
+        with (
+            patch.object(
+                retention_service, "_acquire_advisory_lock", return_value=True
+            ),
+            patch.object(retention_service, "_audit_deletion"),
+            patch(
+                "lilypad.server.services.data_retention_service.get_opensearch_service",
+                return_value=mock_opensearch_service,
+            ),
+            patch("lilypad.server.services.data_retention_service.log"),
+        ):
+            metrics = retention_service._cleanup_with_counts(
+                mock_organization, cutoff_date, dry_run=True
+            )
+
+            # Check OpenSearch wasn't actually called
+            mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+
+            if span_count > 5000:
+                # Large dataset should be marked as skipped
+                assert metrics.opensearch_skipped_large is True
+                assert metrics.opensearch_deleted == 0
+            else:
+                # Small dataset should estimate deletion count
+                assert metrics.opensearch_deleted == span_count
+                assert metrics.opensearch_skipped_large is False
+
+
+def test_cleanup_with_spans_without_projects(retention_service, mock_organization):
+    """Test cleanup when spans don't have project assignments."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock result with spans but no project mapping
+    span_uuids = [uuid4() for _ in range(50)]
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = MagicMock(
+        span_count=50,
+        comment_count=5,
+        annotation_count=2,
+        span_uuids=span_uuids,
+        span_project_map={},  # Empty mapping
+    )
+    retention_service.session.execute.return_value = mock_result
+
+    # Mock OpenSearch service
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = True
+
+    with (
+        patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
+        patch.object(retention_service, "_audit_deletion"),
+        patch(
+            "lilypad.server.services.data_retention_service.get_opensearch_service",
+            return_value=mock_opensearch_service,
+        ),
+        patch("lilypad.server.services.data_retention_service.log") as mock_log,
+    ):
+        metrics = retention_service._cleanup_with_counts(
+            mock_organization, cutoff_date, dry_run=False
+        )
+
+        # Check warning was logged
+        warning_calls = [
+            call
+            for call in mock_log.warning.call_args_list
+            if "without project assignments" in str(call)
+        ]
+        assert len(warning_calls) == 1
+
+        # OpenSearch cleanup shouldn't be attempted
+        mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+        assert metrics.opensearch_deleted == 0
+
+
+def test_cleanup_with_opensearch_successful_deletion(
+    retention_service, mock_organization
+):
+    """Test successful OpenSearch deletion."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock result with moderate dataset
+    project_uuid = str(uuid4())
+    span_uuids = [uuid4() for _ in range(100)]
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = MagicMock(
+        span_count=100,
+        comment_count=10,
+        annotation_count=5,
+        span_uuids=span_uuids,
+        span_project_map={str(span_uuid): project_uuid for span_uuid in span_uuids},
+    )
+    retention_service.session.execute.return_value = mock_result
+
+    # Mock successful OpenSearch service
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = True
+    mock_opensearch_service.delete_traces_by_uuids.return_value = (True, 100)
+
+    with (
+        patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
+        patch.object(retention_service, "_audit_deletion"),
+        patch(
+            "lilypad.server.services.data_retention_service.get_opensearch_service",
+            return_value=mock_opensearch_service,
+        ),
+    ):
+        metrics = retention_service._cleanup_with_counts(
+            mock_organization, cutoff_date, dry_run=False
+        )
+
+        # Check successful deletion
+        assert metrics.opensearch_deleted == 100
+        assert metrics.opensearch_error is False
+        assert metrics.opensearch_timeout is False
+        assert metrics.opensearch_skipped_large is False
+        mock_opensearch_service.delete_traces_by_uuids.assert_called_once()
+
+
+def test_cleanup_with_opensearch_returns_false(retention_service, mock_organization):
+    """Test when OpenSearch deletion returns False."""
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=30)
+
+    # Mock result
+    project_uuid = str(uuid4())
+    span_uuids = [uuid4() for _ in range(50)]
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = MagicMock(
+        span_count=50,
+        comment_count=5,
+        annotation_count=2,
+        span_uuids=span_uuids,
+        span_project_map={str(span_uuid): project_uuid for span_uuid in span_uuids},
+    )
+    retention_service.session.execute.return_value = mock_result
+
+    # Mock OpenSearch service that returns False
+    mock_opensearch_service = MagicMock()
+    mock_opensearch_service.is_enabled = True
+    mock_opensearch_service.delete_traces_by_uuids.return_value = (False, 0)
+
+    with (
+        patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
+        patch.object(retention_service, "_audit_deletion"),
+        patch(
+            "lilypad.server.services.data_retention_service.get_opensearch_service",
+            return_value=mock_opensearch_service,
+        ),
+        patch("lilypad.server.services.data_retention_service.log") as mock_log,
+    ):
+        metrics = retention_service._cleanup_with_counts(
+            mock_organization, cutoff_date, dry_run=False
+        )
+
+        # Check error was marked
+        assert metrics.opensearch_error is True
+        assert metrics.opensearch_deleted == 0
+
+        # Check warning log
+        warning_calls = [
+            call
+            for call in mock_log.warning.call_args_list
+            if "returned false" in str(call)
+        ]
+        assert len(warning_calls) == 1
