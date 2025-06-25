@@ -188,11 +188,11 @@ def test_get_organization_tier_uses_price_ids(retention_service, mock_organizati
     retention_service.session.exec.return_value.first.return_value = mock_billing
 
     # Test with TEAM price ID
-    with patch(
-        "lilypad.server.services.data_retention_service.settings"
-    ) as mock_settings:
+    with patch("lilypad.server._utils.tier.get_settings") as mock_get_settings:
+        mock_settings = MagicMock()
         mock_settings.stripe_cloud_team_flat_price_id = "price_team_123"
         mock_settings.stripe_cloud_pro_flat_price_id = "price_pro_456"
+        mock_get_settings.return_value = mock_settings
 
         mock_billing.stripe_price_id = "price_team_123"
         tier = retention_service._get_organization_tier(mock_organization.uuid)

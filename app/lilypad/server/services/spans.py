@@ -65,9 +65,13 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         if getattr(self, "_cached_tier", None) is not None:
             return self._cached_tier
 
-        self._cached_tier = get_organization_tier(
-            self.session, self.user.active_organization_uuid
-        )
+        # Get organization UUID - should always be available
+        org_uuid = self.user.active_organization_uuid
+        if not org_uuid:
+            # This should not happen in production, but handle for safety
+            return Tier.FREE
+
+        self._cached_tier = get_organization_tier(self.session, org_uuid)
         return self._cached_tier
 
     def _apply_display_retention_filter(self, stmt: Any) -> Any:
@@ -102,8 +106,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         if display_days is None:
             return stmt
 
-        # Apply the date filter using PostgreSQL's date arithmetic
-        # Using func.make_interval for proper PostgreSQL interval handling
+        # Apply the date filter using PostgreSQL functions
         return stmt.where(
             self.table.created_at
             >= func.now() - func.make_interval(0, 0, 0, display_days, 0, 0, 0)
