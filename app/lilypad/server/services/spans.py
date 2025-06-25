@@ -15,7 +15,7 @@ from sqlmodel import and_, asc, delete, func, select, text
 from ee import Tier
 
 from ...ee.server.constants import ALT_HOST_NAME, HOST_NAME
-from .._utils.tier import get_organization_tier
+from .._utils.tier import get_display_retention_days, get_organization_tier
 from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
@@ -60,15 +60,11 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         Returns:
             The tier for the organization, defaults to FREE on error.
         """
-        # Use instance attribute for caching within request lifecycle
-        # Check if already cached (not just if attribute exists)
-        if getattr(self, "_cached_tier", None) is not None:
+        if hasattr(self, "_cached_tier"):
             return self._cached_tier
 
-        # Get organization UUID - should always be available
         org_uuid = self.user.active_organization_uuid
         if not org_uuid:
-            # This should not happen in production, but handle for safety
             return Tier.FREE
 
         self._cached_tier = get_organization_tier(self.session, org_uuid)
@@ -83,9 +79,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         Returns:
             The modified statement with display retention filters applied
         """
-        # Check if we're on Lilypad Cloud using the same logic as require_license
         settings = get_settings()
-        # This matches the logic in require_license.is_lilypad_cloud
         is_lilypad_cloud = settings.remote_client_hostname.endswith(
             HOST_NAME
         ) or settings.remote_client_hostname.endswith(ALT_HOST_NAME)
@@ -94,15 +88,10 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         if not is_lilypad_cloud:
             return stmt
 
-        # Get the user's organization tier (cached per request)
         tier = self._get_display_tier()
-
-        # Get display retention days from centralized configuration
-        from .._utils.tier import get_display_retention_days
 
         display_days = get_display_retention_days(tier)
 
-        # No filtering for unlimited tiers
         if display_days is None:
             return stmt
 

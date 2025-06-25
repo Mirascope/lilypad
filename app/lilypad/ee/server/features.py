@@ -22,7 +22,7 @@ cloud_features = {
         num_users_per_organization=2,
         traces_per_month=30_000,
         data_retention_days=90,
-        display_retention_days=30,  # FREE users see 30 days, creating upgrade incentive
+        display_retention_days=30,
     ),
     Tier.PRO: FeatureSettings(
         num_users_per_organization=10,
