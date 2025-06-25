@@ -4,7 +4,6 @@ import logging
 from collections.abc import Sequence
 from datetime import date, datetime
 from enum import Enum
-from functools import cached_property
 from typing import Any, Literal
 from uuid import UUID
 
@@ -16,6 +15,7 @@ from sqlmodel import and_, asc, delete, func, select, text
 from ee import Tier
 
 from ...ee.server.constants import ALT_HOST_NAME, HOST_NAME
+from .._utils.tier import get_organization_tier
 from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
@@ -54,22 +54,21 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
 
-    @cached_property
-    def _display_tier(self) -> Tier:
-        """Get organization tier with request-scoped caching.
-
-        This property is cached for the lifetime of the SpanService instance,
-        which corresponds to a single request in FastAPI.
+    def _get_display_tier(self) -> Tier:
+        """Get organization tier with proper error handling.
 
         Returns:
-            The tier for the organization.
+            The tier for the organization, defaults to FREE on error.
         """
-        # Import here to avoid circular imports
-        from .billing import BillingService
+        # Use instance attribute for caching within request lifecycle
+        # Check if already cached (not just if attribute exists)
+        if getattr(self, "_cached_tier", None) is not None:
+            return self._cached_tier
 
-        return BillingService.get_organization_tier_by_uuid(
+        self._cached_tier = get_organization_tier(
             self.session, self.user.active_organization_uuid
         )
+        return self._cached_tier
 
     def _apply_display_retention_filter(self, stmt: Any) -> Any:
         """Apply display-level retention filtering based on user tier.
@@ -92,22 +91,23 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             return stmt
 
         # Get the user's organization tier (cached per request)
-        tier = self._display_tier
+        tier = self._get_display_tier()
 
-        # Determine display retention days based on tier
-        if tier == Tier.FREE:
-            display_days = 30
-        elif tier == Tier.PRO:
-            display_days = 180
-        else:  # TEAM or ENTERPRISE
-            # No display filtering for unlimited tiers
+        # Get display retention days from centralized configuration
+        from .._utils.tier import get_display_retention_days
+
+        display_days = get_display_retention_days(tier)
+
+        # No filtering for unlimited tiers
+        if display_days is None:
             return stmt
 
-        # Apply the date filter using PostgreSQL's date arithmetic with proper parameterization
-        # This ensures consistent timezone handling between app and DB
+        # Apply the date filter using PostgreSQL's date arithmetic
+        # Using func.make_interval for proper PostgreSQL interval handling
         return stmt.where(
-            self.table.created_at >= func.current_timestamp() - text("INTERVAL :days")
-        ).params(days=f"{display_days} days")
+            self.table.created_at
+            >= func.now() - func.make_interval(0, 0, 0, display_days, 0, 0, 0)
+        )
 
     def count_no_parent_spans(self, project_uuid: UUID) -> int:
         """Return the *total* number of root‑level spans for a project.
@@ -123,6 +123,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
             )
         )
+
+        # Apply display retention filtering for consistency
+        stmt = self._apply_display_retention_filter(stmt)
 
         return self.session.exec(stmt).one()
 

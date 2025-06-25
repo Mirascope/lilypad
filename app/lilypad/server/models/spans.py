@@ -84,6 +84,20 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
             "created_at",
             postgresql_using="btree",
         ),
+        # Indexes for display retention filtering performance
+        Index(
+            "idx_spans_created_at_root",
+            "created_at",
+            postgresql_where=text("parent_span_id IS NULL"),
+            postgresql_using="btree",
+        ),
+        Index(
+            "idx_spans_org_project_created",
+            "project_uuid",
+            "created_at",
+            postgresql_where=text("parent_span_id IS NULL"),
+            postgresql_using="btree",
+        ),
     )
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"

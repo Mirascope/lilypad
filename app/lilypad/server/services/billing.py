@@ -9,11 +9,12 @@ from uuid import UUID
 
 import stripe
 from fastapi import HTTPException, status
-from sqlmodel import Session, col, desc, select, update
+from sqlmodel import Session, desc, select, update
 from stripe import InvalidRequestError, StripeError
 
 from ee import Tier
 
+from .._utils.tier import get_organization_tier
 from ..models.billing import BillingTable, SubscriptionStatus
 from ..models.organizations import OrganizationTable
 from ..schemas.billing import BillingCreate
@@ -88,28 +89,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         Returns:
             The tier for the organization
         """
-        stmt = (
-            select(BillingTable)
-            .where(col(BillingTable.organization_uuid) == organization_uuid)
-            .order_by(desc(BillingTable.created_at))
-            .limit(1)
-        )
-
-        billing = session.exec(stmt).first()  # pyright: ignore[reportCallIssue, reportArgumentType]
-
-        if not billing:
-            return Tier.FREE
-
-        if not billing.stripe_price_id:
-            return Tier.FREE
-
-        # Determine tier based on stripe_price_id
-        if billing.stripe_price_id == settings.stripe_cloud_team_flat_price_id:
-            return Tier.TEAM
-        elif billing.stripe_price_id == settings.stripe_cloud_pro_flat_price_id:
-            return Tier.PRO
-        else:
-            return Tier.FREE
+        return get_organization_tier(session, organization_uuid)
 
     def create_customer(self, organization: OrganizationTable, email: str) -> str:
         """Create a Stripe customer for an organization.

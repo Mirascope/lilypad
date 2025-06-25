@@ -87,6 +87,7 @@ dev-dependencies = [
     "datamodel-code-generator[ruff]>=0.28.4",
     "types-boto3[boto3,secretsmanager]>=1.35.0",
     "moto[secretsmanager]>=5.0.24",
+    "freezegun>=1.5.2",
 ]
 
 
