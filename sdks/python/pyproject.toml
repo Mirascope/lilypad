@@ -43,8 +43,8 @@ dependencies = [
 Homepage = "https://github.com/Mirascope/lilypad"
 Repository = "https://github.com/Mirascope/lilypad"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pyright==1.1.402",
     "pytest>=8.3.2",
     "mypy",
@@ -64,6 +64,14 @@ dev-dependencies = [
     "urllib3>=2.4.0",
 ]
 
+examples = [
+  "fastapi>=0.115.13,<1",
+  "requests>=2.32.4,<3",
+    "uvicorn>=0.34.3,<1",
+]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [project.optional-dependencies]
 cli = ["typer>=0.15.2", "rich>=13.7.1"]
