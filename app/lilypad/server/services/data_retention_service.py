@@ -42,8 +42,8 @@ class CleanupMetrics:
     spans_deleted: int = 0
     comments_deleted: int = 0
     annotations_deleted: int = 0
-    opensearch_deleted: int = 0
-    opensearch_skipped_large: bool = False
+    opensearch_deleted: int = 0  # Number of documents deleted from OpenSearch indices
+    opensearch_skipped_large: bool = False  # True when OpenSearch deletion skipped due to exceeding size limit (OOM protection)
     opensearch_timeout: bool = False
     opensearch_error: bool = False
     error: str | None = None
@@ -445,10 +445,8 @@ class DataRetentionService:
                             result: dict[str, Any],
                         ) -> None:
                             try:
-                                success, count = (
-                                    opensearch_service.delete_traces_by_uuids(
-                                        UUID(proj_uuid), span_uuids
-                                    )
+                                success, count = opensearch_service.bulk_delete_traces(
+                                    UUID(proj_uuid), span_uuids
                                 )
                                 result["success"] = success
                                 result["count"] = count
