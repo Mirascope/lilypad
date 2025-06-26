@@ -184,7 +184,7 @@ known-first-party = ["lilypad", "tests"]
 [tool.pyright]
 pythonVersion = "3.10"
 
-exclude = [".venv", "tests", "src/lilypad"]
+exclude = [".venv", "tests", "src/lilypad", "examples"]
 
 [build-system]
 requires = ["hatchling"]
