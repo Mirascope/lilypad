@@ -1042,14 +1042,15 @@ def test_cleanup_with_opensearch_error(retention_service, mock_organization):
         )
 
         # Check error was handled
-        assert metrics.opensearch_error is True
+        assert metrics.error is not None
+        assert "OpenSearch deletion error" in metrics.error
         assert metrics.opensearch_deleted == 0
 
         # Check warning log for error
         warning_calls = [
             call
             for call in mock_log.warning.call_args_list
-            if "Failed to delete" in str(call)
+            if "OpenSearch deletion error" in str(call)
         ]
         assert len(warning_calls) == 1
 
@@ -1225,7 +1226,7 @@ def test_cleanup_with_opensearch_successful_deletion(
 
         # Check successful deletion
         assert metrics.opensearch_deleted == 100
-        assert metrics.opensearch_error is False
+        assert metrics.error is None  # No error should be present
         assert metrics.opensearch_timeout is False
         assert metrics.opensearch_skipped_large is False
         mock_opensearch_service.bulk_delete_traces.assert_called_once()
@@ -1267,7 +1268,8 @@ def test_cleanup_with_opensearch_returns_false(retention_service, mock_organizat
         )
 
         # Check error was marked
-        assert metrics.opensearch_error is True
+        assert metrics.error is not None
+        assert "OpenSearch deletion returned false" in metrics.error
         assert metrics.opensearch_deleted == 0
 
         # Check warning log

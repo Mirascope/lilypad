@@ -27,7 +27,6 @@ from ..settings import get_settings
 from .billing import BillingService
 from .opensearch import get_opensearch_service
 
-
 log = logging.getLogger(__name__)
 settings = get_settings()
 
@@ -45,7 +44,6 @@ class CleanupMetrics:
     opensearch_deleted: int = 0  # Number of documents deleted from OpenSearch indices
     opensearch_skipped_large: bool = False  # True when OpenSearch deletion skipped due to exceeding size limit (OOM protection)
     opensearch_timeout: bool = False
-    opensearch_error: bool = False
     error: str | None = None
     lock_acquired: bool = True
     dry_run: bool = False
@@ -471,20 +469,28 @@ class DataRetentionService:
                             metrics.opensearch_timeout = True
                         elif delete_result["error"]:
                             # Error occurred (Task 3)
-                            log.warning(
-                                f"Failed to delete OpenSearch traces for project {project_uuid_str}: "
+                            error_msg = (
+                                f"OpenSearch deletion error for project {project_uuid_str}: "
                                 f"{type(delete_result['error']).__name__}: {str(delete_result['error'])}"
                             )
-                            metrics.opensearch_error = True
+                            log.warning(error_msg)
+                            # Append OpenSearch error to existing error message if any
+                            if metrics.error:
+                                metrics.error = f"{metrics.error}; {error_msg}"
+                            else:
+                                metrics.error = error_msg
                         elif delete_result["success"]:
                             # Success
                             opensearch_deleted += delete_result["count"]
                         else:
                             # Deletion returned False
-                            log.warning(
-                                f"OpenSearch deletion returned false for project {project_uuid_str}"
-                            )
-                            metrics.opensearch_error = True
+                            error_msg = f"OpenSearch deletion returned false for project {project_uuid_str}"
+                            log.warning(error_msg)
+                            # Append OpenSearch error to existing error message if any
+                            if metrics.error:
+                                metrics.error = f"{metrics.error}; {error_msg}"
+                            else:
+                                metrics.error = error_msg
 
                     metrics.opensearch_deleted = opensearch_deleted
 

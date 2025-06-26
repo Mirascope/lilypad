@@ -1226,7 +1226,9 @@ def test_get_organization_tier_by_uuid_database_error(mock_logger, db_session):
     # Mock session to raise database error
     mock_session = Mock()
     mock_session.exec.side_effect = OperationalError(
-        "Database connection failed", None, None
+        "Database connection failed",
+        None,
+        None,  # pyright: ignore[reportArgumentType]
     )
 
     tier = BillingService.get_organization_tier_by_uuid(mock_session, org_uuid)
