@@ -19,7 +19,7 @@ from sqlmodel import Session, col, desc, select
 from ee import Tier
 
 from ...ee.server.features import cloud_features
-from ..db.session import create_session
+from ..db.session import standalone_session
 from ..models.billing import BillingTable
 from ..models.organizations import OrganizationTable
 from ..settings import get_settings
@@ -739,8 +739,7 @@ class DataRetentionScheduler:
         """Run the actual cleanup process."""
         log.info("Starting scheduled data retention cleanup")
 
-        session = create_session()
-        try:
+        with standalone_session() as session:
             service = DataRetentionService(session)
 
             # Check if dry run is enabled
@@ -777,9 +776,6 @@ class DataRetentionScheduler:
             # metrics.gauge('data_retention.successful_cleanups', successful_cleanups)
             # metrics.gauge('data_retention.failed_cleanups', failed_cleanups)
             # metrics.counter('data_retention.spans_deleted', total_spans_deleted)
-
-        finally:
-            session.close()
 
     async def _run_initial_cleanup(self) -> None:
         """Run initial cleanup after a delay."""

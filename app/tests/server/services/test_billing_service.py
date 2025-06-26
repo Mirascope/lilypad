@@ -996,3 +996,24 @@ def test_update_customer_returns_none(
     # Should raise _CustomerNotFound
     with pytest.raises(_CustomerNotFound):
         billing_service.update_customer("cus_test123", "New Name")
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_is_enabled_with_api_key(mock_stripe, billing_service):
+    """Test is_enabled returns True when API key is set."""
+    mock_stripe.api_key = "sk_test_123"
+    assert billing_service.is_enabled is True
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_is_enabled_without_api_key(mock_stripe, billing_service):
+    """Test is_enabled returns False when API key is not set."""
+    mock_stripe.api_key = None
+    assert billing_service.is_enabled is False
+
+
+@patch("lilypad.server.services.billing.stripe")
+def test_is_enabled_with_empty_string(mock_stripe, billing_service):
+    """Test is_enabled returns False when API key is empty string."""
+    mock_stripe.api_key = ""
+    assert billing_service.is_enabled is False
