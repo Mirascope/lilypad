@@ -71,7 +71,6 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
     __table_args__ = (
         UniqueConstraint("span_id"),
-        Index("ix_spans_span_id", "span_id"),
         Index(
             "idx_spans_project_parent_filtered",
             "project_uuid",

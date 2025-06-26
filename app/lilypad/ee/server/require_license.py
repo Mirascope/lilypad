@@ -204,11 +204,40 @@ def get_organization_license(
 
 
 def is_lilypad_cloud(
-    request: Request,
+    request: Request | None = None,
 ) -> bool:
-    """Check if the request is to Lilypad Cloud"""
-    return request.url.hostname is not None and (
-        request.url.hostname.endswith(HOST_NAME)
-        or request.url.hostname.endswith(ALT_HOST_NAME)
-        or get_settings().remote_client_hostname.endswith(ALT_HOST_NAME)
-    )
+    """Check if this is a Lilypad Cloud deployment.
+
+    Args:
+        request: Optional request object. If provided, checks request hostname.
+                If not provided, only checks settings.
+
+    Returns:
+        True if this is a Lilypad Cloud deployment, False otherwise.
+    """
+    if request and request.url.hostname:
+        return request.url.hostname.endswith(
+            HOST_NAME
+        ) or request.url.hostname.endswith(ALT_HOST_NAME)
+
+    settings = get_settings()
+    remote_hostname = settings.remote_client_hostname
+
+    if remote_hostname:
+        # More strict domain validation to prevent subdomain attacks
+        if (
+            remote_hostname in (HOST_NAME, ALT_HOST_NAME)
+            or remote_hostname.endswith(f".{HOST_NAME}")
+            or remote_hostname.endswith(f".{ALT_HOST_NAME}")
+        ):
+            return True
+
+    return False
+
+
+def is_lilypad_cloud_dependency(request: Request) -> bool:
+    """FastAPI dependency wrapper for is_lilypad_cloud.
+
+    This is used when is_lilypad_cloud needs to be used as a FastAPI dependency.
+    """
+    return is_lilypad_cloud(request)

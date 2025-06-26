@@ -1,5 +1,6 @@
 """Database session management"""
 
+import contextlib
 from collections.abc import Generator
 
 from sqlalchemy.engine import Engine
@@ -78,3 +79,33 @@ def create_session() -> Session:
     """
     engine = db.get_engine()
     return Session(engine)
+
+
+@contextlib.contextmanager
+def standalone_session():
+    """Create a session for standalone/background tasks.
+
+    Unlike get_session(), this doesn't automatically commit.
+    The caller has full control over transaction boundaries.
+
+    Use cases:
+    - Background tasks that process multiple items
+    - Long-running operations with partial commits
+    - Batch processing where individual failures shouldn't rollback everything
+
+    Example:
+        with standalone_session() as session:
+            service = DataRetentionService(session)
+            await service.cleanup_all_organizations()
+            # Commits are handled inside the service
+    """
+    session = create_session()
+    try:
+        yield session
+    except Exception:
+        # Only rollback uncommitted changes
+        if session.in_transaction():
+            session.rollback()
+        raise
+    finally:
+        session.close()
