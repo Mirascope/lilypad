@@ -12,7 +12,6 @@ from lilypad.server.main import (
     SPAStaticFiles,
     app,
     health,
-    is_lilypad_cloud_deployment,
     lifespan,
     log_exceptions,
     run_migrations,
@@ -57,50 +56,92 @@ class TestRunMigrations:
         mock_log.error.assert_called_once_with("Migration failed: Migration error")
 
 
-class TestIsLilypadCloudDeployment:
-    """Test is_lilypad_cloud_deployment function."""
+class TestIsLilypadCloud:
+    """Test is_lilypad_cloud function from require_license module."""
 
-    @patch("lilypad.server.main.settings")
-    def test_is_cloud_with_mirascope_domain(self, mock_settings):
+    @patch("lilypad.ee.server.require_license.get_settings")
+    def test_is_cloud_with_mirascope_domain(self, mock_get_settings):
         """Test detection with mirascope.com domain."""
+        from lilypad.ee.server.require_license import is_lilypad_cloud
+
+        mock_settings = Mock()
         mock_settings.remote_client_hostname = "lilypad.mirascope.com"
-        assert is_lilypad_cloud_deployment() is True
+        mock_get_settings.return_value = mock_settings
+        assert is_lilypad_cloud() is True
 
-    @patch("lilypad.server.main.settings")
-    def test_is_cloud_with_lilypad_domain(self, mock_settings):
+    @patch("lilypad.ee.server.require_license.get_settings")
+    def test_is_cloud_with_lilypad_domain(self, mock_get_settings):
         """Test detection with lilypad.so domain."""
+        from lilypad.ee.server.require_license import is_lilypad_cloud
+
+        mock_settings = Mock()
         mock_settings.remote_client_hostname = "app.lilypad.so"
-        assert is_lilypad_cloud_deployment() is True
+        mock_get_settings.return_value = mock_settings
+        assert is_lilypad_cloud() is True
 
-    @patch("lilypad.server.main.settings")
-    def test_is_cloud_with_exact_domain(self, mock_settings):
+    @patch("lilypad.ee.server.require_license.get_settings")
+    def test_is_cloud_with_exact_domain(self, mock_get_settings):
         """Test detection with exact domain match."""
+        from lilypad.ee.server.require_license import is_lilypad_cloud
+
+        mock_settings = Mock()
         mock_settings.remote_client_hostname = "mirascope.com"
-        assert is_lilypad_cloud_deployment() is True
+        mock_get_settings.return_value = mock_settings
+        assert is_lilypad_cloud() is True
 
-    @patch("lilypad.server.main.settings")
-    def test_not_cloud_with_different_domain(self, mock_settings):
+    @patch("lilypad.ee.server.require_license.get_settings")
+    def test_not_cloud_with_different_domain(self, mock_get_settings):
         """Test detection with non-cloud domain."""
+        from lilypad.ee.server.require_license import is_lilypad_cloud
+
+        mock_settings = Mock()
         mock_settings.remote_client_hostname = "example.com"
-        assert is_lilypad_cloud_deployment() is False
+        mock_get_settings.return_value = mock_settings
+        assert is_lilypad_cloud() is False
 
-    @patch("lilypad.server.main.settings")
-    def test_not_cloud_with_empty_hostname(self, mock_settings):
+    @patch("lilypad.ee.server.require_license.get_settings")
+    def test_not_cloud_with_empty_hostname(self, mock_get_settings):
         """Test detection with empty hostname."""
+        from lilypad.ee.server.require_license import is_lilypad_cloud
+
+        mock_settings = Mock()
         mock_settings.remote_client_hostname = ""
-        assert is_lilypad_cloud_deployment() is False
+        mock_get_settings.return_value = mock_settings
+        assert is_lilypad_cloud() is False
 
-    @patch("lilypad.server.main.settings")
-    def test_not_cloud_with_none_hostname(self, mock_settings):
+    @patch("lilypad.ee.server.require_license.get_settings")
+    def test_not_cloud_with_none_hostname(self, mock_get_settings):
         """Test detection with None hostname."""
-        mock_settings.remote_client_hostname = None
-        assert is_lilypad_cloud_deployment() is False
+        from lilypad.ee.server.require_license import is_lilypad_cloud
 
-    @patch("lilypad.server.main.settings")
-    def test_not_cloud_with_fake_domain(self, mock_settings):
+        mock_settings = Mock()
+        mock_settings.remote_client_hostname = None
+        mock_get_settings.return_value = mock_settings
+        assert is_lilypad_cloud() is False
+
+    @patch("lilypad.ee.server.require_license.get_settings")
+    def test_not_cloud_with_fake_domain(self, mock_get_settings):
         """Test detection prevents fake domain attacks."""
+        from lilypad.ee.server.require_license import is_lilypad_cloud
+
+        mock_settings = Mock()
         mock_settings.remote_client_hostname = "fakemirascope.com"
-        assert is_lilypad_cloud_deployment() is False
+        mock_get_settings.return_value = mock_settings
+        assert is_lilypad_cloud() is False
+
+    def test_is_cloud_with_request_hostname(self):
+        """Test detection with request hostname."""
+        from lilypad.ee.server.require_license import is_lilypad_cloud
+
+        mock_request = Mock()
+        mock_request.url.hostname = "app.mirascope.com"
+        assert is_lilypad_cloud(mock_request) is True
+
+        mock_request.url.hostname = "test.lilypad.so"
+        assert is_lilypad_cloud(mock_request) is True
+
+        mock_request.url.hostname = "example.com"
+        assert is_lilypad_cloud(mock_request) is False
 
 
 class TestLifespan:
@@ -379,7 +420,7 @@ class TestLifespan:
     @pytest.mark.asyncio
     @patch("lilypad.server.main.run_migrations")
     @patch("lilypad.server.main.settings")
-    @patch("lilypad.server.main.is_lilypad_cloud_deployment")
+    @patch("lilypad.ee.server.require_license.is_lilypad_cloud")
     @patch("lilypad.server.main.get_retention_scheduler")
     @patch("lilypad.server.main.close_kafka_producer")
     async def test_lifespan_with_data_retention_scheduler_cloud(
@@ -417,7 +458,7 @@ class TestLifespan:
     @pytest.mark.asyncio
     @patch("lilypad.server.main.run_migrations")
     @patch("lilypad.server.main.settings")
-    @patch("lilypad.server.main.is_lilypad_cloud_deployment")
+    @patch("lilypad.ee.server.require_license.is_lilypad_cloud")
     @patch("lilypad.server.main.get_retention_scheduler")
     async def test_lifespan_with_data_retention_scheduler_failure(
         self,
@@ -450,7 +491,7 @@ class TestLifespan:
     @pytest.mark.asyncio
     @patch("lilypad.server.main.run_migrations")
     @patch("lilypad.server.main.settings")
-    @patch("lilypad.server.main.is_lilypad_cloud_deployment")
+    @patch("lilypad.ee.server.require_license.is_lilypad_cloud")
     async def test_lifespan_skip_retention_scheduler_non_cloud(
         self,
         mock_is_cloud,
@@ -724,7 +765,9 @@ class TestLifespanDataRetentionShutdownError:
             patch(
                 "lilypad.server.main.get_stripe_queue_processor"
             ) as mock_get_stripe_processor,
-            patch("lilypad.server.main.is_lilypad_cloud_deployment", return_value=True),
+            patch(
+                "lilypad.ee.server.require_license.is_lilypad_cloud", return_value=True
+            ),
             patch(
                 "lilypad.server.main.get_retention_scheduler",
                 return_value=mock_retention_scheduler,

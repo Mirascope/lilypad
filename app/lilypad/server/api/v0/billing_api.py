@@ -14,7 +14,10 @@ from stripe import SignatureVerificationError
 from ee.validate import LicenseInfo, Tier
 
 from ....ee.server.features import cloud_features
-from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
+from ....ee.server.require_license import (
+    get_organization_license,
+    is_lilypad_cloud_dependency,
+)
 from ..._utils.auth import get_current_user
 from ...db import get_session
 from ...schemas.billing import StripeWebhookResponse
@@ -162,7 +165,7 @@ def get_event_summaries(
     user: Annotated[UserPublic, Depends(get_current_user)],
     organization_service: Annotated[OrganizationService, Depends(OrganizationService)],
     license: Annotated[LicenseInfo, Depends(get_organization_license)],
-    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
+    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud_dependency)],
 ) -> EventSummaryResponse:
     if not is_lilypad_cloud:
         raise HTTPException(
