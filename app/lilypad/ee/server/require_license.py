@@ -223,16 +223,14 @@ def is_lilypad_cloud(
     settings = get_settings()
     remote_hostname = settings.remote_client_hostname
 
-    if remote_hostname:
-        # More strict domain validation to prevent subdomain attacks
-        if (
+    return bool(
+        remote_hostname
+        and (
             remote_hostname in (HOST_NAME, ALT_HOST_NAME)
             or remote_hostname.endswith(f".{HOST_NAME}")
             or remote_hostname.endswith(f".{ALT_HOST_NAME}")
-        ):
-            return True
-
-    return False
+        )
+    )
 
 
 def is_lilypad_cloud_dependency(request: Request) -> bool:

@@ -82,7 +82,7 @@ def create_session() -> Session:
 
 
 @contextlib.contextmanager
-def standalone_session():
+def standalone_session() -> Generator[Session, None, None]:
     """Create a session for standalone/background tasks.
 
     Unlike get_session(), this doesn't automatically commit.

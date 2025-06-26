@@ -2,28 +2,27 @@
 
 import logging
 import time
-import uuid
 from datetime import datetime, timezone
-from typing import Any
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
+from uuid import UUID, uuid4
 
 import stripe
 from fastapi import HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, desc, select, update
 from stripe import InvalidRequestError, StripeError
 
 from ee import Tier
 
-from .._utils.tier import get_organization_tier
 from ..models.billing import BillingTable, SubscriptionStatus
 from ..models.organizations import OrganizationTable
 from ..schemas.billing import BillingCreate
-from ..services.stripe_kafka_service import StripeKafkaService
 from ..settings import get_settings
 from .base_organization import BaseOrganizationService
 
-settings = get_settings()
-stripe.api_key = settings.stripe_api_key
+if TYPE_CHECKING:
+    from .stripe_kafka_service import StripeKafkaService
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,9 +45,10 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         Returns:
             True if Stripe API key is configured, False otherwise
         """
-        return bool(stripe.api_key)
+        settings = get_settings()
+        return bool(settings.stripe_api_key)
 
-    def get_tier_from_billing(self, organization_uuid: uuid.UUID) -> Tier:
+    def get_tier_from_billing(self, organization_uuid: UUID) -> Tier:
         """Get the tier from the billing table for an organization.
 
         Args:
@@ -65,6 +65,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         if not billing or not billing.stripe_price_id:
             return Tier.FREE
 
+        settings = get_settings()
         # Determine tier based on stripe_price_id
         if billing.stripe_price_id == settings.stripe_cloud_team_flat_price_id:
             return Tier.TEAM
@@ -89,7 +90,38 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         Returns:
             The tier for the organization
         """
-        return get_organization_tier(session, organization_uuid)
+        try:
+            # Only select the column we need for better performance
+            stmt = (
+                select(BillingTable.stripe_price_id)
+                .where(BillingTable.organization_uuid == organization_uuid)
+                .order_by(desc(BillingTable.created_at))
+                .limit(1)
+            )
+
+            result = session.exec(stmt).first()
+
+            if not result:
+                return Tier.FREE
+
+            stripe_price_id = result
+
+            # Get settings to check price IDs
+            settings = get_settings()
+
+            # Determine tier based on stripe_price_id
+            if stripe_price_id == settings.stripe_cloud_team_flat_price_id:
+                return Tier.TEAM
+            elif stripe_price_id == settings.stripe_cloud_pro_flat_price_id:
+                return Tier.PRO
+            else:
+                return Tier.FREE
+        except SQLAlchemyError as e:
+            # Database connection or query errors
+            logger.warning(
+                f"Database error while determining tier for organization {organization_uuid}: {e}"
+            )
+            return Tier.FREE
 
     def create_customer(self, organization: OrganizationTable, email: str) -> str:
         """Create a Stripe customer for an organization.
@@ -101,7 +133,8 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         Returns:
             The Stripe customer ID
         """
-        if not stripe.api_key:
+        settings = get_settings()
+        if not settings.stripe_api_key:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Stripe API key not configured",
@@ -119,6 +152,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 email=email,
                 name=organization.name,
                 metadata={"organization_uuid": str(organization.uuid)},
+                api_key=settings.stripe_api_key,
             )
 
             billing_data = BillingCreate(
@@ -146,13 +180,14 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 detail=f"Error creating Stripe customer: {str(e)}",
             )
 
-    def delete_customer_and_billing(self, organization_uuid: uuid.UUID) -> None:
+    def delete_customer_and_billing(self, organization_uuid: UUID) -> None:
         """Delete a Stripe customer for an organization and then delete billing row.
 
         Args:
             organization_uuid: The UUID of the organization
         """
-        if not stripe.api_key:
+        settings = get_settings()
+        if not settings.stripe_api_key:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Stripe API key not configured",
@@ -166,7 +201,9 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             raise _CustomerNotFound()
 
         try:
-            stripe.Customer.delete(billing.stripe_customer_id)
+            stripe.Customer.delete(
+                billing.stripe_customer_id, api_key=settings.stripe_api_key
+            )
             self.session.delete(billing)
             self.session.commit()
         except InvalidRequestError as e:
@@ -192,7 +229,8 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         Returns:
             The updated Stripe customer or None if not found
         """
-        if not stripe.api_key:
+        settings = get_settings()
+        if not settings.stripe_api_key:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Stripe API key not configured",
@@ -202,6 +240,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             customer = stripe.Customer.modify(
                 customer_id,
                 name=new_name,
+                api_key=settings.stripe_api_key,
             )
             if not customer:
                 raise _CustomerNotFound()
@@ -223,14 +262,17 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
         Returns:
             The Stripe customer or None if not found
         """
-        if not stripe.api_key:
+        settings = get_settings()
+        if not settings.stripe_api_key:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Stripe API key not configured",
             )
 
         try:
-            return stripe.Customer.retrieve(customer_id)
+            return stripe.Customer.retrieve(
+                customer_id, api_key=settings.stripe_api_key
+            )
         except InvalidRequestError:
             return None
         except StripeError as e:
@@ -241,7 +283,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
     def report_span_usage(
         self,
-        organization_uuid: uuid.UUID,
+        organization_uuid: UUID,
         quantity: int = 1,
         idempotency_key: str | None = None,
     ) -> None:
@@ -252,7 +294,8 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
             quantity: The number of spans to report (default: 1)
             idempotency_key: Optional idempotency key for the request
         """
-        if not stripe.api_key:
+        settings = get_settings()
+        if not settings.stripe_api_key:
             # Skip reporting if Stripe is not configured
             return None
 
@@ -274,8 +317,9 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 "value": str(quantity),
                 "stripe_customer_id": str(organization.billing.stripe_customer_id),
             },
-            identifier=idempotency_key or str(uuid.uuid4()),
+            identifier=idempotency_key or str(uuid4()),
             timestamp=int(time.time()),
+            api_key=settings.stripe_api_key,
         )
 
         # First, get the billing record ID
@@ -350,9 +394,9 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
 
     async def report_span_usage_with_fallback(
         self,
-        organization_uuid: uuid.UUID,
+        organization_uuid: UUID,
         quantity: int,
-        stripe_kafka_service: StripeKafkaService | None = None,
+        stripe_kafka_service: "StripeKafkaService | None" = None,
     ) -> None:
         """Report span usage to Stripe Kafka queue with fallback to direct API.
 
@@ -368,7 +412,7 @@ class BillingService(BaseOrganizationService[BillingTable, BillingCreate]):
                 "quantity": quantity,
                 "event_type": "span_usage",
                 "user_uuid": str(self.user.uuid),
-                "trace_id": str(uuid.uuid4()),  # Generate a trace_id for Kafka
+                "trace_id": str(uuid4()),  # Generate a trace_id for Kafka
             }
 
             try:

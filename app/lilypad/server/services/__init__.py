@@ -1,6 +1,22 @@
-"""Services for the `lilypad` server."""
+"""Services for the `lilypad` server.
+
+IMPORTANT: Circular Dependency Management
+-----------------------------------------
+This module exports commonly used services. When adding new service exports,
+be aware of potential circular dependencies:
+
+1. BillingService is imported by several services (spans, data_retention, etc.)
+2. BillingService itself imports StripeKafkaService
+3. To avoid circular imports in the future:
+   - Keep service dependencies minimal
+   - Use static methods for shared functionality
+   - Consider using TYPE_CHECKING imports for type hints only
+   - If circular dependencies arise, remove the problematic import from __all__
+     and require direct imports (e.g., from .billing import BillingService)
+"""
 
 from .api_keys import APIKeyService
+from .billing import BillingService
 from .comments import CommentService
 from .deployments import DeploymentService
 from .environments import EnvironmentService
@@ -20,6 +36,7 @@ from .users import UserService
 
 __all__ = [
     "APIKeyService",
+    "BillingService",
     "CommentService",
     "DeploymentService",
     "EnvironmentService",

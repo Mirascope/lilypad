@@ -184,41 +184,27 @@ def test_audit_deletion_creates_structured_log(retention_service, mock_organizat
 
 def test_get_organization_tier_uses_price_ids(retention_service, mock_organization):
     """Test tier detection uses Stripe price IDs from settings."""
-    mock_billing = MagicMock()
-    retention_service.session.exec.return_value.first.return_value = mock_billing
-
-    # Test with TEAM price ID
-    with patch("lilypad.server._utils.tier.get_settings") as mock_get_settings:
-        mock_settings = MagicMock()
-        mock_settings.stripe_cloud_team_flat_price_id = "price_team_123"
-        mock_settings.stripe_cloud_pro_flat_price_id = "price_pro_456"
-        mock_get_settings.return_value = mock_settings
-
-        mock_billing.stripe_price_id = "price_team_123"
+    # Mock BillingService.get_organization_tier_by_uuid directly
+    with patch(
+        "lilypad.server.services.data_retention_service.BillingService.get_organization_tier_by_uuid"
+    ) as mock_get_tier:
+        # Test with TEAM price ID
+        mock_get_tier.return_value = Tier.TEAM
         tier = retention_service._get_organization_tier(mock_organization.uuid)
         assert tier == Tier.TEAM
+        mock_get_tier.assert_called_once_with(
+            retention_service.session, mock_organization.uuid
+        )
 
         # Test with PRO price ID
-        mock_billing.stripe_price_id = "price_pro_456"
+        mock_get_tier.reset_mock()
+        mock_get_tier.return_value = Tier.PRO
         tier = retention_service._get_organization_tier(mock_organization.uuid)
         assert tier == Tier.PRO
 
-        # Test with unknown price ID
-        mock_billing.stripe_price_id = "price_unknown_789"
-        tier = retention_service._get_organization_tier(mock_organization.uuid)
-        assert tier == Tier.FREE
-
-        # Test with None stripe_price_id (covers line 176)
-        mock_billing.stripe_price_id = None
-        tier = retention_service._get_organization_tier(mock_organization.uuid)
-        assert tier == Tier.FREE
-
-        # Test with empty stripe_price_id
-        mock_billing.stripe_price_id = ""
-        tier = retention_service._get_organization_tier(mock_organization.uuid)
-        assert tier == Tier.FREE
-
-        retention_service.session.exec.return_value.first.return_value = None
+        # Test with unknown price ID (FREE)
+        mock_get_tier.reset_mock()
+        mock_get_tier.return_value = Tier.FREE
         tier = retention_service._get_organization_tier(mock_organization.uuid)
         assert tier == Tier.FREE
 
