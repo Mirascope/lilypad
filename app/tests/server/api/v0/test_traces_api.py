@@ -517,7 +517,7 @@ def test_create_traces_cloud_limit_exceeded(
     from ee.validate import LicenseInfo, Tier
     from lilypad.ee.server.require_license import (
         get_organization_license,
-        is_lilypad_cloud,
+        is_lilypad_cloud_dependency,
     )
     from lilypad.server.api.v0.main import api
     from lilypad.server.services.spans import SpanService
@@ -555,7 +555,7 @@ def test_create_traces_cloud_limit_exceeded(
         )
 
     api.dependency_overrides[SpanService] = override_span_service
-    api.dependency_overrides[is_lilypad_cloud] = override_is_lilypad_cloud
+    api.dependency_overrides[is_lilypad_cloud_dependency] = override_is_lilypad_cloud
     api.dependency_overrides[get_organization_license] = (
         override_get_organization_license
     )
@@ -576,7 +576,7 @@ def test_create_traces_cloud_limit_exceeded(
     finally:
         # Clean up overrides
         api.dependency_overrides.pop(SpanService, None)
-        api.dependency_overrides.pop(is_lilypad_cloud, None)
+        api.dependency_overrides.pop(is_lilypad_cloud_dependency, None)
         api.dependency_overrides.pop(get_organization_license, None)
 
 

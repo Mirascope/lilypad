@@ -460,7 +460,7 @@ def test_get_event_summaries_success(
     """Test successful retrieval of event summaries."""
     from lilypad.ee.server.require_license import (
         get_organization_license,
-        is_lilypad_cloud,
+        is_lilypad_cloud_dependency,
     )
 
     # Mock settings
@@ -481,7 +481,7 @@ def test_get_event_summaries_success(
             organization_uuid=test_user.active_organization_uuid,
         )
 
-    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+    api.dependency_overrides[is_lilypad_cloud_dependency] = override_is_cloud
     api.dependency_overrides[get_organization_license] = override_get_license
 
     try:
@@ -506,7 +506,7 @@ def test_get_event_summaries_success(
         assert data["monthly_total"] == 100_000  # PRO tier traces per month
     finally:
         # Clean up overrides
-        del api.dependency_overrides[is_lilypad_cloud]
+        del api.dependency_overrides[is_lilypad_cloud_dependency]
         del api.dependency_overrides[get_organization_license]
 
 
@@ -516,13 +516,13 @@ def test_get_event_summaries_not_cloud(
     test_user: UserTable,
 ):
     """Test event summaries endpoint when not on Lilypad Cloud."""
-    from lilypad.ee.server.require_license import is_lilypad_cloud
+    from lilypad.ee.server.require_license import is_lilypad_cloud_dependency
 
     # Override dependency to return False for cloud check
     def override_is_cloud():
         return False
 
-    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+    api.dependency_overrides[is_lilypad_cloud_dependency] = override_is_cloud
 
     try:
         response = client.get("/stripe/event-summaries")
@@ -533,7 +533,7 @@ def test_get_event_summaries_not_cloud(
         )
     finally:
         # Clean up override
-        del api.dependency_overrides[is_lilypad_cloud]
+        del api.dependency_overrides[is_lilypad_cloud_dependency]
 
 
 @patch("lilypad.server.api.v0.billing_api.get_settings")
@@ -548,7 +548,7 @@ def test_get_event_summaries_no_data(
     """Test event summaries when no data is returned from Stripe."""
     from lilypad.ee.server.require_license import (
         get_organization_license,
-        is_lilypad_cloud,
+        is_lilypad_cloud_dependency,
     )
 
     # Mock settings
@@ -569,7 +569,7 @@ def test_get_event_summaries_no_data(
             organization_uuid=test_user.active_organization_uuid,
         )
 
-    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+    api.dependency_overrides[is_lilypad_cloud_dependency] = override_is_cloud
     api.dependency_overrides[get_organization_license] = override_get_license
 
     try:
@@ -592,7 +592,7 @@ def test_get_event_summaries_no_data(
         assert data["monthly_total"] == 30_000  # FREE tier traces per month
     finally:
         # Clean up overrides
-        del api.dependency_overrides[is_lilypad_cloud]
+        del api.dependency_overrides[is_lilypad_cloud_dependency]
         del api.dependency_overrides[get_organization_license]
 
 
@@ -608,7 +608,7 @@ def test_get_event_summaries_different_tiers(
     """Test event summaries with different subscription tiers."""
     from lilypad.ee.server.require_license import (
         get_organization_license,
-        is_lilypad_cloud,
+        is_lilypad_cloud_dependency,
     )
 
     # Mock settings
@@ -620,7 +620,7 @@ def test_get_event_summaries_different_tiers(
     def override_is_cloud():
         return True
 
-    api.dependency_overrides[is_lilypad_cloud] = override_is_cloud
+    api.dependency_overrides[is_lilypad_cloud_dependency] = override_is_cloud
 
     try:
         # Create organization with billing
@@ -661,5 +661,5 @@ def test_get_event_summaries_different_tiers(
         # a special value like -1 or null to represent unlimited)
     finally:
         # Clean up overrides
-        del api.dependency_overrides[is_lilypad_cloud]
+        del api.dependency_overrides[is_lilypad_cloud_dependency]
         del api.dependency_overrides[get_organization_license]
