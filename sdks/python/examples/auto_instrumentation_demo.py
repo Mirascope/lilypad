@@ -6,6 +6,7 @@ This example shows how trace context is automatically propagated without any cod
 from typing import List, Any
 import lilypad
 import requests
+import requests.adapters
 
 # Configure Lilypad with auto-instrumentation
 lilypad.configure(
@@ -55,7 +56,7 @@ def patched_send(
     return resp
 
 
-requests.adapters.HTTPAdapter.send = patched_send
+requests.adapters.HTTPAdapter.send = patched_send  # pyright: ignore [reportAttributeAccessIssue]
 
 
 # Example 1: Simple traced function making HTTP call
