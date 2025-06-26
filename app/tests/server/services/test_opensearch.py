@@ -1369,8 +1369,8 @@ class TestGetOpenSearchService:
         assert "Error deleting old traces" in mock_logger.error.call_args[0][0]
 
     @patch("lilypad.server.services.opensearch.get_settings")
-    def test_delete_traces_by_uuids_no_client(self, mock_get_settings):
-        """Test delete_traces_by_uuids when client is not available."""
+    def test_bulk_delete_traces_no_client(self, mock_get_settings):
+        """Test bulk_delete_traces when client is not available."""
         mock_settings = Mock()
         mock_settings.opensearch_host = None  # Disable service
         mock_settings.opensearch_port = 9200
@@ -1379,15 +1379,15 @@ class TestGetOpenSearchService:
         service = OpenSearchService()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            success, count = service.delete_traces_by_uuids(uuid4(), [uuid4()])
+            success, count = service.bulk_delete_traces(uuid4(), [uuid4()])
 
         assert success is False
         assert count == 0
         mock_logger.warning.assert_called_with("OpenSearch client not available")
 
     @patch("lilypad.server.services.opensearch.get_settings")
-    def test_delete_traces_by_uuids_empty_list(self, mock_get_settings):
-        """Test delete_traces_by_uuids with empty UUID list."""
+    def test_bulk_delete_traces_empty_list(self, mock_get_settings):
+        """Test bulk_delete_traces with empty UUID list."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
         mock_settings.opensearch_port = 9200
@@ -1395,17 +1395,17 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
 
-        success, count = service.delete_traces_by_uuids(uuid4(), [])
+        success, count = service.bulk_delete_traces(uuid4(), [])
 
         assert success is True
         assert count == 0
 
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
-    def test_delete_traces_by_uuids_index_not_exists(
+    def test_bulk_delete_traces_index_not_exists(
         self, mock_opensearch_class, mock_get_settings
     ):
-        """Test delete_traces_by_uuids when index doesn't exist."""
+        """Test bulk_delete_traces when index doesn't exist."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
         mock_settings.opensearch_port = 9200
@@ -1423,7 +1423,7 @@ class TestGetOpenSearchService:
         span_uuids = [uuid4() for _ in range(10)]
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            success, count = service.delete_traces_by_uuids(project_uuid, span_uuids)
+            success, count = service.bulk_delete_traces(project_uuid, span_uuids)
 
         assert success is True
         assert count == 0
@@ -1433,10 +1433,10 @@ class TestGetOpenSearchService:
 
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
-    def test_delete_traces_by_uuids_batch_processing(
+    def test_bulk_delete_traces_batch_processing(
         self, mock_opensearch_class, mock_get_settings
     ):
-        """Test delete_traces_by_uuids with batch processing."""
+        """Test bulk_delete_traces with batch processing."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
         mock_settings.opensearch_port = 9200
@@ -1462,7 +1462,7 @@ class TestGetOpenSearchService:
         # Create 2500 UUIDs (will be 3 batches with batch_size=1000)
         span_uuids = [uuid4() for _ in range(2500)]
 
-        success, count = service.delete_traces_by_uuids(
+        success, count = service.bulk_delete_traces(
             project_uuid, span_uuids, batch_size=1000
         )
 
@@ -1472,10 +1472,10 @@ class TestGetOpenSearchService:
 
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
-    def test_delete_traces_by_uuids_with_batch_failures(
+    def test_bulk_delete_traces_with_batch_failures(
         self, mock_opensearch_class, mock_get_settings
     ):
-        """Test delete_traces_by_uuids with failures in some batches."""
+        """Test bulk_delete_traces with failures in some batches."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
         mock_settings.opensearch_port = 9200
@@ -1499,7 +1499,7 @@ class TestGetOpenSearchService:
         span_uuids = [uuid4() for _ in range(1500)]
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            success, count = service.delete_traces_by_uuids(
+            success, count = service.bulk_delete_traces(
                 project_uuid, span_uuids, batch_size=1000
             )
 
@@ -1517,10 +1517,10 @@ class TestGetOpenSearchService:
 
     @patch("lilypad.server.services.opensearch.get_settings")
     @patch("lilypad.server.services.opensearch.OpenSearch")
-    def test_delete_traces_by_uuids_exception(
+    def test_bulk_delete_traces_exception(
         self, mock_opensearch_class, mock_get_settings
     ):
-        """Test delete_traces_by_uuids when exception occurs."""
+        """Test bulk_delete_traces when exception occurs."""
         mock_settings = Mock()
         mock_settings.opensearch_host = "localhost"
         mock_settings.opensearch_port = 9200
@@ -1538,7 +1538,7 @@ class TestGetOpenSearchService:
         span_uuids = [uuid4() for _ in range(10)]
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            success, count = service.delete_traces_by_uuids(project_uuid, span_uuids)
+            success, count = service.bulk_delete_traces(project_uuid, span_uuids)
 
         assert success is False
         assert count == 0

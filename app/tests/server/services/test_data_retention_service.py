@@ -940,7 +940,7 @@ def test_cleanup_with_opensearch_large_dataset(retention_service, mock_organizat
         # Check that OpenSearch cleanup was skipped
         assert metrics.opensearch_skipped_large is True
         assert metrics.opensearch_deleted == 0
-        mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+        mock_opensearch_service.bulk_delete_traces.assert_not_called()
 
         # Check warning log was called
         warning_calls = [
@@ -978,7 +978,7 @@ def test_cleanup_with_opensearch_timeout(retention_service, mock_organization):
         time.sleep(35)  # Longer than 30s timeout
         return True, 100
 
-    mock_opensearch_service.delete_traces_by_uuids.side_effect = slow_delete
+    mock_opensearch_service.bulk_delete_traces.side_effect = slow_delete
 
     with (
         patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
@@ -1024,7 +1024,7 @@ def test_cleanup_with_opensearch_error(retention_service, mock_organization):
     # Mock OpenSearch service that raises error
     mock_opensearch_service = MagicMock()
     mock_opensearch_service.is_enabled = True
-    mock_opensearch_service.delete_traces_by_uuids.side_effect = Exception(
+    mock_opensearch_service.bulk_delete_traces.side_effect = Exception(
         "Connection error"
     )
 
@@ -1087,7 +1087,7 @@ def test_cleanup_with_opensearch_disabled(retention_service, mock_organization):
         )
 
         # Check OpenSearch wasn't called
-        mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+        mock_opensearch_service.bulk_delete_traces.assert_not_called()
         assert metrics.opensearch_deleted == 0
         assert metrics.opensearch_skipped_large is False
 
@@ -1129,7 +1129,7 @@ def test_cleanup_with_opensearch_dry_run(retention_service, mock_organization):
             )
 
             # Check OpenSearch wasn't actually called
-            mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+            mock_opensearch_service.bulk_delete_traces.assert_not_called()
 
             if span_count > 5000:
                 # Large dataset should be marked as skipped
@@ -1183,7 +1183,7 @@ def test_cleanup_with_spans_without_projects(retention_service, mock_organizatio
         assert len(warning_calls) == 1
 
         # OpenSearch cleanup shouldn't be attempted
-        mock_opensearch_service.delete_traces_by_uuids.assert_not_called()
+        mock_opensearch_service.bulk_delete_traces.assert_not_called()
         assert metrics.opensearch_deleted == 0
 
 
@@ -1209,7 +1209,7 @@ def test_cleanup_with_opensearch_successful_deletion(
     # Mock successful OpenSearch service
     mock_opensearch_service = MagicMock()
     mock_opensearch_service.is_enabled = True
-    mock_opensearch_service.delete_traces_by_uuids.return_value = (True, 100)
+    mock_opensearch_service.bulk_delete_traces.return_value = (True, 100)
 
     with (
         patch.object(retention_service, "_acquire_advisory_lock", return_value=True),
@@ -1228,7 +1228,7 @@ def test_cleanup_with_opensearch_successful_deletion(
         assert metrics.opensearch_error is False
         assert metrics.opensearch_timeout is False
         assert metrics.opensearch_skipped_large is False
-        mock_opensearch_service.delete_traces_by_uuids.assert_called_once()
+        mock_opensearch_service.bulk_delete_traces.assert_called_once()
 
 
 def test_cleanup_with_opensearch_returns_false(retention_service, mock_organization):
@@ -1251,7 +1251,7 @@ def test_cleanup_with_opensearch_returns_false(retention_service, mock_organizat
     # Mock OpenSearch service that returns False
     mock_opensearch_service = MagicMock()
     mock_opensearch_service.is_enabled = True
-    mock_opensearch_service.delete_traces_by_uuids.return_value = (False, 0)
+    mock_opensearch_service.bulk_delete_traces.return_value = (False, 0)
 
     with (
         patch.object(retention_service, "_acquire_advisory_lock", return_value=True),

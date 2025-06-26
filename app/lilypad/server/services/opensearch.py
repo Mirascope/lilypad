@@ -395,7 +395,7 @@ class OpenSearchService:
             )
             return False, 0
 
-    def delete_traces_by_uuids(
+    def bulk_delete_traces(
         self, project_uuid: UUID, span_uuids: list[UUID], batch_size: int = 1000
     ) -> tuple[bool, int]:
         """Delete specific traces by their UUIDs with batch processing.
