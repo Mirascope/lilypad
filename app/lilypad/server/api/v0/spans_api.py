@@ -155,7 +155,7 @@ async def search_traces(
         source: dict[str, Any] = hit["_source"]
         function_uuid_str = source.get("function_uuid")
         if "organization_uuid" not in source or "span_id" not in source:
-            continue  # Skip if either key is missing
+            continue  # Skip if either key is missing  # pragma: no cover
         span = SpanTable(
             uuid=hit["_id"],
             organization_uuid=source["organization_uuid"],

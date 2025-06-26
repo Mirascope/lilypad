@@ -55,23 +55,6 @@ def run_migrations() -> None:
         log.error(f"Migration failed: {e.stderr}")
 
 
-def is_lilypad_cloud_deployment() -> bool:
-    """Check if this is a Lilypad Cloud deployment based on settings."""
-    from ..ee.server import ALT_HOST_NAME, HOST_NAME
-
-    remote_hostname = settings.remote_client_hostname
-    # Handle empty or None hostname
-    if not remote_hostname:
-        return False
-
-    # More strict domain validation to prevent subdomain attacks
-    return (
-        remote_hostname in (HOST_NAME, ALT_HOST_NAME)
-        or remote_hostname.endswith(f".{HOST_NAME}")
-        or remote_hostname.endswith(f".{ALT_HOST_NAME}")
-    )
-
-
 @asynccontextmanager
 async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
     """Run the migrations and optional setup on startup."""
@@ -130,7 +113,10 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             # Continue startup even if processor fails
 
     retention_scheduler = None
-    if is_lilypad_cloud_deployment():
+    # Import is_lilypad_cloud from require_license module
+    from ..ee.server.require_license import is_lilypad_cloud
+
+    if is_lilypad_cloud():
         log.info(
             "Detected Lilypad Cloud deployment - starting data retention scheduler"
         )

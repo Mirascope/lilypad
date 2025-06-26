@@ -4,7 +4,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from sqlalchemy import Index
 from sqlmodel import Field, Relationship, SQLModel
 
 from lilypad.server.models.base_sql_model import get_json_column
@@ -55,19 +54,14 @@ class AnnotationTable(AnnotationBase, BaseOrganizationSQLModel, table=True):
     """Annotation table."""
 
     __tablename__ = ANNOTATION_TABLE_NAME  # type: ignore
-    __table_args__ = (
-        # Index for cascade delete performance during data retention
-        Index(
-            "idx_annotations_span_uuid",
-            "span_uuid",
-            postgresql_using="btree",
-        ),
-    )
     project_uuid: UUID | None = Field(
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     span_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{SPAN_TABLE_NAME}.uuid", ondelete="CASCADE"
+        default=None,
+        foreign_key=f"{SPAN_TABLE_NAME}.uuid",
+        ondelete="CASCADE",
+        index=True,
     )
     function_uuid: UUID | None = Field(
         default=None, foreign_key=f"{FUNCTION_TABLE_NAME}.uuid", ondelete="CASCADE"

@@ -15,12 +15,13 @@ from sqlmodel import and_, asc, delete, func, select, text
 from ee import Tier
 
 from ...ee.server.constants import ALT_HOST_NAME, HOST_NAME
-from .._utils.tier import get_display_retention_days, get_organization_tier
+from .._utils.tier import get_display_retention_days
 from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
 from ..settings import get_settings
 from .base_organization import BaseOrganizationService
+from .billing import BillingService
 from .tags import TagService
 
 logger = logging.getLogger(__name__)
@@ -67,7 +68,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         if not org_uuid:
             return Tier.FREE
 
-        self._cached_tier = get_organization_tier(self.session, org_uuid)
+        self._cached_tier = BillingService.get_organization_tier_by_uuid(
+            self.session, org_uuid
+        )
         return self._cached_tier
 
     def _apply_display_retention_filter(self, stmt: Any) -> Any:

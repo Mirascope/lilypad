@@ -21,11 +21,12 @@ from sqlmodel import Session, col, select
 from ee import Tier
 
 from ...ee.server.features import cloud_features
-from .._utils.tier import get_organization_tier
-from ..db.session import create_session
+from ..db.session import standalone_session
 from ..models.organizations import OrganizationTable
 from ..settings import get_settings
+from .billing import BillingService
 from .opensearch import get_opensearch_service
+
 
 log = logging.getLogger(__name__)
 settings = get_settings()
@@ -167,7 +168,9 @@ class DataRetentionService:
 
     def _get_organization_tier(self, organization_uuid: UUID) -> Tier:
         """Get the tier for an organization from billing table."""
-        return get_organization_tier(self.session, organization_uuid)
+        return BillingService.get_organization_tier_by_uuid(
+            self.session, organization_uuid
+        )
 
     @classmethod
     def get_retention_days(cls, tier: Tier) -> int | None:
@@ -865,8 +868,7 @@ class DataRetentionScheduler:
         """Run the actual cleanup process."""
         log.info("Starting scheduled data retention cleanup")
 
-        session = create_session()
-        try:
+        with standalone_session() as session:
             service = DataRetentionService(session)
 
             # Check if dry run is enabled
@@ -903,9 +905,6 @@ class DataRetentionScheduler:
             # metrics.gauge('data_retention.successful_cleanups', successful_cleanups)
             # metrics.gauge('data_retention.failed_cleanups', failed_cleanups)
             # metrics.counter('data_retention.spans_deleted', total_spans_deleted)
-
-        finally:
-            session.close()
 
     async def _run_initial_cleanup(self) -> None:
         """Run initial cleanup after a delay."""

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint, text
 from sqlmodel import DateTime, Field, Relationship, SQLModel
 
 from . import get_json_column
@@ -80,6 +80,12 @@ class BillingTable(BillingBase, BaseOrganizationSQLModel, table=True):
         UniqueConstraint("stripe_customer_id", name="uix_billing_stripe_customer_id"),
         UniqueConstraint(
             "stripe_subscription_id", name="uix_billing_stripe_subscription_id"
+        ),
+        Index(
+            "ix_billings_organization_uuid_created_at_desc",
+            "organization_uuid",
+            text("created_at DESC"),
+            postgresql_using="btree",
         ),
     )
 
