@@ -62,7 +62,7 @@ class RawEnvironmentsClient:
         *,
         name: str,
         description: typing.Optional[str] = OMIT,
-        is_default: typing.Optional[bool] = OMIT,
+        is_development: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[EnvironmentPublic]:
         """
@@ -74,7 +74,7 @@ class RawEnvironmentsClient:
 
         description : typing.Optional[str]
 
-        is_default : typing.Optional[bool]
+        is_development : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -90,7 +90,7 @@ class RawEnvironmentsClient:
             json={
                 "name": name,
                 "description": description,
-                "is_default": is_default,
+                "is_development": is_development,
             },
             headers={
                 "content-type": "application/json",
@@ -268,7 +268,7 @@ class AsyncRawEnvironmentsClient:
         *,
         name: str,
         description: typing.Optional[str] = OMIT,
-        is_default: typing.Optional[bool] = OMIT,
+        is_development: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[EnvironmentPublic]:
         """
@@ -280,7 +280,7 @@ class AsyncRawEnvironmentsClient:
 
         description : typing.Optional[str]
 
-        is_default : typing.Optional[bool]
+        is_development : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -296,7 +296,7 @@ class AsyncRawEnvironmentsClient:
             json={
                 "name": name,
                 "description": description,
-                "is_default": is_default,
+                "is_development": is_development,
             },
             headers={
                 "content-type": "application/json",

@@ -17,7 +17,7 @@ class EnvironmentPublic(UncheckedBaseModel):
 
     name: str
     description: typing.Optional[str] = None
-    is_default: typing.Optional[bool] = None
+    is_development: typing.Optional[bool] = None
     uuid_: typing_extensions.Annotated[str, FieldMetadata(alias="uuid")]
     organization_uuid: str
     created_at: dt.datetime

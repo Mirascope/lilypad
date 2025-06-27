@@ -21,7 +21,7 @@
 .PHONY: generate generate-openapi generate-sdk generate-client
 
 # Maintenance
-.PHONY: clean clean-all db-migrate db-rollback db-reset
+.PHONY: clean clean-all db-migrate db-rollback db-reset db-revision
 .PHONY: logs logs-app logs-services check update-deps
 
 help:
@@ -67,6 +67,7 @@ help:
 	@echo "  clean             - Clean build artifacts"
 	@echo "  clean-all         - Clean all artifacts including caches"
 	@echo "  db-migrate        - Run database migrations"
+	@echo "  db-revision       - Make a database revision"
 	@echo "  db-rollback       - Rollback last database migration"
 	@echo "  db-reset          - Reset database (CAUTION: drops all data)"
 	@echo "  logs              - Show logs for all services"
@@ -98,8 +99,6 @@ dev-local:
 dev-stripe-webhook:
 	+$(MAKE) -C app dev-stripe-webhook
 
-prod-down:
-	cd app && docker-compose down
 dev-local-app:
 	+$(MAKE) -C app dev-local-app
 
@@ -216,6 +215,9 @@ clean-all: clean
 # Database operations
 db-migrate:
 	+$(MAKE) -C app db-migrate
+
+db-revision:
+	+$(MAKE) -C app db-revision
 
 db-rollback:
 	+$(MAKE) -C app db-rollback
