@@ -45,12 +45,13 @@ def create_jwt_token(
     )
 
 
-def create_api_key() -> str:
+def create_api_key(prefix: str) -> tuple[str, str]:
     """Create a new API key."""
     raw_key = base64.b64encode(secrets.token_bytes(32)).decode("utf-8")
-    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+    api_key = f"lp_{prefix[:7].lower()}_{raw_key}"
+    key_hash = hashlib.sha256(api_key.encode()).hexdigest()
 
-    return key_hash
+    return api_key, key_hash
 
 
 settings = get_settings()
@@ -67,8 +68,9 @@ async def validate_api_key_project(
     strict: bool = True,
 ) -> bool:
     """Checks if the API key matches the project UUID."""
+    api_key_hash = hashlib.sha256(api_key.encode()).hexdigest() if api_key else None
     api_key_row = session.exec(
-        select(APIKeyTable).where(APIKeyTable.key_hash == api_key)
+        select(APIKeyTable).where(APIKeyTable.key_hash == api_key_hash)
     ).first()
     if not api_key_row:
         if strict:
@@ -112,8 +114,9 @@ async def get_current_user(
     """Dependency to get the current authenticated user from session."""
     """Get the current user from JWT token"""
     if api_key:
+        api_key_hash = hashlib.sha256(api_key.encode()).hexdigest()
         api_key_row = session.exec(
-            select(APIKeyTable).where(APIKeyTable.key_hash == api_key)
+            select(APIKeyTable).where(APIKeyTable.key_hash == api_key_hash)
         ).first()
         if not api_key_row:
             raise HTTPException(

@@ -108,6 +108,6 @@ jobs:
             echo "Then commit the changes."
             echo ""
             echo "Note: Make sure to regenerate OpenAPI schema first if app code changed:"
-            echo "  make generate-all"
+            echo "  make generate"
             exit 1
           fi

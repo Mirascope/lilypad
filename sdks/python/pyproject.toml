@@ -45,7 +45,7 @@ Repository = "https://github.com/Mirascope/lilypad"
 
 [dependency-groups]
 dev = [
-    "pyright==1.1.399",
+    "pyright==1.1.402",
     "pytest>=8.3.2",
     "mypy",
     "respx",
@@ -192,7 +192,7 @@ known-first-party = ["lilypad", "tests"]
 [tool.pyright]
 pythonVersion = "3.10"
 
-exclude = [".venv", "tests", "src/lilypad"]
+exclude = [".venv", "tests", "src/lilypad", "examples"]
 
 [build-system]
 requires = ["hatchling"]

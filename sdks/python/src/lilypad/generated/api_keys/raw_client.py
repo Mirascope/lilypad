@@ -63,8 +63,8 @@ class RawApiKeysClient:
         *,
         name: str,
         project_uuid: str,
+        environment_uuid: str,
         expires_at: typing.Optional[dt.datetime] = OMIT,
-        environment_uuid: typing.Optional[str] = OMIT,
         key_hash: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[str]:
@@ -77,9 +77,9 @@ class RawApiKeysClient:
 
         project_uuid : str
 
-        expires_at : typing.Optional[dt.datetime]
+        environment_uuid : str
 
-        environment_uuid : typing.Optional[str]
+        expires_at : typing.Optional[dt.datetime]
 
         key_hash : typing.Optional[str]
 
@@ -228,8 +228,8 @@ class AsyncRawApiKeysClient:
         *,
         name: str,
         project_uuid: str,
+        environment_uuid: str,
         expires_at: typing.Optional[dt.datetime] = OMIT,
-        environment_uuid: typing.Optional[str] = OMIT,
         key_hash: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[str]:
@@ -242,9 +242,9 @@ class AsyncRawApiKeysClient:
 
         project_uuid : str
 
-        expires_at : typing.Optional[dt.datetime]
+        environment_uuid : str
 
-        environment_uuid : typing.Optional[str]
+        expires_at : typing.Optional[dt.datetime]
 
         key_hash : typing.Optional[str]
 
