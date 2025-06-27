@@ -110,7 +110,7 @@ class Settings(BaseSettings):
         description="Maximum consecutive errors before data retention scheduler needs manual intervention",
     )
     data_retention_dry_run: bool = Field(
-        default=False,
+        default=True,
         description="If True, data retention will only simulate deletion without actually deleting data",
     )
     data_retention_audit_log: bool = Field(
