@@ -150,7 +150,7 @@ db-reset:
 db-revision:
 	@echo "Enter migration message: " && \
 	read msg && \
-	uv run alembic revision -m "$$msg"
+	alembic revision --autogenerate -m "$$msg"
 
 # Logging
 logs:

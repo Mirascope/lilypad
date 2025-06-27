@@ -59,7 +59,7 @@ class EnvironmentsClient:
         *,
         name: str,
         description: typing.Optional[str] = OMIT,
-        is_default: typing.Optional[bool] = OMIT,
+        is_development: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> EnvironmentPublic:
         """
@@ -71,7 +71,7 @@ class EnvironmentsClient:
 
         description : typing.Optional[str]
 
-        is_default : typing.Optional[bool]
+        is_development : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -95,7 +95,7 @@ class EnvironmentsClient:
         )
         """
         _response = self._raw_client.create(
-            name=name, description=description, is_default=is_default, request_options=request_options
+            name=name, description=description, is_development=is_development, request_options=request_options
         )
         return _response.data
 
@@ -222,7 +222,7 @@ class AsyncEnvironmentsClient:
         *,
         name: str,
         description: typing.Optional[str] = OMIT,
-        is_default: typing.Optional[bool] = OMIT,
+        is_development: typing.Optional[bool] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> EnvironmentPublic:
         """
@@ -234,7 +234,7 @@ class AsyncEnvironmentsClient:
 
         description : typing.Optional[str]
 
-        is_default : typing.Optional[bool]
+        is_development : typing.Optional[bool]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -266,7 +266,7 @@ class AsyncEnvironmentsClient:
         asyncio.run(main())
         """
         _response = await self._raw_client.create(
-            name=name, description=description, is_default=is_default, request_options=request_options
+            name=name, description=description, is_development=is_development, request_options=request_options
         )
         return _response.data
 
