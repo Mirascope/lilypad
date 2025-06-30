@@ -38,7 +38,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotFoundError = void 0;
 const errors = __importStar(require("../../errors/index.js"));
-class NotFoundError extends errors.MirascopeApiError {
+class NotFoundError extends errors.LilypadError {
     constructor(body, rawResponse) {
         super({
             message: "NotFoundError",

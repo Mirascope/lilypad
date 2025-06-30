@@ -47,7 +47,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Tags = void 0;
 const core = __importStar(require("../../../../core/index.js"));
-const MirascopeApi = __importStar(require("../../../index.js"));
+const Lilypad = __importStar(require("../../../index.js"));
 const headers_js_1 = require("../../../../core/headers.js");
 const errors = __importStar(require("../../../../errors/index.js"));
 class Tags {
@@ -83,7 +83,7 @@ class Tags {
                 return { data: _response.body, rawResponse: _response.rawResponse };
             }
             if (_response.error.reason === "status-code") {
-                throw new errors.MirascopeApiError({
+                throw new errors.LilypadError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.body,
                     rawResponse: _response.rawResponse,
@@ -91,15 +91,15 @@ class Tags {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /tags.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /tags.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -109,10 +109,10 @@ class Tags {
     /**
      * Create a tag
      *
-     * @param {MirascopeApi.TagCreate} request
+     * @param {Lilypad.TagCreate} request
      * @param {Tags.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.tags.create({
@@ -145,9 +145,9 @@ class Tags {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -156,15 +156,15 @@ class Tags {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling POST /tags.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling POST /tags.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -177,7 +177,7 @@ class Tags {
      * @param {string} tagUuid
      * @param {Tags.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.tags.get("tag_uuid")
@@ -205,9 +205,9 @@ class Tags {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -216,15 +216,15 @@ class Tags {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /tags/{tag_uuid}.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /tags/{tag_uuid}.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -237,7 +237,7 @@ class Tags {
      * @param {string} tagUuid
      * @param {Tags.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.tags.delete("tag_uuid")
@@ -265,9 +265,9 @@ class Tags {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -276,15 +276,15 @@ class Tags {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling DELETE /tags/{tag_uuid}.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling DELETE /tags/{tag_uuid}.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -295,10 +295,10 @@ class Tags {
      * Update a tag.
      *
      * @param {string} tagUuid
-     * @param {MirascopeApi.TagCreate} request
+     * @param {Lilypad.TagCreate} request
      * @param {Tags.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.tags.update("tag_uuid", {
@@ -331,9 +331,9 @@ class Tags {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -342,15 +342,15 @@ class Tags {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling PATCH /tags/{tag_uuid}.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling PATCH /tags/{tag_uuid}.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });

@@ -47,7 +47,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Auth = void 0;
 const core = __importStar(require("../../../../core/index.js"));
-const MirascopeApi = __importStar(require("../../../index.js"));
+const Lilypad = __importStar(require("../../../index.js"));
 const headers_js_1 = require("../../../../core/headers.js");
 const errors = __importStar(require("../../../../errors/index.js"));
 class Auth {
@@ -60,10 +60,10 @@ class Auth {
      * Saves the user and organization or retrieves the user after authenticating
      * with GitHub.
      *
-     * @param {MirascopeApi.AuthHandleGithubCallbackRequest} request
+     * @param {Lilypad.AuthHandleGithubCallbackRequest} request
      * @param {Auth.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.auth.handleGithubCallback({
@@ -97,9 +97,9 @@ class Auth {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -108,15 +108,15 @@ class Auth {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /auth/github/callback.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /auth/github/callback.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -129,10 +129,10 @@ class Auth {
      * Saves the user and organization or retrieves the user after authenticating
      * with Google.
      *
-     * @param {MirascopeApi.AuthHandleGoogleCallbackRequest} request
+     * @param {Lilypad.AuthHandleGoogleCallbackRequest} request
      * @param {Auth.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.auth.handleGoogleCallback({
@@ -166,9 +166,9 @@ class Auth {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -177,15 +177,15 @@ class Auth {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /auth/google/callback.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /auth/google/callback.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });

@@ -1,3 +1,3 @@
-export * as MirascopeApi from "./api/index.js";
-export { MirascopeApiError, MirascopeApiTimeoutError } from "./errors/index.js";
-export { MirascopeApiClient } from "./Client.js";
+export * as Lilypad from "./api/index.js";
+export { LilypadError, LilypadTimeoutError } from "./errors/index.js";
+export { LilypadClient } from "./Client.js";

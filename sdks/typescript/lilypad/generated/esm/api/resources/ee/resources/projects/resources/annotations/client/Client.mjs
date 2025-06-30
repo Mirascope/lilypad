@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as core from "../../../../../../../../core/index.mjs";
-import * as MirascopeApi from "../../../../../../../index.mjs";
+import * as Lilypad from "../../../../../../../index.mjs";
 import { mergeHeaders, mergeOnlyDefinedHeaders } from "../../../../../../../../core/headers.mjs";
 import * as errors from "../../../../../../../../errors/index.mjs";
 export class Annotations {
@@ -24,7 +24,7 @@ export class Annotations {
      * @param {string} projectUuid
      * @param {Annotations.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.ee.projects.annotations.list("project_uuid")
@@ -52,9 +52,9 @@ export class Annotations {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -63,15 +63,15 @@ export class Annotations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /ee/projects/{project_uuid}/annotations.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /ee/projects/{project_uuid}/annotations.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -95,10 +95,10 @@ export class Annotations {
      *     not been labeled yet.
      *
      * @param {string} projectUuid
-     * @param {MirascopeApi.AnnotationCreate[]} request
+     * @param {Lilypad.AnnotationCreate[]} request
      * @param {Annotations.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.ee.projects.annotations.create("project_uuid", [{}])
@@ -129,9 +129,9 @@ export class Annotations {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -140,15 +140,15 @@ export class Annotations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling POST /ee/projects/{project_uuid}/annotations.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling POST /ee/projects/{project_uuid}/annotations.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -162,7 +162,7 @@ export class Annotations {
      * @param {string} projectUuid
      * @param {Annotations.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.ee.projects.annotations.delete("annotation_uuid", "project_uuid")
@@ -190,9 +190,9 @@ export class Annotations {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -201,15 +201,15 @@ export class Annotations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling DELETE /ee/projects/{project_uuid}/annotations/{annotation_uuid}.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling DELETE /ee/projects/{project_uuid}/annotations/{annotation_uuid}.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -221,10 +221,10 @@ export class Annotations {
      *
      * @param {string} annotationUuid
      * @param {string} projectUuid
-     * @param {MirascopeApi.ee.projects.AnnotationUpdate} request
+     * @param {Lilypad.ee.projects.AnnotationUpdate} request
      * @param {Annotations.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.ee.projects.annotations.update("annotation_uuid", "project_uuid")
@@ -255,9 +255,9 @@ export class Annotations {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -266,15 +266,15 @@ export class Annotations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling PATCH /ee/projects/{project_uuid}/annotations/{annotation_uuid}.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling PATCH /ee/projects/{project_uuid}/annotations/{annotation_uuid}.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });

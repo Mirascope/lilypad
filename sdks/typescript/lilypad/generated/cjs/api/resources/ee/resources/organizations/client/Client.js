@@ -47,7 +47,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Organizations = void 0;
 const core = __importStar(require("../../../../../../core/index.js"));
-const MirascopeApi = __importStar(require("../../../../../index.js"));
+const Lilypad = __importStar(require("../../../../../index.js"));
 const headers_js_1 = require("../../../../../../core/headers.js");
 const errors = __importStar(require("../../../../../../errors/index.js"));
 const Client_js_1 = require("../resources/users/client/Client.js");
@@ -88,7 +88,7 @@ class Organizations {
                 return { data: _response.body, rawResponse: _response.rawResponse };
             }
             if (_response.error.reason === "status-code") {
-                throw new errors.MirascopeApiError({
+                throw new errors.LilypadError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.body,
                     rawResponse: _response.rawResponse,
@@ -96,15 +96,15 @@ class Organizations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /ee/organizations/license.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /ee/organizations/license.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -140,7 +140,7 @@ class Organizations {
                 return { data: _response.body, rawResponse: _response.rawResponse };
             }
             if (_response.error.reason === "status-code") {
-                throw new errors.MirascopeApiError({
+                throw new errors.LilypadError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.body,
                     rawResponse: _response.rawResponse,
@@ -148,15 +148,15 @@ class Organizations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /ee/user-organizations.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /ee/user-organizations.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -166,10 +166,10 @@ class Organizations {
     /**
      * Create user organization
      *
-     * @param {MirascopeApi.ee.CreateUserOrganizationToken} request
+     * @param {Lilypad.ee.CreateUserOrganizationToken} request
      * @param {Organizations.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.ee.organizations.create({
@@ -202,9 +202,9 @@ class Organizations {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -213,15 +213,15 @@ class Organizations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling POST /ee/user-organizations.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling POST /ee/user-organizations.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -234,7 +234,7 @@ class Organizations {
      * @param {string} userOrganizationUuid
      * @param {Organizations.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.ee.organizations.delete("user_organization_uuid")
@@ -262,9 +262,9 @@ class Organizations {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -273,15 +273,15 @@ class Organizations {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling DELETE /ee/user-organizations/{user_organization_uuid}.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling DELETE /ee/user-organizations/{user_organization_uuid}.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });

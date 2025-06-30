@@ -33,10 +33,10 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MirascopeApiClient = exports.MirascopeApiTimeoutError = exports.MirascopeApiError = exports.MirascopeApi = void 0;
-exports.MirascopeApi = __importStar(require("./api/index.js"));
+exports.LilypadClient = exports.LilypadTimeoutError = exports.LilypadError = exports.Lilypad = void 0;
+exports.Lilypad = __importStar(require("./api/index.js"));
 var index_js_1 = require("./errors/index.js");
-Object.defineProperty(exports, "MirascopeApiError", { enumerable: true, get: function () { return index_js_1.MirascopeApiError; } });
-Object.defineProperty(exports, "MirascopeApiTimeoutError", { enumerable: true, get: function () { return index_js_1.MirascopeApiTimeoutError; } });
+Object.defineProperty(exports, "LilypadError", { enumerable: true, get: function () { return index_js_1.LilypadError; } });
+Object.defineProperty(exports, "LilypadTimeoutError", { enumerable: true, get: function () { return index_js_1.LilypadTimeoutError; } });
 var Client_js_1 = require("./Client.js");
-Object.defineProperty(exports, "MirascopeApiClient", { enumerable: true, get: function () { return Client_js_1.MirascopeApiClient; } });
+Object.defineProperty(exports, "LilypadClient", { enumerable: true, get: function () { return Client_js_1.LilypadClient; } });

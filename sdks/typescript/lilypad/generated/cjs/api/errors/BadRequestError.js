@@ -38,7 +38,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BadRequestError = void 0;
 const errors = __importStar(require("../../errors/index.js"));
-class BadRequestError extends errors.MirascopeApiError {
+class BadRequestError extends errors.LilypadError {
     constructor(body, rawResponse) {
         super({
             message: "BadRequestError",

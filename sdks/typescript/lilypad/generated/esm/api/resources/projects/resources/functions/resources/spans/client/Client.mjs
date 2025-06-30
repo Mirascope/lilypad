@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as core from "../../../../../../../../core/index.mjs";
-import * as MirascopeApi from "../../../../../../../index.mjs";
+import * as Lilypad from "../../../../../../../index.mjs";
 import { mergeHeaders, mergeOnlyDefinedHeaders } from "../../../../../../../../core/headers.mjs";
 import * as errors from "../../../../../../../../errors/index.mjs";
 export class Spans {
@@ -23,10 +23,10 @@ export class Spans {
      *
      * @param {string} projectUuid
      * @param {string} functionUuid
-     * @param {MirascopeApi.projects.functions.SpansGetAggregatesRequest} request
+     * @param {Lilypad.projects.functions.SpansGetAggregatesRequest} request
      * @param {Spans.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.projects.functions.spans.getAggregates("project_uuid", "function_uuid", {
@@ -60,9 +60,9 @@ export class Spans {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -71,15 +71,15 @@ export class Spans {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /projects/{project_uuid}/functions/{function_uuid}/spans/metadata.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /projects/{project_uuid}/functions/{function_uuid}/spans/metadata.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -91,10 +91,10 @@ export class Spans {
      *
      * @param {string} projectUuid
      * @param {string} functionUuid
-     * @param {MirascopeApi.projects.functions.SpansListPaginatedRequest} request
+     * @param {Lilypad.projects.functions.SpansListPaginatedRequest} request
      * @param {Spans.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.projects.functions.spans.listPaginated("project_uuid", "function_uuid")
@@ -134,9 +134,9 @@ export class Spans {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -145,15 +145,15 @@ export class Spans {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /projects/{project_uuid}/functions/{function_uuid}/spans/paginated.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /projects/{project_uuid}/functions/{function_uuid}/spans/paginated.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });

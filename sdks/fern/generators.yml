@@ -1,10 +1,8 @@
 # yaml-language-server: $schema=https://schema.buildwithfern.dev/generators-yml.json
-
 api:
   specs:
     - openapi: lilypad-api.json
       overrides: ./openapi-overrides.yml
-
 groups:
   python-sdk:
     generators:
@@ -20,3 +18,12 @@ groups:
           pydantic_config:
             skip_validation: true
           exclude_types_from_init_exports: true
+  typescript-sdk:
+    generators:
+      - name: fernapi/fern-typescript-node-sdk
+        version: 1.10.1
+        output:
+          location: local-file-system
+          path: ../typescript/lilypad/generated
+        config:
+          namespaceExport: Lilypad

@@ -1,2 +1,2 @@
-export { MirascopeApiError } from "./MirascopeApiError.mjs";
-export { MirascopeApiTimeoutError } from "./MirascopeApiTimeoutError.mjs";
+export { LilypadError } from "./LilypadError.mjs";
+export { LilypadTimeoutError } from "./LilypadTimeoutError.mjs";

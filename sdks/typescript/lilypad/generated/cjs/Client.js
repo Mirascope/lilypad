@@ -45,11 +45,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MirascopeApiClient = void 0;
+exports.LilypadClient = void 0;
 const core = __importStar(require("./core/index.js"));
 const headers_js_1 = require("./core/headers.js");
 const errors = __importStar(require("./errors/index.js"));
-const MirascopeApi = __importStar(require("./api/index.js"));
+const Lilypad = __importStar(require("./api/index.js"));
 const Client_js_1 = require("./api/resources/organizations/client/Client.js");
 const Client_js_2 = require("./api/resources/apiKeys/client/Client.js");
 const Client_js_3 = require("./api/resources/webhooks/client/Client.js");
@@ -64,7 +64,7 @@ const Client_js_11 = require("./api/resources/tags/client/Client.js");
 const Client_js_12 = require("./api/resources/comments/client/Client.js");
 const Client_js_13 = require("./api/resources/settings/client/Client.js");
 const Client_js_14 = require("./api/resources/ee/client/Client.js");
-class MirascopeApiClient {
+class LilypadClient {
     constructor(_options) {
         this._options = Object.assign(Object.assign({}, _options), { headers: (0, headers_js_1.mergeHeaders)({
                 "X-API-Key": _options === null || _options === void 0 ? void 0 : _options.apiKey,
@@ -130,7 +130,7 @@ class MirascopeApiClient {
         return ((_a = this._ee) !== null && _a !== void 0 ? _a : (this._ee = new Client_js_14.Ee(this._options)));
     }
     /**
-     * @param {MirascopeApiClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {LilypadClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
      *     await client.createCustomerPortalStripeCustomerPortalPost()
@@ -156,7 +156,7 @@ class MirascopeApiClient {
                 return { data: _response.body, rawResponse: _response.rawResponse };
             }
             if (_response.error.reason === "status-code") {
-                throw new errors.MirascopeApiError({
+                throw new errors.LilypadError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.body,
                     rawResponse: _response.rawResponse,
@@ -164,15 +164,15 @@ class MirascopeApiClient {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling POST /stripe/customer-portal.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling POST /stripe/customer-portal.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -180,10 +180,10 @@ class MirascopeApiClient {
         });
     }
     /**
-     * @param {MirascopeApi.StripeCheckoutSession} request
-     * @param {MirascopeApiClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {Lilypad.StripeCheckoutSession} request
+     * @param {LilypadClient.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.createCheckoutSessionStripeCreateCheckoutSessionPost({
@@ -216,9 +216,9 @@ class MirascopeApiClient {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -227,15 +227,15 @@ class MirascopeApiClient {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling POST /stripe/create-checkout-session.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling POST /stripe/create-checkout-session.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -243,7 +243,7 @@ class MirascopeApiClient {
         });
     }
     /**
-     * @param {MirascopeApiClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {LilypadClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @example
      *     await client.getEventSummariesStripeEventSummariesGet()
@@ -269,7 +269,7 @@ class MirascopeApiClient {
                 return { data: _response.body, rawResponse: _response.rawResponse };
             }
             if (_response.error.reason === "status-code") {
-                throw new errors.MirascopeApiError({
+                throw new errors.LilypadError({
                     statusCode: _response.error.statusCode,
                     body: _response.error.body,
                     rawResponse: _response.rawResponse,
@@ -277,15 +277,15 @@ class MirascopeApiClient {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /stripe/event-summaries.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /stripe/event-summaries.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -297,9 +297,9 @@ class MirascopeApiClient {
      *
      * @param {string} projectUuid
      * @param {string} traceId
-     * @param {MirascopeApiClient.RequestOptions} requestOptions - Request-specific configuration.
+     * @param {LilypadClient.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.getSpansByTraceIdProjectsProjectUuidTracesByTraceIdTraceIdGet("project_uuid", "trace_id")
@@ -327,9 +327,9 @@ class MirascopeApiClient {
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -338,15 +338,15 @@ class MirascopeApiClient {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling GET /projects/{project_uuid}/traces/by-trace-id/{trace_id}.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling GET /projects/{project_uuid}/traces/by-trace-id/{trace_id}.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });
@@ -363,4 +363,4 @@ class MirascopeApiClient {
         });
     }
 }
-exports.MirascopeApiClient = MirascopeApiClient;
+exports.LilypadClient = LilypadClient;

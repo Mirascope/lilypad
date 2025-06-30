@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import * as core from "../../../../../../../../core/index.mjs";
-import * as MirascopeApi from "../../../../../../../index.mjs";
+import * as Lilypad from "../../../../../../../index.mjs";
 import { mergeHeaders, mergeOnlyDefinedHeaders } from "../../../../../../../../core/headers.mjs";
 import * as errors from "../../../../../../../../errors/index.mjs";
 import { Annotations } from "../resources/annotations/client/Client.mjs";
@@ -28,14 +28,14 @@ export class Functions {
      *
      * @param {string} projectUuid
      * @param {string} functionUuid
-     * @param {MirascopeApi.ee.projects.PlaygroundParameters} request
+     * @param {Lilypad.ee.projects.PlaygroundParameters} request
      * @param {Functions.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.BadRequestError}
-     * @throws {@link MirascopeApi.NotFoundError}
-     * @throws {@link MirascopeApi.RequestTimeoutError}
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
-     * @throws {@link MirascopeApi.InternalServerError}
+     * @throws {@link Lilypad.BadRequestError}
+     * @throws {@link Lilypad.NotFoundError}
+     * @throws {@link Lilypad.RequestTimeoutError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
+     * @throws {@link Lilypad.InternalServerError}
      *
      * @example
      *     await client.ee.projects.functions.runPlayground("project_uuid", "function_uuid", {
@@ -68,25 +68,22 @@ export class Functions {
                 abortSignal: requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.abortSignal,
             });
             if (_response.ok) {
-                return {
-                    data: _response.body,
-                    rawResponse: _response.rawResponse,
-                };
+                return { data: _response.body, rawResponse: _response.rawResponse };
             }
             if (_response.error.reason === "status-code") {
                 switch (_response.error.statusCode) {
                     case 400:
-                        throw new MirascopeApi.BadRequestError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.BadRequestError(_response.error.body, _response.rawResponse);
                     case 404:
-                        throw new MirascopeApi.NotFoundError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.NotFoundError(_response.error.body, _response.rawResponse);
                     case 408:
-                        throw new MirascopeApi.RequestTimeoutError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.RequestTimeoutError(_response.error.body, _response.rawResponse);
                     case 422:
-                        throw new MirascopeApi.UnprocessableEntityError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.UnprocessableEntityError(_response.error.body, _response.rawResponse);
                     case 500:
-                        throw new MirascopeApi.InternalServerError(_response.error.body, _response.rawResponse);
+                        throw new Lilypad.InternalServerError(_response.error.body, _response.rawResponse);
                     default:
-                        throw new errors.MirascopeApiError({
+                        throw new errors.LilypadError({
                             statusCode: _response.error.statusCode,
                             body: _response.error.body,
                             rawResponse: _response.rawResponse,
@@ -95,15 +92,15 @@ export class Functions {
             }
             switch (_response.error.reason) {
                 case "non-json":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         statusCode: _response.error.statusCode,
                         body: _response.error.rawBody,
                         rawResponse: _response.rawResponse,
                     });
                 case "timeout":
-                    throw new errors.MirascopeApiTimeoutError("Timeout exceeded when calling POST /ee/projects/{project_uuid}/functions/{function_uuid}/playground.");
+                    throw new errors.LilypadTimeoutError("Timeout exceeded when calling POST /ee/projects/{project_uuid}/functions/{function_uuid}/playground.");
                 case "unknown":
-                    throw new errors.MirascopeApiError({
+                    throw new errors.LilypadError({
                         message: _response.error.errorMessage,
                         rawResponse: _response.rawResponse,
                     });

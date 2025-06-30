@@ -39,7 +39,7 @@ export declare class Spans {
      * @param {string} projectUuid
      * @param {Spans.RequestOptions} requestOptions - Request-specific configuration.
      *
-     * @throws {@link MirascopeApi.UnprocessableEntityError}
+     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.ee.projects.spans.generateAnnotation("span_uuid", "project_uuid")
