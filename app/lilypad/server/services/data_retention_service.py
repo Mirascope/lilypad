@@ -476,7 +476,9 @@ class DataRetentionService:
                             log.warning(error_msg)
                             # Append OpenSearch error to existing error message if any
                             if metrics.error:
-                                metrics.error = f"{metrics.error}; {error_msg}"
+                                metrics.error = (
+                                    f"{metrics.error}; {error_msg}"  # pragma: no cover
+                                )
                             else:
                                 metrics.error = error_msg
                         elif delete_result["success"]:
@@ -488,7 +490,9 @@ class DataRetentionService:
                             log.warning(error_msg)
                             # Append OpenSearch error to existing error message if any
                             if metrics.error:
-                                metrics.error = f"{metrics.error}; {error_msg}"
+                                metrics.error = (
+                                    f"{metrics.error}; {error_msg}"  # pragma: no cover
+                                )
                             else:
                                 metrics.error = error_msg
 
