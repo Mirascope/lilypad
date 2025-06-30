@@ -25,7 +25,7 @@ def get_display_retention_days(tier: Tier) -> int | None:
     """
     feature_settings = cloud_features.get(tier)
     if not feature_settings:
-        return None
+        return None  # pragma: no cover
 
     # Convert float('inf') to None for unlimited retention
     days = feature_settings.display_retention_days
