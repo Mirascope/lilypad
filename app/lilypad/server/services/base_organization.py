@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from ..models import BaseOrganizationSQLModel
-from .base import BaseService
+from .base import AsyncBaseService, BaseService
 
 _TableT = TypeVar("_TableT", bound=BaseOrganizationSQLModel)
 _CreateT = TypeVar("_CreateT", bound=BaseModel)
@@ -38,5 +38,36 @@ class BaseOrganizationService(BaseService[_TableT, _CreateT]):
             "organization_uuid", self.user.active_organization_uuid
         )
         return super().create_record(
+            data, organization_uuid=organization_uuid, **kwargs
+        )
+
+
+class AsyncBaseOrganizationService(AsyncBaseService[_TableT, _CreateT]):
+    """Async base class for all services that are under an organization."""
+
+    async def find_record_by_uuid(self, uuid: UUID, **filters: Any) -> _TableT:
+        """Find record by uuid with organization filter"""
+        organization_uuid = filters.pop(
+            "organization_uuid", self.user.active_organization_uuid
+        )
+        return await super().find_record_by_uuid(
+            uuid, organization_uuid=organization_uuid, **filters
+        )
+
+    async def find_all_records(self, **filters: Any) -> Sequence[_TableT]:
+        """Find all records with organization filter"""
+        organization_uuid = filters.pop(
+            "organization_uuid", self.user.active_organization_uuid
+        )
+        return await super().find_all_records(
+            organization_uuid=organization_uuid, **filters
+        )
+
+    async def create_record(self, data: _CreateT, **kwargs: Any) -> _TableT:
+        """Create a new record with organization"""
+        organization_uuid = kwargs.pop(
+            "organization_uuid", self.user.active_organization_uuid
+        )
+        return await super().create_record(
             data, organization_uuid=organization_uuid, **kwargs
         )

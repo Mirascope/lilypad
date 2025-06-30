@@ -66,12 +66,68 @@ class Settings(BaseSettings):
     db_user: str | None = None
     db_password: str | None = None
     db_port: int | None = None
-    db_pool_size: int = 8
-    db_max_overflow: int = 2
-    db_pool_recycle: int = 1800
-    db_pool_pre_ping: bool = True
+
+    # Worker configuration
+    worker_count: int = Field(
+        default=4,
+        ge=1,
+        le=32,
+        description="Number of worker processes",
+    )
+    db_max_connections: int = Field(
+        default=100,
+        ge=20,
+        le=1000,
+        description="Maximum database connections allowed",
+    )
+
+    @property
+    def calculated_pool_size(self) -> int:
+        """Calculate safe pool size per worker based on total connections."""
+        # Reserve connections for maintenance, migrations, etc.
+        reserved_connections = 10
+        available_connections = self.db_max_connections - reserved_connections
+
+        # Each worker gets an equal share
+        per_worker_connections = available_connections // self.worker_count
+
+        # Split between pool and overflow (60% pool, 40% overflow)
+        pool_size = int(per_worker_connections * 0.6)
+
+        # Ensure minimum viable pool size
+        return max(5, min(pool_size, 50))
+
+    @property
+    def calculated_max_overflow(self) -> int:
+        """Calculate safe max overflow per worker."""
+        # Reserve connections for maintenance
+        reserved_connections = 10
+        available_connections = self.db_max_connections - reserved_connections
+
+        # Each worker gets an equal share
+        per_worker_connections = available_connections // self.worker_count
+
+        # Split between pool and overflow (60% pool, 40% overflow)
+        overflow_size = int(per_worker_connections * 0.4)
+
+        # Ensure minimum viable overflow
+        return max(2, min(overflow_size, 20))
+
+    db_pool_size: int = Field(default=20, ge=5, le=100)
+    db_max_overflow: int = Field(default=10, ge=0, le=50)
+    db_pool_recycle: int = Field(default=3600, ge=0)
+    db_pool_pre_ping: bool = Field(default=True)
+    db_pool_timeout: int = Field(
+        default=30,
+        ge=1,
+        le=300,
+        description="Seconds to wait for connection",
+    )
     kafka_db_thread_pool_size: int = Field(
         default=4, description="Number of threads for Kafka processor DB operations"
+    )
+    use_async_db: bool = Field(
+        default=False, description="Use async database connections (experimental)"
     )
 
     # Stripe settings
@@ -150,6 +206,30 @@ class Settings(BaseSettings):
         return urlparse(self.client_url).hostname or ""
 
     model_config = SettingsConfigDict(env_prefix="LILYPAD_")
+
+    def __init__(self, **data: Any) -> None:
+        """Initialize settings with calculated defaults."""
+        super().__init__(**data)
+
+        # If pool sizes weren't explicitly set, use calculated values
+        if "db_pool_size" not in data:
+            self.db_pool_size = self.calculated_pool_size
+        if "db_max_overflow" not in data:
+            self.db_max_overflow = self.calculated_max_overflow
+
+        # Log the configuration
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Database pool configuration: "
+            f"workers={self.worker_count}, "
+            f"max_connections={self.db_max_connections}, "
+            f"pool_size={self.db_pool_size}, "
+            f"max_overflow={self.db_max_overflow}, "
+            f"total_per_worker={self.db_pool_size + self.db_max_overflow}, "
+            f"total_all_workers={self.worker_count * (self.db_pool_size + self.db_max_overflow)}"
+        )
 
 
 def get_settings() -> Settings:
