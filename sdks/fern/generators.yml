@@ -27,3 +27,4 @@ groups:
           path: ../typescript/lilypad/generated
         config:
           namespaceExport: Lilypad
+          outputSourceFiles: true
