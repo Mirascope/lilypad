@@ -231,9 +231,9 @@ const LilypadOnboarding = () => {
     });
     const environment = await createEnvironment
       .mutateAsync({
-        name: "Default Environment",
-        description: "Default environment for your project",
-        is_default: true,
+        name: "Dev",
+        description: "Development environment for your project",
+        is_development: true,
       })
       .catch(() => {
         toast.error("Failed to create environment");

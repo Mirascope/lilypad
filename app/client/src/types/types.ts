@@ -531,10 +531,10 @@ export interface EnvironmentCreate {
   /** Description */
   description?: string | null;
   /**
-   * Is Default
+   * Is Development
    * @default false
    */
-  is_default?: boolean;
+  is_development?: boolean | null;
 }
 
 /**
@@ -547,10 +547,10 @@ export interface EnvironmentPublic {
   /** Description */
   description?: string | null;
   /**
-   * Is Default
+   * Is Development
    * @default false
    */
-  is_default?: boolean;
+  is_development?: boolean | null;
   /**
    * Uuid
    * @format uuid

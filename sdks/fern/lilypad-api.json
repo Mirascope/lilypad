@@ -5877,9 +5877,16 @@
             ],
             "title": "Description"
           },
-          "is_default": {
-            "type": "boolean",
-            "title": "Is Default",
+          "is_development": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Development",
             "default": false
           }
         },
@@ -5907,9 +5914,16 @@
             ],
             "title": "Description"
           },
-          "is_default": {
-            "type": "boolean",
-            "title": "Is Default",
+          "is_development": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Development",
             "default": false
           },
           "uuid": {

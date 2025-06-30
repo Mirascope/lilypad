@@ -29,7 +29,7 @@ help:
 	@echo "  publish       - Publish to PyPI (requires auth)"
 
 setup:
-	uv sync --all-extras --dev
+	uv sync --all-extras --dev --group examples --locked
 
 test:
 	uv run pytest
@@ -44,8 +44,13 @@ test-coverage:
 lint:
 	uv run ruff check .
 
-typecheck:
+typecheck-examples:
+	uv run --group examples -- pyright examples
+
+typecheck-sdk:
 	uv run pyright src/lilypad tests
+
+typecheck: typecheck-sdk typecheck-examples
 
 format:
 	uv run ruff format .

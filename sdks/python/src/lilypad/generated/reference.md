@@ -2139,7 +2139,7 @@ client.environments.create(
 <dl>
 <dd>
 
-**is_default:** `typing.Optional[bool]` 
+**is_development:** `typing.Optional[bool]` 
     
 </dd>
 </dl>
