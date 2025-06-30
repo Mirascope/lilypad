@@ -60,8 +60,8 @@ class ApiKeysClient:
         *,
         name: str,
         project_uuid: str,
+        environment_uuid: str,
         expires_at: typing.Optional[dt.datetime] = OMIT,
-        environment_uuid: typing.Optional[str] = OMIT,
         key_hash: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> str:
@@ -74,9 +74,9 @@ class ApiKeysClient:
 
         project_uuid : str
 
-        expires_at : typing.Optional[dt.datetime]
+        environment_uuid : str
 
-        environment_uuid : typing.Optional[str]
+        expires_at : typing.Optional[dt.datetime]
 
         key_hash : typing.Optional[str]
 
@@ -100,13 +100,14 @@ class ApiKeysClient:
         client.api_keys.create(
             name="name",
             project_uuid="project_uuid",
+            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.create(
             name=name,
             project_uuid=project_uuid,
-            expires_at=expires_at,
             environment_uuid=environment_uuid,
+            expires_at=expires_at,
             key_hash=key_hash,
             request_options=request_options,
         )
@@ -201,8 +202,8 @@ class AsyncApiKeysClient:
         *,
         name: str,
         project_uuid: str,
+        environment_uuid: str,
         expires_at: typing.Optional[dt.datetime] = OMIT,
-        environment_uuid: typing.Optional[str] = OMIT,
         key_hash: typing.Optional[str] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> str:
@@ -215,9 +216,9 @@ class AsyncApiKeysClient:
 
         project_uuid : str
 
-        expires_at : typing.Optional[dt.datetime]
+        environment_uuid : str
 
-        environment_uuid : typing.Optional[str]
+        expires_at : typing.Optional[dt.datetime]
 
         key_hash : typing.Optional[str]
 
@@ -246,6 +247,7 @@ class AsyncApiKeysClient:
             await client.api_keys.create(
                 name="name",
                 project_uuid="project_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
@@ -254,8 +256,8 @@ class AsyncApiKeysClient:
         _response = await self._raw_client.create(
             name=name,
             project_uuid=project_uuid,
-            expires_at=expires_at,
             environment_uuid=environment_uuid,
+            expires_at=expires_at,
             key_hash=key_hash,
             request_options=request_options,
         )
