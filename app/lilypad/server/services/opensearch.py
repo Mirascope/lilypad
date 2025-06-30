@@ -1,6 +1,7 @@
 """The `OpenSearchClass` class for opensearch."""
 
 import logging
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -342,6 +343,135 @@ class OpenSearchService:
                 f"Error deleting traces and child traces for function {function_uuid}: {str(e)}"
             )
             return False
+
+    def delete_traces_older_than(
+        self, project_uuid: UUID, cutoff_date: datetime
+    ) -> tuple[bool, int]:
+        """Delete all traces older than a specific date for a project.
+
+        Args:
+            project_uuid: The project UUID to delete traces for
+            cutoff_date: The cutoff date as datetime object
+
+        Returns:
+            Tuple of (success: bool, deleted_count: int)
+        """
+        if not self.client:
+            logger.warning("OpenSearch client not available")
+            return False, 0
+
+        index_name = self.get_index_name(project_uuid)
+
+        try:
+            if not self.client.indices.exists(index=index_name):
+                logger.info(f"Index {index_name} does not exist, nothing to delete")
+                return True, 0
+
+            # Convert datetime to ISO format for OpenSearch
+            cutoff_date_str = cutoff_date.isoformat()
+
+            # Build the range query for documents older than cutoff_date
+            delete_query = {"query": {"range": {"created_at": {"lt": cutoff_date_str}}}}
+
+            # Execute delete by query
+            response = self.client.delete_by_query(index=index_name, body=delete_query)
+
+            deleted_count = response.get("deleted", 0)
+            failures = response.get("failures", [])
+
+            if failures:
+                logger.warning(
+                    f"Some documents failed to delete from {index_name}: {failures[:5]}"
+                )
+
+            logger.info(
+                f"Successfully deleted {deleted_count} traces older than {cutoff_date_str} "
+                f"from project {project_uuid}"
+            )
+            return True, deleted_count
+        except Exception as e:
+            logger.error(
+                f"Error deleting old traces for project {project_uuid}: {str(e)}"
+            )
+            return False, 0
+
+    def bulk_delete_traces(
+        self, project_uuid: UUID, span_uuids: list[UUID], batch_size: int = 1000
+    ) -> tuple[bool, int]:
+        """Delete specific traces by their UUIDs with batch processing.
+
+        Args:
+            project_uuid: The project UUID
+            span_uuids: List of span UUIDs to delete
+            batch_size: Number of UUIDs to process in each batch (default: 1000)
+
+        Returns:
+            Tuple of (success: bool, deleted_count: int)
+        """
+        if not self.client:
+            logger.warning("OpenSearch client not available")
+            return False, 0
+
+        if not span_uuids:
+            return True, 0
+
+        index_name = self.get_index_name(project_uuid)
+
+        try:
+            if not self.client.indices.exists(index=index_name):
+                logger.info(f"Index {index_name} does not exist, nothing to delete")
+                return True, 0
+
+            # Convert UUIDs to strings
+            uuid_strings = [str(uuid) for uuid in span_uuids]
+
+            total_deleted = 0
+            total_failures = 0
+
+            # Process in batches to avoid query size limits
+            for i in range(0, len(uuid_strings), batch_size):
+                batch_uuids = uuid_strings[i : i + batch_size]
+
+                # Build the terms query for this batch
+                delete_query = {"query": {"terms": {"uuid": batch_uuids}}}
+
+                # Execute delete by query for this batch
+                response = self.client.delete_by_query(
+                    index=index_name, body=delete_query
+                )
+
+                batch_deleted = response.get("deleted", 0)
+                batch_failures = response.get("failures", [])
+
+                total_deleted += batch_deleted
+
+                if batch_failures:
+                    total_failures += len(batch_failures)
+                    logger.warning(
+                        f"Batch {i // batch_size + 1}: {len(batch_failures)} documents "
+                        f"failed to delete from {index_name}"
+                    )
+
+                logger.debug(
+                    f"Batch {i // batch_size + 1}: Deleted {batch_deleted} traces "
+                    f"from project {project_uuid}"
+                )
+
+            if total_failures > 0:
+                logger.warning(
+                    f"Total failures during deletion: {total_failures} documents"
+                )
+
+            logger.info(
+                f"Successfully deleted {total_deleted} traces by UUID from project {project_uuid} "
+                f"in {len(range(0, len(uuid_strings), batch_size))} batches"
+            )
+            return True, total_deleted
+        except Exception as e:
+            logger.error(
+                f"Error deleting traces by UUID for project {project_uuid}: {str(e)}"
+            )
+            return False, 0
 
 
 def get_opensearch_service() -> OpenSearchService:

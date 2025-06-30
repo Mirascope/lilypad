@@ -331,7 +331,7 @@ def test_create_organization_with_stripe(
     org_data = {"name": "Stripe Test Organization"}
 
     # Mock cloud environment and billing service
-    from lilypad.ee.server.require_license import is_lilypad_cloud
+    from lilypad.ee.server.require_license import is_lilypad_cloud_dependency
     from lilypad.server.api.v0.main import api
     from lilypad.server.services.billing import BillingService
 
@@ -341,7 +341,7 @@ def test_create_organization_with_stripe(
 
     # Override dependencies
     api.dependency_overrides[BillingService] = lambda: mock_billing_service
-    api.dependency_overrides[is_lilypad_cloud] = lambda: True
+    api.dependency_overrides[is_lilypad_cloud_dependency] = lambda: True
 
     try:
         response = client.post("/organizations", json=org_data)
@@ -358,7 +358,7 @@ def test_create_organization_with_stripe(
     finally:
         # Clean up overrides
         api.dependency_overrides.pop(BillingService, None)
-        api.dependency_overrides.pop(is_lilypad_cloud, None)
+        api.dependency_overrides.pop(is_lilypad_cloud_dependency, None)
 
 
 def test_delete_organization_with_stripe(

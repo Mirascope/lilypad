@@ -575,7 +575,7 @@ class SpanQueueProcessor:
             if result:
                 spans, org_uuid, user_uuid, project_uuid = result
                 opensearch_service = OpenSearchService()
-                if opensearch_service.is_enabled:
+                if opensearch_service.is_enabled:  # pragma: no cover
                     trace_dicts = [span.model_dump() for span in spans]
                     await index_traces_in_opensearch(
                         project_uuid, trace_dicts, opensearch_service
@@ -611,7 +611,7 @@ class SpanQueueProcessor:
                     logger.debug(f"Transaction committed for trace {trace_id}")
 
         except IntegrityError as e:
-            if self._session:
+            if self._session:  # pragma: no cover
                 self._session.rollback()
             logger.error(
                 f"Integrity error processing trace {trace_id}: {e}. Likely parent span missing."

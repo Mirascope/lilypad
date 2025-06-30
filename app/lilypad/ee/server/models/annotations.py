@@ -58,7 +58,10 @@ class AnnotationTable(AnnotationBase, BaseOrganizationSQLModel, table=True):
         default=None, foreign_key=f"{PROJECT_TABLE_NAME}.uuid", ondelete="CASCADE"
     )
     span_uuid: UUID | None = Field(
-        default=None, foreign_key=f"{SPAN_TABLE_NAME}.uuid", ondelete="CASCADE"
+        default=None,
+        foreign_key=f"{SPAN_TABLE_NAME}.uuid",
+        ondelete="CASCADE",
+        index=True,
     )
     function_uuid: UUID | None = Field(
         default=None, foreign_key=f"{FUNCTION_TABLE_NAME}.uuid", ondelete="CASCADE"

@@ -85,6 +85,57 @@ class Settings(BaseSettings):
     stripe_cloud_team_meter_price_id: str | None = None
     stripe_spans_metering_id: str | None = None
 
+    # Data retention settings
+    data_retention_initial_delay_seconds: int = Field(
+        default=300,  # 5 minutes
+        ge=0,
+        description="Delay in seconds before running initial data retention cleanup after startup",
+    )
+    data_retention_scheduler_hour: int = Field(
+        default=2,  # 2 AM UTC
+        ge=0,
+        le=23,
+        description="Hour of day (UTC) to run scheduled data retention cleanup (0-23)",
+    )
+    data_retention_batch_size: int = Field(
+        default=100,
+        ge=1,
+        le=1000,
+        description="Number of organizations to process in each batch during data retention cleanup",
+    )
+    data_retention_max_errors: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="Maximum consecutive errors before data retention scheduler needs manual intervention",
+    )
+    data_retention_dry_run: bool = Field(
+        default=True,
+        description="If True, data retention will only simulate deletion without actually deleting data",
+    )
+    data_retention_audit_log: bool = Field(
+        default=True,
+        description="If True, log audit entries for all data deletions",
+    )
+    data_retention_lock_timeout_ms: int = Field(
+        default=60000,  # 60 seconds
+        ge=1000,
+        le=300000,
+        description="Timeout in milliseconds for acquiring advisory locks during data retention",
+    )
+    data_retention_query_timeout_ms: int = Field(
+        default=300000,  # 5 minutes
+        ge=10000,
+        le=600000,
+        description="Timeout in milliseconds for data retention queries",
+    )
+    data_retention_max_concurrent_connections: int = Field(
+        default=10,
+        ge=1,
+        le=50,
+        description="Maximum concurrent database connections for data retention processing",
+    )
+
     # Secret Manager settings
     secret_manager_type: str = Field(
         default="SUPABASE_VAULT",

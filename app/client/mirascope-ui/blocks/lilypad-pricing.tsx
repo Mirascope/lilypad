@@ -169,7 +169,7 @@ export const cloudHostedFeatures = [
     pro: "100k spans / month (thereafter $1 per 10k)",
     team: "1M spans / month (thereafter $1 per 10k)",
   },
-  { feature: "Data Retention", free: "30 days", pro: "90 days", team: "180 days" },
+  { feature: "Data Retention", free: "30 days", pro: "180 days", team: "Unlimited" },
   { feature: "Versioned Functions", free: true, pro: true, team: true },
   { feature: "Playground", free: true, pro: true, team: true },
   { feature: "Comparisons", free: true, pro: true, team: true },

@@ -18,7 +18,10 @@ from fastapi import (
 from ee.validate import LicenseInfo
 
 from ....ee.server.features import cloud_features
-from ....ee.server.require_license import get_organization_license, is_lilypad_cloud
+from ....ee.server.require_license import (
+    get_organization_license,
+    is_lilypad_cloud_dependency,
+)
 from ..._utils import (
     get_current_user,
     validate_api_key_project_strict,
@@ -139,7 +142,7 @@ async def _process_span(
 async def traces(
     match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
     license: Annotated[LicenseInfo, Depends(get_organization_license)],
-    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
+    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud_dependency)],
     project_uuid: UUID,
     request: Request,
     span_service: Annotated[SpanService, Depends(SpanService)],

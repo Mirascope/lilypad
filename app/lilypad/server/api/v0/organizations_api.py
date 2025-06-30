@@ -9,7 +9,7 @@ from ee import LicenseValidator
 from ee.validate import LicenseError
 
 from ....ee.server.models.user_organizations import UserRole
-from ....ee.server.require_license import is_lilypad_cloud
+from ....ee.server.require_license import is_lilypad_cloud, is_lilypad_cloud_dependency
 from ....ee.server.schemas.user_organizations import UserOrganizationCreate
 from ....ee.server.services.user_organizations import UserOrganizationService
 from ....server._utils.auth import create_jwt_token
@@ -44,7 +44,7 @@ async def create_organization(
     user: Annotated[UserPublic, Depends(get_current_user)],
     user_service: Annotated[UserService, Depends(UserService)],
     billing_service: Annotated[BillingService, Depends(BillingService)],
-    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
+    is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud_dependency)],
 ) -> OrganizationTable:
     """Create an organization."""
     try:

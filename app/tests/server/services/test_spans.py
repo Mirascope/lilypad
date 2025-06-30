@@ -1,13 +1,16 @@
 """Tests for the SpanService class"""
 
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import pytest
 from pydantic_core._pydantic_core import ValidationError  # type: ignore
-from sqlmodel import Session
+from sqlmodel import Session, select
 
+from ee import Tier
+from lilypad.ee.server.constants import HOST_NAME
+from lilypad.server._utils.tier import get_display_retention_days
 from lilypad.server.models import (
     FunctionTable,
     ProjectTable,
@@ -21,7 +24,8 @@ from lilypad.server.schemas.spans import SpanCreate, SpanUpdate
 from lilypad.server.schemas.users import UserPublic
 from lilypad.server.services import SpanService
 from lilypad.server.services.billing import BillingService
-from lilypad.server.services.spans import TimeFrame
+from lilypad.server.services.spans import ALT_HOST_NAME, TimeFrame
+from lilypad.server.settings import Settings
 
 
 def test_find_records_by_version_uuid(
@@ -1239,3 +1243,237 @@ def test_sync_span_tags_remove_existing_tags(
     # Verify tag was removed
     links = db_session.query(SpanTagLink).filter_by(span_uuid=span.uuid).all()
     assert len(links) == 0
+
+
+def test_get_display_tier_cached(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test _get_display_tier caching mechanism."""
+    service = SpanService(db_session, test_user)
+
+    with patch.object(
+        BillingService, "get_organization_tier_by_uuid", return_value=Tier.PRO
+    ) as mock_billing:
+        tier1 = service._get_display_tier()
+        assert tier1 == Tier.PRO
+        assert mock_billing.call_count == 1
+
+        tier2 = service._get_display_tier()
+        assert tier2 == Tier.PRO
+        assert mock_billing.call_count == 1
+
+        assert hasattr(service, "_cached_tier")
+        assert service._cached_tier == Tier.PRO
+
+
+def test_get_display_tier_no_organization_uuid(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
+):
+    """Test _get_display_tier when user has no active organization."""
+    user_no_org = UserPublic.model_validate(test_user)
+    monkeypatch.setattr(user_no_org, "active_organization_uuid", None)
+
+    service = SpanService(db_session, user_no_org)
+
+    tier = service._get_display_tier()
+    assert tier == Tier.FREE
+
+
+def test_apply_display_retention_filter_self_hosted(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
+):
+    """Test _apply_display_retention_filter for self-hosted deployments."""
+    service = SpanService(db_session, test_user)
+
+    mock_settings = Settings(remote_client_url="https://self-hosted.example.com")
+
+    with patch(
+        "lilypad.server.services.spans.get_settings", return_value=mock_settings
+    ):
+        stmt = select(SpanTable)
+
+        filtered_stmt = service._apply_display_retention_filter(stmt)
+
+        assert filtered_stmt is stmt
+
+
+def test_apply_display_retention_filter_lilypad_cloud_unlimited(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
+):
+    """Test _apply_display_retention_filter for Lilypad Cloud with unlimited retention."""
+    service = SpanService(db_session, test_user)
+
+    mock_settings = Mock(spec=Settings)
+    mock_settings.remote_client_hostname = "app.mirascope.com"
+
+    with (
+        patch.object(service, "_get_display_tier", return_value=Tier.TEAM),
+        patch("lilypad.server.services.spans.get_settings", return_value=mock_settings),
+    ):
+        stmt = select(SpanTable)
+
+        filtered_stmt = service._apply_display_retention_filter(stmt)
+
+        assert filtered_stmt is stmt
+
+
+def test_apply_display_retention_filter_lilypad_cloud_with_retention(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
+):
+    """Test _apply_display_retention_filter for Lilypad Cloud with retention limit."""
+    service = SpanService(db_session, test_user)
+
+    mock_settings = Mock(spec=Settings)
+    mock_settings.remote_client_hostname = "app.mirascope.com"
+
+    original_stmt = select(SpanTable)
+
+    with (
+        patch.object(service, "_get_display_tier", return_value=Tier.FREE),
+        patch("lilypad.server.services.spans.get_settings", return_value=mock_settings),
+        patch(
+            "lilypad.server.services.spans.get_display_retention_days",
+            return_value=30,
+        ),
+    ):
+        filtered_stmt = service._apply_display_retention_filter(original_stmt)
+
+        assert filtered_stmt is not None
+
+        is_lilypad_cloud = mock_settings.remote_client_hostname.endswith(
+            "mirascope.com"
+        )
+        assert is_lilypad_cloud is True
+        assert get_display_retention_days(Tier.FREE) == 30
+
+
+def test_apply_display_retention_filter_alt_hostname(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
+):
+    """Test _apply_display_retention_filter with alternative Lilypad Cloud hostname."""
+    service = SpanService(db_session, test_user)
+
+    mock_settings = Mock(spec=Settings)
+    mock_settings.remote_client_hostname = "app.lilypad.so"
+
+    original_stmt = select(SpanTable)
+
+    with (
+        patch.object(service, "_get_display_tier", return_value=Tier.PRO),
+        patch("lilypad.server.services.spans.get_settings", return_value=mock_settings),
+        patch(
+            "lilypad.server.services.spans.get_display_retention_days",
+            return_value=180,
+        ),
+    ):
+        filtered_stmt = service._apply_display_retention_filter(original_stmt)
+
+        assert filtered_stmt is not None
+
+        is_lilypad_cloud = mock_settings.remote_client_hostname.endswith("lilypad.so")
+        assert is_lilypad_cloud is True
+        assert get_display_retention_days(Tier.PRO) == 180
+
+
+def test_count_no_parent_spans_with_display_retention(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
+):
+    """Test count_no_parent_spans applies display retention filter."""
+    service = SpanService(db_session, test_user)
+
+    mock_settings = Mock(spec=Settings)
+    mock_settings.remote_client_hostname = "app.mirascope.com"
+
+    with (
+        patch.object(service, "_get_display_tier", return_value=Tier.FREE),
+        patch("lilypad.server.services.spans.get_settings", return_value=mock_settings),
+        patch.object(
+            service,
+            "_apply_display_retention_filter",
+            wraps=service._apply_display_retention_filter,
+        ) as mock_filter,
+    ):
+        mock_result = Mock()
+        mock_result.one.return_value = 5
+        with patch.object(service.session, "exec", return_value=mock_result):
+            count = service.count_no_parent_spans(test_project.uuid)  # type: ignore
+
+            assert mock_filter.call_count == 1
+            assert count == 5
+
+
+def test_find_all_no_parent_spans_with_display_retention(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic, monkeypatch
+):
+    """Test find_all_no_parent_spans applies display retention filter."""
+    service = SpanService(db_session, test_user)
+
+    mock_settings = Mock(spec=Settings)
+    mock_settings.remote_client_hostname = "app.mirascope.com"
+
+    with (
+        patch.object(service, "_get_display_tier", return_value=Tier.PRO),
+        patch("lilypad.server.services.spans.get_settings", return_value=mock_settings),
+        patch.object(
+            service,
+            "_apply_display_retention_filter",
+            wraps=service._apply_display_retention_filter,
+        ) as mock_filter,
+    ):
+        mock_result = Mock()
+        mock_span = Mock(spec=SpanTable)
+        mock_result.all.return_value = [mock_span]
+        with patch.object(service.session, "exec", return_value=mock_result):
+            spans = service.find_all_no_parent_spans(test_project.uuid)  # type: ignore
+
+            assert mock_filter.call_count == 1
+            assert len(spans) == 1
+
+
+def test_apply_display_retention_filter_coverage_lines_94_103(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test _apply_display_retention_filter."""
+    service = SpanService(db_session, test_user)
+    original_stmt = select(SpanTable)
+
+    with patch("lilypad.server.services.spans.get_settings") as mock_settings:
+        mock_settings.return_value.remote_client_hostname = f"app.{HOST_NAME}"
+
+        with patch.object(
+            BillingService, "get_organization_tier_by_uuid", return_value=Tier.FREE
+        ):
+            filtered_stmt = service._apply_display_retention_filter(original_stmt)
+            assert filtered_stmt is not None
+
+    stmt2 = select(SpanTable)
+    with patch("lilypad.server.services.spans.get_settings") as mock_settings:
+        mock_settings.return_value.remote_client_hostname = f"app.{ALT_HOST_NAME}"
+
+        with patch.object(
+            BillingService, "get_organization_tier_by_uuid", return_value=Tier.TEAM
+        ):
+            filtered_stmt2 = service._apply_display_retention_filter(stmt2)
+            assert filtered_stmt2 is not None
+
+
+def test_apply_display_retention_filter_unlimited_retention_covers_line_99(
+    db_session: Session, test_project: ProjectTable, test_user: UserPublic
+):
+    """Test return stmt when display_days is None."""
+    service = SpanService(db_session, test_user)
+
+    stmt = select(SpanTable)
+
+    with patch("lilypad.server.services.spans.get_settings") as mock_settings:
+        mock_settings.return_value.remote_client_hostname = f"app.{HOST_NAME}"
+
+        with (
+            patch.object(service, "_get_display_tier", return_value=Tier.TEAM),
+            patch(
+                "lilypad.server.services.spans.get_display_retention_days",
+                return_value=None,
+            ),
+        ):
+            result = service._apply_display_retention_filter(stmt)
+            assert result is stmt

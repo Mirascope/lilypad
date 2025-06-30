@@ -22,6 +22,7 @@ from starlette.types import Scope as StarletteScope
 
 from lilypad.server._utils.posthog import setup_posthog_middleware
 from lilypad.server.logging_config import setup_logging
+from lilypad.server.services.data_retention_service import get_retention_scheduler
 from lilypad.server.services.kafka_producer import (
     close_kafka_producer,
     get_kafka_producer,
@@ -111,6 +112,28 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             )  # pragma: no cover
             # Continue startup even if processor fails
 
+    retention_scheduler = None
+    # Import is_lilypad_cloud from require_license module
+    from ..ee.server.require_license import is_lilypad_cloud
+
+    if is_lilypad_cloud():
+        log.info(
+            "Detected Lilypad Cloud deployment - starting data retention scheduler"
+        )
+        try:
+            retention_scheduler = get_retention_scheduler()
+            await retention_scheduler.start(run_immediately=True)
+            log.info(
+                "Data retention scheduler started successfully (runs daily at 2 AM UTC, initial run in 5 minutes)"
+            )
+        except Exception as e:
+            log.error(
+                f"Failed to start data retention scheduler (non-fatal): {e}",
+                exc_info=True,
+            )
+    else:
+        log.info("Not a Lilypad Cloud deployment - skipping data retention scheduler")
+
     yield
 
     # Cleanup on shutdown
@@ -132,6 +155,14 @@ async def lifespan(app_: FastAPI) -> AsyncGenerator[None, None]:
             log.info("Stripe queue processor stopped successfully")
         except Exception as e:  # pragma: no cover
             log.error(f"Error stopping stripe queue processor: {e}")  # pragma: no cover
+
+    if retention_scheduler:
+        log.info("Stopping data retention scheduler")
+        try:
+            await retention_scheduler.stop()
+            log.info("Data retention scheduler stopped successfully")
+        except Exception as e:
+            log.error(f"Error stopping data retention scheduler: {e}", exc_info=True)
 
     # Give more time for pending tasks to complete
     log.info("Waiting for pending tasks to complete...")
