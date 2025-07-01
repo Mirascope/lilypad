@@ -5,7 +5,11 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.pool import NullPool, StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
 from ee.validate import LicenseInfo, Tier
@@ -24,12 +28,28 @@ from lilypad.server.models import (
 )
 from lilypad.server.schemas.users import UserPublic
 
-# Create a single test engine for all tests
+# Import performance tracking fixtures
+
+# Create test engines with proper isolation
 TEST_DATABASE_URL = "sqlite:///:memory:"
+TEST_ASYNC_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+# For async tests, we'll use a different approach to avoid locking
+
+# Create a sync engine for sync tests
 test_engine = create_engine(
     TEST_DATABASE_URL,
     connect_args={"check_same_thread": False},
+    poolclass=StaticPool,  # Use StaticPool for in-memory SQLite
 )
+
+# Create async engine for async tests
+test_async_engine = create_async_engine(
+    TEST_ASYNC_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=NullPool,  # Use NullPool to avoid connection sharing issues
+)
+
 ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 
 
@@ -39,6 +59,15 @@ def create_test_database():
     SQLModel.metadata.create_all(test_engine)
     yield
     SQLModel.metadata.drop_all(test_engine)
+
+
+@pytest_asyncio.fixture(scope="function")
+async def create_async_test_database():
+    """Create async test database for tests."""
+    async with test_async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    yield
+    # Clean up is handled by the in-memory database being discarded
 
 
 @pytest.fixture
@@ -58,6 +87,57 @@ def session() -> Generator[Session, None, None]:
         session.close()
         transaction.rollback()
         connection.close()
+
+
+@pytest_asyncio.fixture
+async def async_session(
+    create_async_test_database,
+) -> AsyncGenerator[AsyncSession, None]:
+    """Create a fresh async database session for each test.
+
+    Yields:
+        AsyncSession: The async database session
+    """
+    async_session = AsyncSession(
+        bind=test_async_engine,
+        expire_on_commit=False,
+    )
+
+    try:
+        yield async_session
+        # Commit so sync session can see the data
+        await async_session.commit()
+    except Exception:
+        await async_session.rollback()
+        raise
+    finally:
+        await async_session.close()
+
+        # Clean up test data after each test
+        async with test_async_engine.begin() as conn:
+            await conn.run_sync(lambda sync_conn: clean_test_data(sync_conn))
+
+
+def clean_test_data(connection):
+    """Clean test data from all tables except static data."""
+    from sqlalchemy import text
+
+    # Delete in reverse order of foreign key dependencies
+    tables_to_clean = [
+        "spans",
+        "functions",
+        "api_keys",
+        "environments",
+        "projects",
+        "user_organizations",
+        "users",
+        "organizations",
+    ]
+    for table in tables_to_clean:
+        try:
+            connection.execute(text(f"DELETE FROM {table}"))
+        except:
+            pass  # Table might not exist
 
 
 @pytest.fixture
@@ -80,6 +160,28 @@ def get_test_session(
             pass  # Session is handled by the session fixture
 
     return override_get_session  # pyright: ignore [reportReturnType]
+
+
+@pytest.fixture
+def get_test_async_session(
+    async_session: AsyncSession,
+) -> AsyncGenerator[AsyncSession, None]:
+    """Override the get_async_session dependency for FastAPI.
+
+    Args:
+        async_session: The test async database session
+
+    Yields:
+        AsyncSession: Async session
+    """
+
+    async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
+        try:
+            yield async_session
+        finally:
+            pass  # Session is handled by the async_session fixture
+
+    return override_get_async_session  # pyright: ignore [reportReturnType]
 
 
 @pytest.fixture
@@ -170,6 +272,230 @@ def client(
         yield client  # pyright: ignore [reportReturnType]
     finally:
         api.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def async_client(
+    async_test_organization: OrganizationTable,
+    async_test_user: UserTable,
+) -> AsyncGenerator[AsyncClient, None]:  # pyright: ignore [reportInvalidTypeForm]
+    """Create an async test client with separate sync database.
+
+    This avoids SQLite locking issues by using completely separate databases
+    for async and sync operations.
+    """
+    from sqlmodel import Session
+
+    from lilypad.server.db.session import get_session
+
+    # Create a completely separate sync database
+    sync_engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+    # Create tables in sync database
+    SQLModel.metadata.create_all(sync_engine)
+
+    # Create sync session
+    sync_session = Session(sync_engine)
+
+    try:
+        # Copy essential test data to sync database
+        sync_org = OrganizationTable(
+            uuid=async_test_organization.uuid,
+            name=async_test_organization.name,
+            license=getattr(async_test_organization, "license", None),
+        )
+        sync_session.add(sync_org)
+
+        sync_user = UserTable(
+            uuid=async_test_user.uuid,
+            email=async_test_user.email,
+            first_name=async_test_user.first_name,
+            last_name=getattr(async_test_user, "last_name", None),
+            active_organization_uuid=async_test_user.active_organization_uuid,
+        )
+        sync_session.add(sync_user)
+
+        # Add user-org relationship
+        # Type guards for UUID fields
+        assert sync_user.uuid is not None
+        assert sync_org.uuid is not None
+
+        user_org = UserOrganizationTable(
+            user_uuid=sync_user.uuid,
+            organization_uuid=sync_org.uuid,
+            role=UserRole.ADMIN,
+        )
+        sync_session.add(user_org)
+        sync_session.commit()
+
+        # Create dependency overrides
+        def override_get_session() -> Generator[Session, None, None]:
+            yield sync_session
+
+        def override_get_current_user():
+            # Type guard
+            assert async_test_user.uuid is not None
+            return UserPublic(
+                uuid=async_test_user.uuid,
+                email=async_test_user.email,
+                first_name=async_test_user.first_name,
+                last_name=getattr(async_test_user, "last_name", None),
+                active_organization_uuid=async_test_user.active_organization_uuid,
+                scopes=["user:read", "user:write", "vault:read", "vault:write"],
+            )
+
+        def override_get_organization_license():
+            return LicenseInfo(
+                customer="mock_customer",
+                license_id="mock_license",
+                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+                tier=Tier.FREE,
+                organization_uuid=async_test_organization.uuid,
+            )
+
+        # Apply overrides
+        api.dependency_overrides[get_session] = override_get_session  # pyright: ignore [reportArgumentType]
+        api.dependency_overrides[get_current_user] = override_get_current_user  # pyright: ignore [reportArgumentType]
+        api.dependency_overrides[get_organization_license] = (
+            override_get_organization_license  # pyright: ignore [reportArgumentType]
+        )
+
+        # Create client
+        from httpx import ASGITransport
+
+        transport = ASGITransport(app=api)  # pyright: ignore [reportArgumentType]
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            yield client  # pyright: ignore [reportReturnType]
+    finally:
+        api.dependency_overrides.clear()
+        sync_session.close()
+        sync_engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def async_test_organization(
+    async_session: AsyncSession,
+) -> AsyncGenerator[OrganizationTable, None]:
+    """Create a test organization asynchronously."""
+    organization = OrganizationTable(
+        uuid=ORGANIZATION_UUID, name="Test Organization", license="123456"
+    )
+    async_session.add(organization)
+    await async_session.flush()
+    await async_session.refresh(organization)
+    yield organization
+
+
+@pytest_asyncio.fixture
+async def async_test_user(
+    async_session: AsyncSession, async_test_organization: OrganizationTable
+) -> AsyncGenerator[UserTable, None]:
+    """Create a test user asynchronously."""
+    user_uuid = uuid4()
+    user = UserTable(
+        uuid=user_uuid,
+        email="test@test.com",
+        first_name="Test User",
+        active_organization_uuid=ORGANIZATION_UUID,
+    )
+    async_session.add(user)
+
+    user_org = UserOrganizationTable(
+        user_uuid=user_uuid,
+        organization_uuid=ORGANIZATION_UUID,
+        role=UserRole.ADMIN,
+        organization=async_test_organization,
+    )
+    async_session.add(user_org)
+    await async_session.flush()
+    await async_session.refresh(user)
+    yield user
+
+
+@pytest_asyncio.fixture
+async def async_test_project(
+    async_session: AsyncSession,
+) -> AsyncGenerator[ProjectTable, None]:
+    """Create a test project asynchronously."""
+    project = ProjectTable(name="test_project", organization_uuid=ORGANIZATION_UUID)
+    async_session.add(project)
+    await async_session.flush()
+    await async_session.refresh(project)
+    yield project
+
+
+@pytest_asyncio.fixture
+async def async_test_environment(
+    async_session: AsyncSession, async_test_project: ProjectTable
+) -> AsyncGenerator[EnvironmentTable, None]:
+    """Create a test environment asynchronously."""
+    environment = EnvironmentTable(
+        name="test_environment",
+        organization_uuid=ORGANIZATION_UUID,
+    )
+    async_session.add(environment)
+    await async_session.flush()
+    await async_session.refresh(environment)
+    yield environment
+
+
+@pytest_asyncio.fixture
+async def async_test_api_key(
+    async_session: AsyncSession,
+    async_test_project: ProjectTable,
+    async_test_environment: EnvironmentTable,
+    async_test_user: UserTable,
+) -> AsyncGenerator[APIKeyTable, None]:
+    """Create a test API key asynchronously."""
+    if not async_test_project.uuid:
+        raise ValueError("Project UUID is required for API key creation")
+
+    # Type guard
+    assert async_test_user.uuid is not None
+
+    api_key = APIKeyTable(
+        key_hash="test_key",
+        user_uuid=async_test_user.uuid,
+        organization_uuid=ORGANIZATION_UUID,
+        name="test_key",
+        project_uuid=async_test_project.uuid,
+        environment_uuid=async_test_environment.uuid,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+    )
+    async_session.add(api_key)
+    await async_session.flush()
+    await async_session.refresh(api_key)
+
+    # SQLite workaround: ensure timezone info is preserved
+    if api_key.expires_at and api_key.expires_at.tzinfo is None:
+        api_key.expires_at = api_key.expires_at.replace(tzinfo=timezone.utc)
+
+    yield api_key
+
+
+@pytest_asyncio.fixture
+async def async_test_function(
+    async_session: AsyncSession, async_test_project: ProjectTable
+) -> AsyncGenerator[FunctionTable, None]:
+    """Create a test function asynchronously."""
+    function = FunctionTable(
+        project_uuid=async_test_project.uuid,
+        name="test_function",
+        signature="def test(): pass",
+        code="def test(): pass",
+        hash="test_hash",
+        arg_types={},
+        organization_uuid=async_test_project.organization_uuid,
+        version_num=1,
+    )
+    async_session.add(function)
+    await async_session.flush()
+    await async_session.refresh(function)
+    yield function
 
 
 @pytest.fixture

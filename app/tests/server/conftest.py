@@ -6,6 +6,8 @@ from unittest.mock import AsyncMock, Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlmodel import Session, SQLModel, create_engine
 
 from lilypad.ee.server.models import UserRole
@@ -19,7 +21,14 @@ from lilypad.server.schemas.users import (
 
 # In-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
+TEST_ASYNC_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+
+# Async engine for testing
+async_engine = create_async_engine(
+    TEST_ASYNC_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
 
 ORGANIZATION_UUID = UUID("12345678-1234-1234-1234-123456789abc")
 
@@ -38,6 +47,16 @@ def setup_test_db():
     SQLModel.metadata.drop_all(engine)
 
 
+@pytest_asyncio.fixture()
+async def setup_async_test_db():
+    """Set up async test database."""
+    async with async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    yield
+    async with async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
+
+
 @pytest.fixture
 def db_session():
     """Get database session."""
@@ -46,6 +65,15 @@ def db_session():
         yield session
     finally:
         session.close()
+
+
+@pytest_asyncio.fixture
+async def async_db_session(setup_async_test_db):
+    """Get async database session."""
+    async with AsyncSession(async_engine, expire_on_commit=False) as session:
+        async with session.begin():
+            yield session
+            await session.rollback()
 
 
 @pytest.fixture
@@ -301,23 +329,88 @@ def error_response():
 
 @pytest.fixture
 def create_test_records(db_session: Session):
-    """Factory fixture for creating test records."""
+    """Factory fixture for creating test records with error handling."""
     created_records = []
 
     def _create_record(table_class, **kwargs):
-        record = table_class(**kwargs)
-        db_session.add(record)
-        db_session.commit()
-        db_session.refresh(record)
-        created_records.append(record)
-        return record
+        """Create a test record with proper error handling."""
+        from sqlalchemy.exc import IntegrityError
+
+        try:
+            record = table_class(**kwargs)
+            db_session.add(record)
+            db_session.commit()
+            db_session.refresh(record)
+            created_records.append(record)
+            return record
+        except IntegrityError as e:
+            db_session.rollback()
+            raise ValueError(
+                f"Failed to create {table_class.__name__}: {str(e)}"
+            ) from e
+        except Exception as e:
+            db_session.rollback()
+            raise RuntimeError(
+                f"Unexpected error creating {table_class.__name__}: {str(e)}"
+            ) from e
 
     yield _create_record
 
-    # Cleanup
+    # Cleanup with error handling
     for record in reversed(created_records):
-        db_session.delete(record)
-    db_session.commit()
+        try:
+            db_session.delete(record)
+        except Exception:
+            # Log but continue cleanup
+            pass
+
+    try:
+        db_session.commit()
+    except Exception:
+        db_session.rollback()
+
+
+@pytest_asyncio.fixture
+async def create_async_test_records(async_db_session: AsyncSession):
+    """Factory fixture for creating test records asynchronously with error handling."""
+    created_records = []
+
+    async def _create_record(table_class, **kwargs):
+        """Create a test record with proper error handling."""
+        from sqlalchemy.exc import IntegrityError
+
+        try:
+            record = table_class(**kwargs)
+            async_db_session.add(record)
+            await async_db_session.flush()
+            await async_db_session.refresh(record)
+            created_records.append(record)
+            return record
+        except IntegrityError as e:
+            await async_db_session.rollback()
+            raise ValueError(
+                f"Failed to create {table_class.__name__}: {str(e)}"
+            ) from e
+        except Exception as e:
+            await async_db_session.rollback()
+            raise RuntimeError(
+                f"Unexpected error creating {table_class.__name__}: {str(e)}"
+            ) from e
+
+    yield _create_record
+
+    # Cleanup with error handling
+    for record in reversed(created_records):
+        try:
+            await async_db_session.delete(record)
+        except Exception:
+            # Log but continue cleanup
+            pass
+
+    try:
+        await async_db_session.flush()
+    except Exception:
+        await async_db_session.rollback()
 
 
 # ===== Async Mock Fixtures =====
