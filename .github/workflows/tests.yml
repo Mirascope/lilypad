@@ -30,6 +30,21 @@ jobs:
         os: [ubuntu-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lilypad_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     defaults:
       run:
         working-directory: ${{ matrix.project.directory }}
@@ -64,8 +79,21 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --dev
 
-      - name: Run Tests
+      - name: Run Tests (SQLite)
         run: uv run pytest ${{ matrix.project.test_path }} --cov=${{ matrix.project.coverage_source }} --cov-report=xml
+        env:
+          ENVIRONMENT: test
+
+      - name: Run Tests (PostgreSQL)
+        if: matrix.project.name == 'App'
+        run: uv run pytest ${{ matrix.project.test_path }} -v
+        env:
+          ENVIRONMENT: development
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: lilypad_test
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
