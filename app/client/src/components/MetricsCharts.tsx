@@ -21,7 +21,6 @@ export const MetricCharts = ({
   const [timeFrame, setTimeFrame] = useState<TimeFrame>(TimeFrame.DAY);
   const costTitle = `Cost and Tokens (${timeFrame})`;
   const latencyTitle = `Latency (${timeFrame})`;
-
   return (
     <div className="flex h-full flex-col space-y-2">
       <div className="shrink-0">
@@ -56,7 +55,7 @@ export const MetricCharts = ({
         </div>
       </div>
 
-      <div className={cn("flex grow-1 gap-2", className)}>
+      <div className={cn("flex min-h-[200px] grow-1 gap-2", className)}>
         <Suspense fallback={<ChartSkeleton title={costTitle} />}>
           <FunctionCostAndTokensChart
             firstFunction={firstFunction}

@@ -229,9 +229,10 @@ export const AppSidebar = () => {
   const handleEnvironmentChange = (environment: EnvironmentPublic) => {
     setEnvironment(environment);
     queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey.some(key => 
-        typeof key === 'string' && key.toLowerCase().includes('project')
-      )
+      predicate: (query) =>
+        query.queryKey.some(
+          (key) => typeof key === "string" && key.toLowerCase().includes("project")
+        ),
     });
   };
 
@@ -264,39 +265,45 @@ export const AppSidebar = () => {
                 side="right"
                 sideOffset={4}
               >
-                {environments?.map((environment) => (
-                  <DropdownMenuItem
-                    key={environment.uuid}
-                    onClick={() => handleEnvironmentChange(environment)}
-                    className={
-                      environment.is_development
-                        ? "text-amber-700 dark:text-amber-300"
-                        : "text-blue-700 dark:text-blue-300"
-                    }
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${
-                          environment.is_development ? "bg-amber-500" : "bg-blue-500"
-                        }`}
-                      />
-                      <span>{environment.name}</span>
-                      {environment.is_development && (
-                        <span className="ml-auto text-xs text-muted-foreground">DEV</span>
-                      )}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
+                {environments?.map((environment) => {
+                  const isActive = activeEnvironment?.uuid === environment.uuid;
+                  return (
+                    <DropdownMenuItem
+                      key={environment.uuid}
+                      onClick={() => handleEnvironmentChange(environment)}
+                      className={`${
+                        isActive
+                          ? environment.is_development
+                            ? "border-l-4 border-amber-500 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100"
+                            : "border-l-4 border-blue-500 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                          : environment.is_development
+                            ? "text-amber-700 dark:text-amber-300"
+                            : "text-blue-700 dark:text-blue-300"
+                      }`}
+                    >
+                      <div className="flex w-full items-center gap-2">
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            environment.is_development ? "bg-amber-500" : "bg-blue-500"
+                          }`}
+                        />
+                        <span className={isActive ? "font-semibold" : ""}>{environment.name}</span>
+                        <div className="ml-auto flex items-center gap-1">
+                          {environment.is_development && (
+                            <span className="text-xs text-muted-foreground">DEV</span>
+                          )}
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  tooltip="Projects"
-                >
+                <SidebarMenuButton size="lg" tooltip="Projects">
                   <ScrollText />
                   <span>{activeProject ? activeProject.name : "Select Project"}</span>
                   <ChevronDown className="ml-auto" />
