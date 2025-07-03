@@ -1823,6 +1823,16 @@
               "format": "uuid",
               "title": "Function Uuid"
             }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
           }
         ],
         "responses": {
@@ -1881,6 +1891,16 @@
             "schema": {
               "type": "string",
               "title": "Function Name"
+            }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
             }
           }
         ],

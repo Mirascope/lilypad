@@ -544,7 +544,12 @@ class FunctionsClient:
         return _response.data
 
     def archive(
-        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> bool:
         """
         Archive a function and delete spans by function UUID.
@@ -554,6 +559,8 @@ class FunctionsClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -575,9 +582,12 @@ class FunctionsClient:
         client.projects.functions.archive(
             project_uuid="project_uuid",
             function_uuid="function_uuid",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.archive(project_uuid, function_uuid, request_options=request_options)
+        _response = self._raw_client.archive(
+            project_uuid, function_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     def update(
@@ -618,7 +628,12 @@ class FunctionsClient:
         return _response.data
 
     def archive_by_name(
-        self, project_uuid: str, function_name: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_name: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> bool:
         """
         Archive a function by name and delete spans by function name.
@@ -628,6 +643,8 @@ class FunctionsClient:
         project_uuid : str
 
         function_name : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -649,9 +666,12 @@ class FunctionsClient:
         client.projects.functions.archive_by_name(
             project_uuid="project_uuid",
             function_name="function_name",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.archive_by_name(project_uuid, function_name, request_options=request_options)
+        _response = self._raw_client.archive_by_name(
+            project_uuid, function_name, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
 
@@ -1264,7 +1284,12 @@ class AsyncFunctionsClient:
         return _response.data
 
     async def archive(
-        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> bool:
         """
         Archive a function and delete spans by function UUID.
@@ -1274,6 +1299,8 @@ class AsyncFunctionsClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1300,12 +1327,15 @@ class AsyncFunctionsClient:
             await client.projects.functions.archive(
                 project_uuid="project_uuid",
                 function_uuid="function_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.archive(project_uuid, function_uuid, request_options=request_options)
+        _response = await self._raw_client.archive(
+            project_uuid, function_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     async def update(
@@ -1354,7 +1384,12 @@ class AsyncFunctionsClient:
         return _response.data
 
     async def archive_by_name(
-        self, project_uuid: str, function_name: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_name: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> bool:
         """
         Archive a function by name and delete spans by function name.
@@ -1364,6 +1399,8 @@ class AsyncFunctionsClient:
         project_uuid : str
 
         function_name : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1390,10 +1427,13 @@ class AsyncFunctionsClient:
             await client.projects.functions.archive_by_name(
                 project_uuid="project_uuid",
                 function_name="function_name",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.archive_by_name(project_uuid, function_name, request_options=request_options)
+        _response = await self._raw_client.archive_by_name(
+            project_uuid, function_name, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data

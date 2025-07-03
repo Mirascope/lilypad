@@ -5991,6 +5991,7 @@ client = Lilypad(
 client.projects.functions.archive(
     project_uuid="project_uuid",
     function_uuid="function_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6016,6 +6017,14 @@ client.projects.functions.archive(
 <dd>
 
 **function_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -6153,6 +6162,7 @@ client = Lilypad(
 client.projects.functions.archive_by_name(
     project_uuid="project_uuid",
     function_name="function_name",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6178,6 +6188,14 @@ client.projects.functions.archive_by_name(
 <dd>
 
 **function_name:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
