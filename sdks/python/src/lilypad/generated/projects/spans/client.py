@@ -8,7 +8,6 @@ from ...core.request_options import RequestOptions
 from ...types.aggregate_metrics import AggregateMetrics
 from ...types.recent_spans_response import RecentSpansResponse
 from ...types.scope import Scope
-from ...types.span_more_details import SpanMoreDetails
 from ...types.span_public import SpanPublic
 from ...types.time_frame import TimeFrame
 from .raw_client import AsyncRawSpansClient, RawSpansClient
@@ -30,7 +29,12 @@ class SpansClient:
         return self._raw_client
 
     def get_aggregates(
-        self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        *,
+        time_frame: TimeFrame,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> typing.List[AggregateMetrics]:
         """
         Get aggregated span by project uuid.
@@ -40,6 +44,8 @@ class SpansClient:
         project_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -61,10 +67,11 @@ class SpansClient:
         client.projects.spans.get_aggregates(
             project_uuid="project_uuid",
             time_frame="day",
+            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.get_aggregates(
-            project_uuid, time_frame=time_frame, request_options=request_options
+            project_uuid, time_frame=time_frame, environment_uuid=environment_uuid, request_options=request_options
         )
         return _response.data
 
@@ -72,6 +79,7 @@ class SpansClient:
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         since: typing.Optional[dt.datetime] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> RecentSpansResponse:
@@ -83,6 +91,8 @@ class SpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         since : typing.Optional[dt.datetime]
             Get spans created since this timestamp
@@ -106,52 +116,19 @@ class SpansClient:
         )
         client.projects.spans.get_recent(
             project_uuid="project_uuid",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.get_recent(project_uuid, since=since, request_options=request_options)
-        return _response.data
-
-    def get_by_id(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> SpanMoreDetails:
-        """
-        Get span by project_uuid and span_id.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        span_id : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        SpanMoreDetails
-            Successful Response
-
-        Examples
-        --------
-        from mirascope import Lilypad
-
-        client = Lilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-            base_url="https://yourhost.com/path/to/api",
+        _response = self._raw_client.get_recent(
+            project_uuid, environment_uuid=environment_uuid, since=since, request_options=request_options
         )
-        client.projects.spans.get_by_id(
-            project_uuid="project_uuid",
-            span_id="span_id",
-        )
-        """
-        _response = self._raw_client.get_by_id(project_uuid, span_id, request_options=request_options)
         return _response.data
 
     def search(
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         query_string: typing.Optional[str] = None,
         time_range_start: typing.Optional[int] = None,
         time_range_end: typing.Optional[int] = None,
@@ -166,6 +143,8 @@ class SpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         query_string : typing.Optional[str]
 
@@ -198,10 +177,12 @@ class SpansClient:
         )
         client.projects.spans.search(
             project_uuid="project_uuid",
+            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.search(
             project_uuid,
+            environment_uuid=environment_uuid,
             query_string=query_string,
             time_range_start=time_range_start,
             time_range_end=time_range_end,
@@ -213,7 +194,12 @@ class SpansClient:
         return _response.data
 
     def delete(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> bool:
         """
         Delete spans by UUID.
@@ -223,6 +209,8 @@ class SpansClient:
         project_uuid : str
 
         span_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -244,9 +232,46 @@ class SpansClient:
         client.projects.spans.delete(
             project_uuid="project_uuid",
             span_uuid="span_uuid",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.delete(project_uuid, span_uuid, request_options=request_options)
+        _response = self._raw_client.delete(
+            project_uuid, span_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
+        return _response.data
+
+    def get_by_id(
+        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> None:
+        """
+        Parameters
+        ----------
+        project_uuid : str
+
+        span_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        from mirascope import Lilypad
+
+        client = Lilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+        client.projects.spans.get_by_id(
+            project_uuid="project_uuid",
+            span_id="span_id",
+        )
+        """
+        _response = self._raw_client.get_by_id(project_uuid, span_id, request_options=request_options)
         return _response.data
 
 
@@ -266,7 +291,12 @@ class AsyncSpansClient:
         return self._raw_client
 
     async def get_aggregates(
-        self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        *,
+        time_frame: TimeFrame,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> typing.List[AggregateMetrics]:
         """
         Get aggregated span by project uuid.
@@ -276,6 +306,8 @@ class AsyncSpansClient:
         project_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -302,13 +334,14 @@ class AsyncSpansClient:
             await client.projects.spans.get_aggregates(
                 project_uuid="project_uuid",
                 time_frame="day",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.get_aggregates(
-            project_uuid, time_frame=time_frame, request_options=request_options
+            project_uuid, time_frame=time_frame, environment_uuid=environment_uuid, request_options=request_options
         )
         return _response.data
 
@@ -316,6 +349,7 @@ class AsyncSpansClient:
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         since: typing.Optional[dt.datetime] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> RecentSpansResponse:
@@ -327,6 +361,8 @@ class AsyncSpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         since : typing.Optional[dt.datetime]
             Get spans created since this timestamp
@@ -355,63 +391,22 @@ class AsyncSpansClient:
         async def main() -> None:
             await client.projects.spans.get_recent(
                 project_uuid="project_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.get_recent(project_uuid, since=since, request_options=request_options)
-        return _response.data
-
-    async def get_by_id(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> SpanMoreDetails:
-        """
-        Get span by project_uuid and span_id.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        span_id : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        SpanMoreDetails
-            Successful Response
-
-        Examples
-        --------
-        import asyncio
-
-        from mirascope import AsyncLilypad
-
-        client = AsyncLilypad(
-            api_key="YOUR_API_KEY",
-            token="YOUR_TOKEN",
-            base_url="https://yourhost.com/path/to/api",
+        _response = await self._raw_client.get_recent(
+            project_uuid, environment_uuid=environment_uuid, since=since, request_options=request_options
         )
-
-
-        async def main() -> None:
-            await client.projects.spans.get_by_id(
-                project_uuid="project_uuid",
-                span_id="span_id",
-            )
-
-
-        asyncio.run(main())
-        """
-        _response = await self._raw_client.get_by_id(project_uuid, span_id, request_options=request_options)
         return _response.data
 
     async def search(
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         query_string: typing.Optional[str] = None,
         time_range_start: typing.Optional[int] = None,
         time_range_end: typing.Optional[int] = None,
@@ -426,6 +421,8 @@ class AsyncSpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         query_string : typing.Optional[str]
 
@@ -463,6 +460,7 @@ class AsyncSpansClient:
         async def main() -> None:
             await client.projects.spans.search(
                 project_uuid="project_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
@@ -470,6 +468,7 @@ class AsyncSpansClient:
         """
         _response = await self._raw_client.search(
             project_uuid,
+            environment_uuid=environment_uuid,
             query_string=query_string,
             time_range_start=time_range_start,
             time_range_end=time_range_end,
@@ -481,7 +480,12 @@ class AsyncSpansClient:
         return _response.data
 
     async def delete(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> bool:
         """
         Delete spans by UUID.
@@ -491,6 +495,8 @@ class AsyncSpansClient:
         project_uuid : str
 
         span_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -517,10 +523,55 @@ class AsyncSpansClient:
             await client.projects.spans.delete(
                 project_uuid="project_uuid",
                 span_uuid="span_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.delete(project_uuid, span_uuid, request_options=request_options)
+        _response = await self._raw_client.delete(
+            project_uuid, span_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
+        return _response.data
+
+    async def get_by_id(
+        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> None:
+        """
+        Parameters
+        ----------
+        project_uuid : str
+
+        span_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        import asyncio
+
+        from mirascope import AsyncLilypad
+
+        client = AsyncLilypad(
+            api_key="YOUR_API_KEY",
+            token="YOUR_TOKEN",
+            base_url="https://yourhost.com/path/to/api",
+        )
+
+
+        async def main() -> None:
+            await client.projects.spans.get_by_id(
+                project_uuid="project_uuid",
+                span_id="span_id",
+            )
+
+
+        asyncio.run(main())
+        """
+        _response = await self._raw_client.get_by_id(project_uuid, span_id, request_options=request_options)
         return _response.data

@@ -6,20 +6,25 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from lilypad.server.models import ProjectTable
+from lilypad.server.models.api_keys import APIKeyTable
 
 
 class TestAPI404ErrorCases:
     """Test all 404 error cases that currently have pragma: no cover."""
 
-    def test_spans_api_get_span_by_uuid_not_found_mock(self, client: TestClient):
+    def test_spans_api_get_span_by_uuid_not_found_mock(
+        self, client: TestClient, test_project: ProjectTable
+    ):
         """Test spans API get_span returns 404 when span not found - using mock."""
         fake_uuid = uuid4()
-
+        environment_uuid = uuid4()
         with patch(
             "lilypad.server.services.spans.SpanService.find_record_by_uuid",
             return_value=None,
         ):
-            response = client.get(f"/spans/{fake_uuid}")
+            response = client.get(
+                f"/projects/{test_project.uuid}/spans/{fake_uuid}?environment_uuid={environment_uuid}"
+            )
 
             assert response.status_code == 404
             assert "Span not found" in response.json()["detail"]
@@ -32,8 +37,9 @@ class TestAPI404ErrorCases:
             "lilypad.server.services.spans.SpanService.get_record_by_span_id",
             return_value=None,
         ):
+            environment_uuid = uuid4()
             response = client.get(
-                f"/projects/{test_project.uuid}/spans/non_existent_span"
+                f"/projects/{test_project.uuid}/spans/non_existent_span?environment_uuid={environment_uuid}"
             )
 
             assert response.status_code == 404
@@ -47,8 +53,9 @@ class TestAPI404ErrorCases:
             "lilypad.server.services.spans.SpanService.find_root_parent_span",
             return_value=None,
         ):
+            environment_uuid = uuid4()
             response = client.get(
-                f"/projects/{test_project.uuid}/traces/non_existent_span/root"
+                f"/projects/{test_project.uuid}/traces/non_existent_span/root?environment_uuid={environment_uuid}"
             )
 
             assert response.status_code == 404
@@ -62,8 +69,9 @@ class TestAPI404ErrorCases:
             "lilypad.server.services.spans.SpanService.find_spans_by_trace_id",
             return_value=[],
         ):
+            environment_uuid = uuid4()
             response = client.get(
-                f"/projects/{test_project.uuid}/traces/by-trace-id/non_existent_trace"
+                f"/projects/{test_project.uuid}/traces/by-trace-id/non_existent_trace?environment_uuid={environment_uuid}"
             )
 
             assert response.status_code == 404
@@ -86,10 +94,20 @@ class TestOpenSearchIntegration:
 
         # Save original overrides
         original_overrides = api.dependency_overrides.copy()
-
+        assert test_project.uuid is not None
+        project_uuid = test_project.uuid
         try:
             # Add our override
-            api.dependency_overrides[validate_api_key_project_strict] = lambda: True
+            api.dependency_overrides[validate_api_key_project_strict] = (
+                lambda: APIKeyTable(
+                    project_uuid=project_uuid,
+                    key_hash="test_key",
+                    organization_uuid=test_project.organization_uuid,
+                    user_uuid=uuid4(),
+                    name="test_key",
+                    environment_uuid=uuid4(),
+                )
+            )
 
             # Mock the project service to return the test project
             from lilypad.server.services.projects import ProjectService
@@ -152,9 +170,11 @@ class TestOpenSearchIntegration:
             mock_service = Mock()
             mock_service.is_enabled = True
             mock_get_service.return_value = mock_service
-
+            environment_uuid = uuid4()
             # Should still succeed even if the span doesn't exist
-            response = client.delete(f"/projects/{test_project.uuid}/spans/{fake_uuid}")
+            response = client.delete(
+                f"/projects/{test_project.uuid}/spans/{fake_uuid}?environment_uuid={environment_uuid}"
+            )
 
             # Returns False when span doesn't exist, but still 200 OK
             assert response.status_code == 200

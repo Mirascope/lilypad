@@ -27,13 +27,14 @@ def test_spans(
     """Create test spans with various timestamps."""
     now = datetime.now(timezone.utc)
     spans = []
-
+    environment_uuid = uuid4()  # Simulate an environment UUID
     # Create spans with different timestamps
     for i in range(5):
         # Root span
         root_span = SpanTable(
             organization_uuid=test_project.organization_uuid,
             project_uuid=test_project.uuid,
+            environment_uuid=environment_uuid,
             span_id=f"span_root_{i}",
             trace_id=f"trace_{i}",  # pyright: ignore [reportCallIssue]
             parent_span_id=None,
@@ -61,6 +62,7 @@ def test_spans(
         child_span = SpanTable(
             organization_uuid=test_project.organization_uuid,
             project_uuid=test_project.uuid,
+            environment_uuid=environment_uuid,
             span_id=f"span_child_{i}",
             trace_id=f"trace_{i}",  # pyright: ignore [reportCallIssue]
             parent_span_id=f"span_root_{i}",
@@ -114,7 +116,11 @@ def test_get_recent_spans(
     expected_span_ids,
 ):
     """Test getting recent spans with various time parameters."""
-    params = {}
+    environment_uuid = test_spans[
+        0
+    ].environment_uuid  # Use the environment UUID from the first span
+
+    params = {"environment_uuid": str(environment_uuid)}
     if since_minutes:
         since = datetime.now(timezone.utc) - timedelta(minutes=since_minutes)
         params["since"] = since.isoformat()
@@ -167,18 +173,27 @@ def test_get_span_by_id(
     expected_status,
 ):
     """Test getting span by different ID types."""
+    environment_uuid = test_spans[
+        0
+    ].environment_uuid  # Use the environment UUID from the first span
     if exists:
         span = test_spans[0]
         if id_type == "uuid":
-            response = client.get(f"/spans/{span.uuid}")
-        else:  # span_id
-            response = client.get(f"/projects/{test_project.uuid}/spans/{span.span_id}")
-    else:
-        if id_type == "uuid":
-            response = client.get(f"/spans/{uuid4()}")
+            response = client.get(
+                f"/projects/{test_project.uuid}/spans/{span.uuid}?environment_uuid={environment_uuid}"
+            )
         else:  # span_id
             response = client.get(
-                f"/projects/{test_project.uuid}/spans/non_existent_span"
+                f"/projects/{test_project.uuid}/spans/{span.span_id}?environment_uuid={environment_uuid}"
+            )
+    else:
+        if id_type == "uuid":
+            response = client.get(
+                f"/projects/{test_project.uuid}/spans/{uuid4()}?environment_uuid={environment_uuid}"
+            )
+        else:  # span_id
+            response = client.get(
+                f"/projects/{test_project.uuid}/spans/non_existent_span?environment_uuid={environment_uuid}"
             )
 
     assert response.status_code == expected_status
@@ -232,7 +247,13 @@ def test_get_aggregates(
     else:  # function
         url = f"/projects/{test_project.uuid}/functions/{test_function.uuid}/spans/metadata"
 
-    response = client.get(url, params={"time_frame": time_frame})
+    response = client.get(
+        url,
+        params={
+            "time_frame": time_frame,
+            "environment_uuid": str(test_spans[0].environment_uuid),
+        },
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -324,10 +345,11 @@ def test_search_traces_opensearch(
 
     api.dependency_overrides[get_opensearch_service] = lambda: mock_opensearch_service
     api.dependency_overrides[FunctionService] = lambda: mock_function_service
-
+    environment_uuid = uuid4()  # Simulate an environment UUID
     try:
         response = client.get(
-            f"/projects/{test_project.uuid}/spans", params={"query_string": "test"}
+            f"/projects/{test_project.uuid}/spans",
+            params={"query_string": "test", "environment_uuid": str(environment_uuid)},
         )
 
         assert response.status_code == 200
@@ -419,7 +441,8 @@ def test_search_traces_parent_child_relationships(
 
     try:
         response = client.get(
-            f"/projects/{test_project.uuid}/spans", params={"query_string": "test"}
+            f"/projects/{test_project.uuid}/spans",
+            params={"query_string": "test", "environment_uuid": str(uuid4())},
         )
 
         assert response.status_code == 200
@@ -496,9 +519,12 @@ def test_get_spans_by_function_uuid_paginated(
     """Test paginated spans endpoint with various pagination parameters."""
     # Count total spans for the function - the API might filter by root spans only
     # Let's first check what the actual response returns
+    environment_uuid = test_spans[
+        0
+    ].environment_uuid  # Use the environment UUID from the first span
     response = client.get(
         f"/projects/{test_project.uuid}/functions/{test_function.uuid}/spans/paginated",
-        params={"limit": 100, "offset": 0},
+        params={"limit": 100, "offset": 0, "environment_uuid": str(environment_uuid)},
     )
     actual_total = response.json()["total"]
 
@@ -511,7 +537,12 @@ def test_get_spans_by_function_uuid_paginated(
 
     response = client.get(
         f"/projects/{test_project.uuid}/functions/{test_function.uuid}/spans/paginated",
-        params={"limit": limit, "offset": offset, "order": order},
+        params={
+            "limit": limit,
+            "offset": offset,
+            "order": order,
+            "environment_uuid": str(environment_uuid),
+        },
     )
 
     assert response.status_code == 200
@@ -586,6 +617,7 @@ async def test_delete_spans_with_opensearch_background_task():
 
     project_uuid = uuid4()
     span_uuid = uuid4()
+    environment_uuid = uuid4()
 
     # Create mocks
     mock_span_service = Mock(spec=SpanService)
@@ -601,6 +633,7 @@ async def test_delete_spans_with_opensearch_background_task():
     result = await delete_spans(
         project_uuid=project_uuid,
         span_uuid=span_uuid,
+        environment_uuid=environment_uuid,
         span_service=mock_span_service,
         opensearch_service=mock_opensearch,
         background_tasks=mock_bg_tasks,
@@ -631,6 +664,7 @@ async def test_delete_spans_exception_handling():
 
     project_uuid = uuid4()
     span_uuid = uuid4()
+    environment_uuid = uuid4()
 
     # Create mocks
     mock_span_service = Mock(spec=SpanService)
@@ -646,6 +680,7 @@ async def test_delete_spans_exception_handling():
     result = await delete_spans(
         project_uuid=project_uuid,
         span_uuid=span_uuid,
+        environment_uuid=environment_uuid,
         span_service=mock_span_service,
         opensearch_service=mock_opensearch,
         background_tasks=mock_bg_tasks,
@@ -673,9 +708,12 @@ def test_delete_span_with_opensearch_enabled(
         mock_service = Mock()
         mock_service.is_enabled = True
         mock_get_service.return_value = mock_service
-
+        environment_uuid = uuid4()
         # Delete the span
-        response = client.delete(f"/projects/{test_project.uuid}/spans/{span_uuid}")
+        response = client.delete(
+            f"/projects/{test_project.uuid}/spans/{span_uuid}",
+            params={"environment_uuid": str(environment_uuid)},
+        )
 
         # Should succeed even if span doesn't exist
         assert response.status_code == 200

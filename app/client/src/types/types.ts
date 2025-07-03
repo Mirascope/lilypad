@@ -1164,6 +1164,8 @@ export interface SpanPublic {
   parent_span_id?: string | null;
   /** Session Id */
   session_id?: string | null;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /**
    * Uuid
    * @format uuid

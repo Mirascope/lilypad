@@ -14,7 +14,7 @@ export const TagPopover = ({
   spanUuid: string;
   projectUuid: string;
 }) => {
-  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
+  const { data: span } = useSuspenseQuery(spanQueryOptions(projectUuid, spanUuid));
   const { data: availableTags } = useSuspenseQuery(tagsByProjectsQueryOptions(projectUuid));
   const createTag = useCreateTagMutation();
   const updateSpan = useUpdateSpanMutation();

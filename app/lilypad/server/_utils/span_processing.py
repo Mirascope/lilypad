@@ -78,6 +78,7 @@ async def create_span_from_data(
 
     # Extract function UUID
     function_uuid_str = attributes.get("lilypad.function.uuid")
+    enviroment_uuid_str = attributes.get("lilypad.environment.uuid")
 
     # Calculate duration - handles both queue processor and API formats
     duration_ms = span_data.get("duration_ms", 0)
@@ -89,6 +90,7 @@ async def create_span_from_data(
         trace_id=span_data.get("trace_id"),
         type=attributes.get("lilypad.type"),
         function_uuid=UUID(function_uuid_str) if function_uuid_str else None,
+        environment_uuid=UUID(enviroment_uuid_str) if enviroment_uuid_str else None,
         scope=scope,
         data=span_data,
         parent_span_id=span_data.get("parent_span_id"),

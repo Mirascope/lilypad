@@ -4,7 +4,7 @@ import time
 from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -57,10 +57,11 @@ def test_span(
         SpanTable: Test span
     """
     current_time = time.time_ns() // 1_000_000  # Convert to milliseconds
-
+    environment_uuid = uuid4()  # Mock environment UUID
     span = SpanTable(
         span_id="test_span_1",
         trace_id="test_trace_1",
+        environment_uuid=environment_uuid,
         organization_uuid=test_project.organization_uuid,
         project_uuid=test_project.uuid,
         function_uuid=test_function.uuid,
@@ -89,7 +90,11 @@ def test_span(
 
 def test_get_empty_traces(client: TestClient, test_project: ProjectTable):
     """Test getting traces when no traces exist."""
-    response = client.get(f"/projects/{test_project.uuid}/traces")
+    environment_uuid = uuid4()
+    response = client.get(
+        f"/projects/{test_project.uuid}/traces",
+        params={"environment_uuid": str(environment_uuid)},
+    )
     assert response.status_code == 200
     assert response.json() == {"items": [], "limit": 100, "offset": 0, "total": 0}
 
@@ -98,7 +103,10 @@ def test_get_traces_by_project(
     client: TestClient, test_project: ProjectTable, test_span: SpanTable
 ):
     """Test getting traces for a project returns expected traces."""
-    response = client.get(f"/projects/{test_project.uuid}/traces")
+    response = client.get(
+        f"/projects/{test_project.uuid}/traces",
+        params={"environment_uuid": str(test_span.environment_uuid)},
+    )
     assert response.status_code == 200
     traces = response.json()
     assert len(traces["items"]) == 1
@@ -163,7 +171,10 @@ def test_post_traces(
 
 def test_get_span_by_uuid(client: TestClient, test_span: SpanTable):
     """Test getting single span by ID."""
-    response = client.get(f"/spans/{test_span.uuid}")
+    response = client.get(
+        f"/projects/{test_span.project_uuid}/spans/{test_span.uuid}",
+        params={"environment_uuid": str(test_span.environment_uuid)},
+    )
     assert response.status_code == 200
     span = response.json()
     assert span["display_name"] == "test_span"
@@ -173,7 +184,11 @@ def test_get_span_by_uuid(client: TestClient, test_span: SpanTable):
 def test_get_nonexistent_span(client: TestClient):
     """Test getting nonexistent span returns 404."""
     span_uuid = UUID("123e4567-e89b-12d3-a456-426614174000")
-    response = client.get(f"/spans/{span_uuid}")
+    environment_uuid = uuid4()
+    response = client.get(
+        f"/projects/{uuid4()}/spans/{span_uuid}",
+        params={"environment_uuid": str(environment_uuid)},
+    )
     assert response.status_code == 404
 
 
@@ -826,9 +841,17 @@ def test_traces_post_missing_attributes(client: TestClient, test_project: Projec
     from lilypad.server.api.v0.main import api
 
     original_overrides = api.dependency_overrides.copy()
-
+    assert test_project.uuid is not None
+    project_uuid = test_project.uuid
     try:
-        api.dependency_overrides[validate_api_key_project_strict] = lambda: True
+        api.dependency_overrides[validate_api_key_project_strict] = lambda: APIKeyTable(
+            project_uuid=project_uuid,
+            key_hash="test_key",
+            organization_uuid=test_project.organization_uuid,
+            user_uuid=uuid4(),
+            name="test_key",
+            environment_uuid=uuid4(),
+        )
 
         with (
             patch(
@@ -879,7 +902,15 @@ def test_traces_opensearch_indexing(client: TestClient, test_project: ProjectTab
     mock_span.model_dump.return_value = {"span_id": "test", "data": "test"}
 
     # Call the traces function directly with all mocks
-    match_api_key = True
+    assert test_project.uuid is not None
+    match_api_key = APIKeyTable(
+        project_uuid=test_project.uuid,
+        key_hash="test_key",
+        organization_uuid=test_project.organization_uuid,
+        user_uuid=uuid4(),
+        name="test_key",
+        environment_uuid=uuid4(),
+    )
     license = MagicMock(tier="free")
     is_lilypad_cloud = False
     project_uuid = test_project.uuid
@@ -921,7 +952,7 @@ def test_traces_opensearch_indexing(client: TestClient, test_project: ProjectTab
     # Run the function
     asyncio.run(
         traces(
-            match_api_key=match_api_key,
+            api_key=match_api_key,
             license=license,
             is_lilypad_cloud=is_lilypad_cloud,
             project_uuid=project_uuid,  # type: ignore
@@ -953,11 +984,13 @@ def test_get_trace_by_span_uuid_returns_span(
     with patch(
         "lilypad.server.services.spans.SpanService.find_root_parent_span"
     ) as mock_find:
+        environment_uuid = uuid4()
         # Create a proper SpanTable object
         span = SpanTable(
             uuid=UUID("12345678-1234-5678-1234-567812345678"),
             span_id="test_span",
             trace_id="test_trace",  # type: ignore
+            environment_uuid=environment_uuid,
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
             start_time=1000,  # type: ignore
@@ -974,7 +1007,10 @@ def test_get_trace_by_span_uuid_returns_span(
         )
         mock_find.return_value = span
 
-        response = client.get(f"/projects/{test_project.uuid}/traces/test_span/root")
+        response = client.get(
+            f"/projects/{test_project.uuid}/traces/test_span/root",
+            params={"environment_uuid": str(environment_uuid)},
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -991,10 +1027,12 @@ def test_get_spans_by_trace_id_returns_spans(
         "lilypad.server.services.spans.SpanService.find_spans_by_trace_id"
     ) as mock_find:
         # Create proper SpanTable objects
+        environment_uuid = uuid4()
         span1 = SpanTable(
             uuid=UUID("12345678-1234-5678-1234-567812345678"),
             span_id="span1",
             trace_id="test_trace",  # type: ignore
+            environment_uuid=environment_uuid,
             project_uuid=test_project.uuid,
             organization_uuid=test_project.organization_uuid,
             start_time=1000,  # type: ignore
@@ -1013,7 +1051,8 @@ def test_get_spans_by_trace_id_returns_spans(
         mock_find.return_value = [span1]
 
         response = client.get(
-            f"/projects/{test_project.uuid}/traces/by-trace-id/test_trace"
+            f"/projects/{test_project.uuid}/traces/by-trace-id/test_trace",
+            params={"environment_uuid": str(environment_uuid)},
         )
 
         assert response.status_code == 200

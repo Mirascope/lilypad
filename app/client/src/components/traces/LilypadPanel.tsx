@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/ca
 import { LilypadPanelTab } from "@/src/utils/panel-utils";
 import { spanQueryOptions } from "@/src/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useParams } from "@tanstack/react-router";
 
 export const LilypadPanel = ({
   spanUuid,
@@ -16,7 +17,11 @@ export const LilypadPanel = ({
   tab?: string;
   onTabChange?: (tab: string) => void;
 }) => {
-  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
+  const { projectUuid } = useParams({ strict: false });
+  if (!projectUuid) {
+    throw new Error("LilypadPanel requires an active project");
+  }
+  const { data: span } = useSuspenseQuery(spanQueryOptions(projectUuid, spanUuid));
   return (
     <div className="flex h-full flex-col gap-4">
       {showMetrics && <SpanMetrics span={span} />}

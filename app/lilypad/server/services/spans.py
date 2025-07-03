@@ -9,9 +9,11 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from sqlalchemy import TextClause
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import selectinload
 from sqlmodel import and_, asc, delete, func, select, text
 
+from ..models.function_environment_link import FunctionEnvironmentLink
 from ..models.functions import FunctionTable
 from ..models.spans import SpanTable, SpanTagLink
 from ..schemas.spans import SpanCreate, SpanUpdate
@@ -49,20 +51,23 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
     table: type[SpanTable] = SpanTable
     create_model: type[SpanCreate] = SpanCreate
 
-    def count_no_parent_spans(self, project_uuid: UUID) -> int:
+    def count_no_parent_spans(
+        self, project_uuid: UUID, environment_uuid: UUID | None = None
+    ) -> int:
         """Return the *total* number of root‑level spans for a project.
 
         Unlike :py:meth:`find_no_parent_spans` this query only counts rows and
         therefore avoids the overhead of eager‑loading child spans.
         """
-        stmt = (
-            select(func.count())
-            .select_from(self.table)
-            .where(
-                self.table.project_uuid == project_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
-            )
-        )
+        conditions = [
+            self.table.project_uuid == project_uuid,
+            self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
+        ]
+
+        if environment_uuid:
+            conditions.append(self.table.environment_uuid == environment_uuid)
+
+        stmt = select(func.count()).select_from(self.table).where(*conditions)
 
         return self.session.exec(stmt).one()
 
@@ -70,17 +75,23 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self,
         project_uuid: UUID,
         *,
+        environment_uuid: UUID | None = None,
         limit: int | None = None,
         offset: int = 0,
         order: Literal["asc", "desc"] = "desc",
     ) -> Sequence[SpanTable]:
         """Find all root spans for a project."""
+        conditions = [
+            self.table.project_uuid == project_uuid,
+            self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
+        ]
+
+        if environment_uuid:
+            conditions.append(self.table.environment_uuid == environment_uuid)
+
         stmt = (
             select(self.table)
-            .where(
-                self.table.project_uuid == project_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore [comparison‑overlap]
-            )
+            .where(*conditions)
             .order_by(
                 self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
                 if order == "asc"
@@ -147,16 +158,21 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             )
         ).all()
 
-    def get_record_by_span_id(self, project_uuid: UUID, span_id: str) -> SpanTable:
+    def get_record_by_span_id(
+        self, project_uuid: UUID, span_id: str, environment_uuid: UUID | None = None
+    ) -> SpanTable | None:
         """Find spans by span id"""
-        return self.session.exec(
-            select(self.table).where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
-                self.table.project_uuid == project_uuid,
-                self.table.span_id == span_id,
-                self.table.parent_span_id.is_(None),  # type: ignore
-            )
-        ).one_or_none()
+        conditions = [
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+            self.table.span_id == span_id,
+            self.table.parent_span_id.is_(None),  # type: ignore
+        ]
+
+        if environment_uuid:
+            conditions.append(self.table.environment_uuid == environment_uuid)
+
+        return self.session.exec(select(self.table).where(*conditions)).one_or_none()
 
     def _get_date_trunc(self, timeframe: TimeFrame) -> TextClause | None:
         """Get the appropriate date truncation for the timeframe"""
@@ -181,6 +197,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         project_uuid: UUID,
         function_uuid: UUID | None = None,
         time_frame: TimeFrame = TimeFrame.LIFETIME,
+        environment_uuid: UUID | None = None,
     ) -> list[AggregateMetrics]:
         """Get aggregated metrics for spans grouped by the specified timeframe
 
@@ -197,6 +214,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             self.table.organization_uuid == self.user.active_organization_uuid,
             self.table.project_uuid == project_uuid,
         ]
+
+        if environment_uuid:
+            base_filters.append(self.table.environment_uuid == environment_uuid)
 
         columns = [
             func.sum(self.table.cost).label("total_cost"),
@@ -317,6 +337,9 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         spans_to_add = []
         tag_service = TagService(self.session, self.user)
 
+        # Collect function-environment pairs as we process spans
+        function_environment_pairs = set()
+
         for span_create in spans_create:
             db_span = self.table.model_validate(
                 span_create,
@@ -327,6 +350,12 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
                 },
             )
             spans_to_add.append(db_span)
+
+            # Collect function-environment pair if both exist
+            if db_span.function_uuid and db_span.environment_uuid:
+                function_environment_pairs.add(
+                    (db_span.function_uuid, db_span.environment_uuid)
+                )
 
             otel_attributes = db_span.data.get("attributes", {})
             if (
@@ -342,6 +371,7 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         self.session.add_all(spans_to_add)
         self.session.flush()
 
+        # Handle span-tag links
         final_links_to_add = []
         for db_span in spans_to_add:
             if hasattr(db_span, "_temp_links_to_add") and db_span.uuid:
@@ -359,27 +389,46 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
             self.session.add_all(final_links_to_add)
             self.session.flush()
 
+        if function_environment_pairs:
+            link_values = [
+                {"function_uuid": func_uuid, "environment_uuid": env_uuid}
+                for func_uuid, env_uuid in function_environment_pairs
+            ]
+
+            stmt = insert(FunctionEnvironmentLink).values(link_values)
+            stmt = stmt.on_conflict_do_nothing(
+                index_elements=["function_uuid", "environment_uuid"]
+            )
+            self.session.execute(stmt)
+            self.session.flush()
+
         return spans_to_add
 
     def get_spans_since(
-        self, project_uuid: UUID, since: datetime
+        self, project_uuid: UUID, since: datetime, environment_uuid: UUID | None = None
     ) -> Sequence[SpanTable]:
         """Get spans created since the given timestamp.
 
         Args:
             project_uuid: The project UUID
             since: Get spans created after this timestamp
+            environment_uuid: Optional environment filter
 
         Returns:
             List of spans created since the timestamp
         """
+        conditions = [
+            self.table.project_uuid == project_uuid,
+            self.table.created_at > since,
+            self.table.parent_span_id.is_(None),  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
+        ]
+
+        if environment_uuid:
+            conditions.append(self.table.environment_uuid == environment_uuid)
+
         stmt = (
             select(self.table)
-            .where(
-                self.table.project_uuid == project_uuid,
-                self.table.created_at > since,
-                self.table.parent_span_id.is_(None),  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
-            )
+            .where(*conditions)
             .order_by(self.table.created_at.desc())  # pyright: ignore [reportAttributeAccessIssue]
             .options(
                 selectinload(
@@ -461,34 +510,43 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         return modified
 
     def count_records_by_function_uuid(
-        self, project_uuid: UUID, function_uuid: UUID
+        self,
+        project_uuid: UUID,
+        function_uuid: UUID,
+        environment_uuid: UUID | None = None,
     ) -> int:
         """Count root-level spans for a function (fast COUNT(*))."""
-        stmt = (
-            select(func.count())
-            .select_from(self.table)
-            .where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
-                self.table.project_uuid == project_uuid,
-                self.table.function_uuid == function_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore
-            )
-        )
+        conditions = [
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+            self.table.function_uuid == function_uuid,
+            self.table.parent_span_id.is_(None),  # type: ignore
+        ]
+
+        if environment_uuid:
+            conditions.append(self.table.environment_uuid == environment_uuid)
+
+        stmt = select(func.count()).select_from(self.table).where(*conditions)
         return self.session.exec(stmt).one()
 
     def find_spans_by_trace_id(
-        self, project_uuid: UUID, trace_id: str
+        self, project_uuid: UUID, trace_id: str, environment_uuid: UUID | None = None
     ) -> Sequence[SpanTable]:
         """Find all spans for a given trace_id."""
+        conditions = [
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+            # PostgreSQL JSONB operator
+            text("data->>'trace_id' = :trace_id"),
+        ]
+
+        if environment_uuid:
+            conditions.append(self.table.environment_uuid == environment_uuid)
+
         # Use PostgreSQL JSON operator
         stmt = (
             select(self.table)
-            .where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
-                self.table.project_uuid == project_uuid,
-                # PostgreSQL JSONB operator
-                text("data->>'trace_id' = :trace_id"),
-            )
+            .where(*conditions)
             .params(trace_id=trace_id)
             .order_by(asc(self.table.created_at))
         )
@@ -499,19 +557,25 @@ class SpanService(BaseOrganizationService[SpanTable, SpanCreate]):
         project_uuid: UUID,
         function_uuid: UUID,
         *,
+        environment_uuid: UUID | None = None,
         limit: int,
         offset: int = 0,
         order: str = "desc",
     ) -> Sequence[SpanTable]:
         """Find root-level spans for a function with pagination + dynamic sort."""
+        conditions = [
+            self.table.organization_uuid == self.user.active_organization_uuid,
+            self.table.project_uuid == project_uuid,
+            self.table.function_uuid == function_uuid,
+            self.table.parent_span_id.is_(None),  # type: ignore
+        ]
+
+        if environment_uuid:
+            conditions.append(self.table.environment_uuid == environment_uuid)
+
         stmt = (
             select(self.table)
-            .where(
-                self.table.organization_uuid == self.user.active_organization_uuid,
-                self.table.project_uuid == project_uuid,
-                self.table.function_uuid == function_uuid,
-                self.table.parent_span_id.is_(None),  # type: ignore
-            )
+            .where(*conditions)
             .order_by(
                 self.table.created_at.asc()  # pyright: ignore [reportAttributeAccessIssue]
                 if order == "asc"

@@ -25,7 +25,7 @@ export const FunctionOverviewUI = ({
 
   return (
     <div className="flex h-full flex-col gap-2 rounded-md p-2 lg:flex-row">
-      <div className="w-full lg:w-1/2">
+      <div className="w-full shrink-0 lg:w-1/2">
         {showCompare ? (
           <DiffTool
             language="python"

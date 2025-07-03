@@ -252,7 +252,6 @@ export const DataTable = <T extends { uuid: string }>({
   });
 
   const toggleRowSelection = (row: T) => {
-    console.log(row);
     if (onRowClick) {
       onRowClick(row);
     } else {

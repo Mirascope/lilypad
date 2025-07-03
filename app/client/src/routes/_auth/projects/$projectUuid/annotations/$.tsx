@@ -55,7 +55,7 @@ const AnnotationLayout = () => {
         navigate({
           to: Route.fullPath,
           replace: true,
-          params: { projectUuid, _splat: undefined },
+          params: { projectUuid, _splat: "" },
         }).catch(() => {
           toast.error("Failed to navigate");
         });
@@ -73,7 +73,7 @@ const AnnotationLayout = () => {
     navigate({
       to: Route.fullPath,
       replace: true,
-      params: { projectUuid, _splat: activeAnnotation?.uuid },
+      params: { projectUuid, _splat: activeAnnotation?.uuid ?? "" },
     }).catch(() => {
       toast.error("Failed to navigate");
     });
@@ -231,7 +231,7 @@ const AnnotationList = ({
                   navigate({
                     to: Route.fullPath,
                     replace: true,
-                    params: { projectUuid, _splat: undefined },
+                    params: { projectUuid, _splat: "" },
                   }).catch(() => {
                     toast.error("Failed to navigate");
                   });

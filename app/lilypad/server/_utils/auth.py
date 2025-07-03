@@ -66,7 +66,7 @@ async def validate_api_key_project(
     api_key: str | None,
     session: Session,
     strict: bool = True,
-) -> bool:
+) -> APIKeyTable | None:
     """Checks if the API key matches the project UUID."""
     api_key_hash = hashlib.sha256(api_key.encode()).hexdigest() if api_key else None
     api_key_row = session.exec(
@@ -77,22 +77,22 @@ async def validate_api_key_project(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
             )
-        return False
+        return api_key_row
     if project_uuid != api_key_row.project_uuid:
         if strict:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid Project ID for this API Key. Hint: Check your `LILYPAD_PROJECT_ID environment variable`",
             )
-        return False
-    return True
+        return None
+    return api_key_row
 
 
 async def validate_api_key_project_no_strict(
     project_uuid: UUID,
     api_key: Annotated[str | None, Depends(api_key_header)],
     session: Annotated[Session, Depends(get_session)],
-) -> bool:
+) -> APIKeyTable | None:
     return await validate_api_key_project(project_uuid, api_key, session, strict=False)
 
 
@@ -100,7 +100,7 @@ async def validate_api_key_project_strict(
     project_uuid: UUID,
     api_key: Annotated[str | None, Depends(api_key_header)],
     session: Annotated[Session, Depends(get_session)],
-) -> bool:
+) -> APIKeyTable | None:
     return await validate_api_key_project(project_uuid, api_key, session, strict=True)
 
 

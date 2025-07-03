@@ -30,18 +30,18 @@ export const spansQueryOptions = (projectUuid?: string) =>
     enabled: !!projectUuid,
   });
 
-export const fetchSpan = async (spanUuid: string) => {
-  return (await api.get<SpanMoreDetails>(`/spans/${spanUuid}`)).data;
+export const fetchSpan = async (projectUuid: string, spanUuid: string) => {
+  return (await api.get<SpanMoreDetails>(`/projects/${projectUuid}/spans/${spanUuid}`)).data;
 };
 
 export const deleteSpan = async (projectUuid: string, spanUuid: string) => {
   return (await api.delete<boolean>(`/projects/${projectUuid}/spans/${spanUuid}`)).data;
 };
 
-export const spanQueryOptions = (spanUuid: string) =>
+export const spanQueryOptions = (projectUuid: string, spanUuid: string) =>
   queryOptions({
-    queryKey: ["spans", spanUuid],
-    queryFn: () => fetchSpan(spanUuid),
+    queryKey: ["projects", projectUuid, "spans", spanUuid],
+    queryFn: () => fetchSpan(projectUuid, spanUuid),
   });
 
 export const fetchAggregatesByProjectUuid = async (projectUuid: string, timeFrame: TimeFrame) => {
