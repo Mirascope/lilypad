@@ -71,11 +71,31 @@ class SpanTable(SpanBase, BaseOrganizationSQLModel, table=True):
     __tablename__ = SPAN_TABLE_NAME  # type: ignore
     __table_args__ = (
         UniqueConstraint("span_id"),
-        Index("ix_spans_span_id", "span_id"),
         Index(
             "idx_spans_project_parent_filtered",
             "project_uuid",
             postgresql_where=text("parent_span_id IS NULL"),
+        ),
+        # Index for data retention performance
+        Index(
+            "idx_spans_org_created",
+            "organization_uuid",
+            "created_at",
+            postgresql_using="btree",
+        ),
+        # Indexes for display retention filtering performance
+        Index(
+            "idx_spans_created_at_root",
+            "created_at",
+            postgresql_where=text("parent_span_id IS NULL"),
+            postgresql_using="btree",
+        ),
+        Index(
+            "idx_spans_org_project_created",
+            "project_uuid",
+            "created_at",
+            postgresql_where=text("parent_span_id IS NULL"),
+            postgresql_using="btree",
         ),
     )
     project_uuid: UUID | None = Field(

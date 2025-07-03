@@ -1202,3 +1202,345 @@ class TestGetOpenSearchService:
 
         assert result is False
         mock_logger.warning.assert_called_with("OpenSearch client not available")
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    def test_delete_traces_older_than_no_client(self, mock_get_settings):
+        """Test delete_traces_older_than when client is not available."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = None  # Disable service
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        service = OpenSearchService()
+
+        from datetime import datetime
+
+        cutoff_date = datetime.now()
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.delete_traces_older_than(uuid4(), cutoff_date)
+
+        assert success is False
+        assert count == 0
+        mock_logger.warning.assert_called_with("OpenSearch client not available")
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_delete_traces_older_than_index_not_exists(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test delete_traces_older_than when index doesn't exist."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.return_value = False
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+
+        from datetime import datetime
+
+        cutoff_date = datetime.now()
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.delete_traces_older_than(project_uuid, cutoff_date)
+
+        assert success is True
+        assert count == 0
+        # Check that the "does not exist" message was logged
+        info_calls = mock_logger.info.call_args_list
+        assert any("does not exist" in str(call) for call in info_calls)
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_delete_traces_older_than_success(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test successful delete_traces_older_than."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.return_value = True
+        mock_client.delete_by_query.return_value = {"deleted": 42, "failures": []}
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+
+        from datetime import datetime
+
+        cutoff_date = datetime.now()
+
+        success, count = service.delete_traces_older_than(project_uuid, cutoff_date)
+
+        assert success is True
+        assert count == 42
+        mock_client.delete_by_query.assert_called_once()
+
+        # Check the query
+        call_args = mock_client.delete_by_query.call_args
+        assert "query" in call_args[1]["body"]
+        assert "range" in call_args[1]["body"]["query"]
+        assert "created_at" in call_args[1]["body"]["query"]["range"]
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_delete_traces_older_than_with_failures(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test delete_traces_older_than with some failures."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.return_value = True
+        mock_client.delete_by_query.return_value = {
+            "deleted": 35,
+            "failures": [{"error": "some error"}, {"error": "another error"}],
+        }
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+
+        from datetime import datetime
+
+        cutoff_date = datetime.now()
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.delete_traces_older_than(project_uuid, cutoff_date)
+
+        assert success is True
+        assert count == 35
+        # Should log warning about failures
+        warning_calls = list(mock_logger.warning.call_args_list)
+        assert len(warning_calls) == 1
+        assert "failed to delete" in warning_calls[0][0][0]
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_delete_traces_older_than_exception(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test delete_traces_older_than when exception occurs."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.side_effect = Exception("Connection error")
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+
+        from datetime import datetime
+
+        cutoff_date = datetime.now()
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.delete_traces_older_than(project_uuid, cutoff_date)
+
+        assert success is False
+        assert count == 0
+        mock_logger.error.assert_called_once()
+        assert "Error deleting old traces" in mock_logger.error.call_args[0][0]
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    def test_bulk_delete_traces_no_client(self, mock_get_settings):
+        """Test bulk_delete_traces when client is not available."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = None  # Disable service
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        service = OpenSearchService()
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.bulk_delete_traces(uuid4(), [uuid4()])
+
+        assert success is False
+        assert count == 0
+        mock_logger.warning.assert_called_with("OpenSearch client not available")
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    def test_bulk_delete_traces_empty_list(self, mock_get_settings):
+        """Test bulk_delete_traces with empty UUID list."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_get_settings.return_value = mock_settings
+
+        service = OpenSearchService()
+
+        success, count = service.bulk_delete_traces(uuid4(), [])
+
+        assert success is True
+        assert count == 0
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_bulk_delete_traces_index_not_exists(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test bulk_delete_traces when index doesn't exist."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.return_value = False
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+        span_uuids = [uuid4() for _ in range(10)]
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.bulk_delete_traces(project_uuid, span_uuids)
+
+        assert success is True
+        assert count == 0
+        # Check that the "does not exist" message was logged
+        info_calls = mock_logger.info.call_args_list
+        assert any("does not exist" in str(call) for call in info_calls)
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_bulk_delete_traces_batch_processing(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test bulk_delete_traces with batch processing."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.return_value = True
+
+        # Mock responses for 3 batches
+        mock_client.delete_by_query.side_effect = [
+            {"deleted": 1000, "failures": []},
+            {"deleted": 1000, "failures": []},
+            {"deleted": 500, "failures": []},
+        ]
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+
+        # Create 2500 UUIDs (will be 3 batches with batch_size=1000)
+        span_uuids = [uuid4() for _ in range(2500)]
+
+        success, count = service.bulk_delete_traces(
+            project_uuid, span_uuids, batch_size=1000
+        )
+
+        assert success is True
+        assert count == 2500
+        assert mock_client.delete_by_query.call_count == 3
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_bulk_delete_traces_with_batch_failures(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test bulk_delete_traces with failures in some batches."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.return_value = True
+
+        # Mock responses with some failures
+        mock_client.delete_by_query.side_effect = [
+            {"deleted": 900, "failures": [{"error": "error1"} for _ in range(100)]},
+            {"deleted": 1000, "failures": []},
+        ]
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+        span_uuids = [uuid4() for _ in range(1500)]
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.bulk_delete_traces(
+                project_uuid, span_uuids, batch_size=1000
+            )
+
+        assert success is True
+        assert count == 1900  # 900 + 1000
+
+        # Check warnings were logged
+        warning_calls = list(mock_logger.warning.call_args_list)
+        assert any(
+            "100 documents failed to delete" in str(call) for call in warning_calls
+        )
+        assert any(
+            "Total failures during deletion: 100" in str(call) for call in warning_calls
+        )
+
+    @patch("lilypad.server.services.opensearch.get_settings")
+    @patch("lilypad.server.services.opensearch.OpenSearch")
+    def test_bulk_delete_traces_exception(
+        self, mock_opensearch_class, mock_get_settings
+    ):
+        """Test bulk_delete_traces when exception occurs."""
+        mock_settings = Mock()
+        mock_settings.opensearch_host = "localhost"
+        mock_settings.opensearch_port = 9200
+        mock_settings.opensearch_user = None
+        mock_settings.opensearch_password = None
+        mock_settings.opensearch_use_ssl = False
+        mock_get_settings.return_value = mock_settings
+
+        mock_client = Mock()
+        mock_opensearch_class.return_value = mock_client
+        mock_client.indices.exists.side_effect = Exception("Network error")
+
+        service = OpenSearchService()
+        project_uuid = uuid4()
+        span_uuids = [uuid4() for _ in range(10)]
+
+        with patch("lilypad.server.services.opensearch.logger") as mock_logger:
+            success, count = service.bulk_delete_traces(project_uuid, span_uuids)
+
+        assert success is False
+        assert count == 0
+        mock_logger.error.assert_called_once()
+        assert "Error deleting traces by UUID" in mock_logger.error.call_args[0][0]
