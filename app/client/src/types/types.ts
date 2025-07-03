@@ -145,8 +145,11 @@ export interface APIKeyCreate {
    * @format uuid
    */
   project_uuid: string;
-  /** Environment Uuid */
-  environment_uuid?: string | null;
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
   /** Key Hash */
   key_hash?: string | null;
 }
@@ -1054,27 +1057,6 @@ export interface RecentSpansResponse {
   project_uuid: string;
 }
 
-/**
- * SearchQuery
- * Search query parameters.
- */
-export interface SearchQuery {
-  /** Query String */
-  query_string?: string | null;
-  /** Time Range Start */
-  time_range_start?: number | null;
-  /** Time Range End */
-  time_range_end?: number | null;
-  /**
-   * Limit
-   * @default 100
-   */
-  limit?: number;
-  scope?: Scope | null;
-  /** Type */
-  type?: string | null;
-}
-
 /** SettingsPublic */
 export interface SettingsPublic {
   /** Remote Client Url */
@@ -1182,6 +1164,8 @@ export interface SpanPublic {
   parent_span_id?: string | null;
   /** Session Id */
   session_id?: string | null;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /**
    * Uuid
    * @format uuid

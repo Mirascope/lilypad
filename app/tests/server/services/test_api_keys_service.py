@@ -24,7 +24,10 @@ def test_find_keys_by_user_and_project(
 
     # Create an API key for the project
     api_key_data = APIKeyCreate(
-        name="Test Key", project_uuid=project_uuid, key_hash="abcdef123456"
+        name="Test Key",
+        project_uuid=project_uuid,
+        key_hash="abcdef123456",
+        environment_uuid=uuid4(),
     )
     created_key = api_key_service.create_record(api_key_data)
 
@@ -55,7 +58,10 @@ def test_create_record_adds_user_uuid(
 
     # Create an API key
     api_key_data = APIKeyCreate(
-        name="Test Key", project_uuid=project_uuid, key_hash="abcdef789012"
+        name="Test Key",
+        project_uuid=project_uuid,
+        key_hash="abcdef789012",
+        environment_uuid=uuid4(),
     )
     created_key = api_key_service.create_record(api_key_data)
 

@@ -4991,15 +4991,8 @@
             "title": "Project Uuid"
           },
           "environment_uuid": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Environment Uuid"
           },
           "key_hash": {
@@ -5017,7 +5010,8 @@
         "type": "object",
         "required": [
           "name",
-          "project_uuid"
+          "project_uuid",
+          "environment_uuid"
         ],
         "title": "APIKeyCreate",
         "description": "API key create model"

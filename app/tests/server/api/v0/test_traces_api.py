@@ -155,7 +155,7 @@ def test_post_traces(
 
         response = client.post(
             f"/projects/{test_project.uuid}/traces",
-            headers={"X-API-Key": test_api_key.key_hash},
+            headers={"X-API-Key": "test_key"},
             json=trace_data,
         )
         assert response.status_code == 200
@@ -448,7 +448,7 @@ def test_create_traces_with_kafka_success(
         response = client.post(
             f"/projects/{test_project.uuid}/traces",
             json=traces_data,
-            headers={"X-API-Key": test_api_key.key_hash},
+            headers={"X-API-Key": "test_key"},
         )
 
         assert response.status_code == 200
@@ -510,7 +510,7 @@ def test_create_traces_kafka_unavailable_fallback(
         response = client.post(
             f"/projects/{test_project.uuid}/traces",
             json=traces_data,
-            headers={"X-API-Key": test_api_key.key_hash},
+            headers={"X-API-Key": "test_key"},
         )
 
         assert response.status_code == 200
@@ -583,7 +583,7 @@ def test_create_traces_cloud_limit_exceeded(
             response = client.post(
                 f"/projects/{test_project.uuid}/traces",
                 json=traces_data,
-                headers={"X-API-Key": test_api_key.key_hash},
+                headers={"X-API-Key": "test_key"},
             )
 
         assert response.status_code == 402
@@ -670,7 +670,7 @@ def test_create_traces_no_attributes(
         response = client.post(
             f"/projects/{test_project.uuid}/traces",
             json=traces_data,
-            headers={"X-API-Key": test_api_key.key_hash},
+            headers={"X-API-Key": "test_key"},
         )
 
         assert response.status_code == 200
@@ -743,7 +743,7 @@ def test_create_traces_with_parent_child_relationship(
         response = client.post(
             f"/projects/{test_project.uuid}/traces",
             json=traces_data,
-            headers={"X-API-Key": test_api_key.key_hash},
+            headers={"X-API-Key": "test_key"},
         )
 
         assert response.status_code == 200
@@ -800,7 +800,7 @@ def test_create_traces_billing_error(
         response = client.post(
             f"/projects/{test_project.uuid}/traces",
             json=traces_data,
-            headers={"X-API-Key": test_api_key.key_hash},
+            headers={"X-API-Key": "test_key"},
         )
 
         # Should still succeed despite billing error

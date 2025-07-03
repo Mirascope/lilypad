@@ -1,5 +1,6 @@
 """Pytest configuration for FastAPI tests."""
 
+import hashlib
 from collections.abc import AsyncGenerator, Generator
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
@@ -286,8 +287,10 @@ def test_api_key(
     if not test_project.uuid:
         raise ValueError("Project UUID is required for API key creation")
 
+    raw_key = "test_key"
+    api_key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     api_key = APIKeyTable(
-        key_hash="test_key",
+        key_hash=api_key_hash,
         user_uuid=test_user.uuid,  # pyright: ignore [reportArgumentType]
         organization_uuid=ORGANIZATION_UUID,
         name="test_key",

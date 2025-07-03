@@ -42,7 +42,6 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/annotations/$
 const AnnotationLayout = () => {
   const { projectUuid, _splat: annotationUuid } = useParams({ from: Route.id });
   const { data: annotations } = useSuspenseQuery(annotationsByProjectQueryOptions(projectUuid));
-  console.log("Annotations:", annotations);
   const navigate = useNavigate();
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationPublic | null>(
     annotations[0] || null

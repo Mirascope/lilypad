@@ -8,9 +8,9 @@ import {
   USER_CONFIG_STORAGE_KEY,
 } from "@/src/utils/constants";
 import { environmentsQueryOptions } from "@/src/utils/environments";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { VisibilityState } from "@tanstack/react-table";
-import { createContext, ReactNode, useCallback, useContext, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 export interface UserConfig {
   defaultTraceTab?: TraceTab;
@@ -123,18 +123,39 @@ const saveUserConfigToStorage = (config: UserConfig | null) => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: environments } = useSuspenseQuery(environmentsQueryOptions());
   const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
   const [userConfig, setUserConfig] = useState<UserConfig | null>(loadUserConfigFromStorage());
   const [activeProject, setActiveProject] = useState<ProjectPublic | null | undefined>(null);
   const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentPublic | null | undefined>(
-    loadEnvironmentFromStorage() ?? (environments[0] || null)
+    loadEnvironmentFromStorage()
   );
   const isAuthenticated = !!user;
+
+  // Conditionally run the environments query only when authenticated
+  const { data: environments } = useQuery({
+    ...environmentsQueryOptions(),
+    enabled: isAuthenticated, // Only run query when user is authenticated
+  });
+
+  // Set the active environment when environments are loaded
+  useEffect(() => {
+    if (environments && environments.length > 0 && !activeEnvironment) {
+      // If no environment is saved in storage, use the first one
+      const defaultEnvironment = environments[0];
+      setActiveEnvironment(defaultEnvironment);
+      saveEnvironmentToStorage(defaultEnvironment);
+    }
+  }, [environments, activeEnvironment]);
 
   const setSession = useCallback((newSession: UserPublic | null) => {
     setUser(newSession);
     saveToStorage(newSession);
+
+    // If logging out, clear the active environment
+    if (!newSession) {
+      setActiveEnvironment(null);
+      saveEnvironmentToStorage(null);
+    }
   }, []);
 
   const setProject = useCallback((project: ProjectPublic | null | undefined) => {
@@ -163,6 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     saveToStorage(null);
+    setActiveEnvironment(null);
+    saveEnvironmentToStorage(null);
   }, []);
 
   return (
