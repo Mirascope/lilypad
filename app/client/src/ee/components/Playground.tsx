@@ -174,8 +174,8 @@ const CallParamsDrawer = ({
           Configure Call Params
         </Button>
       </SheetTrigger>
-      <SheetContent className="flex flex-col gap-2 overflow-y-auto" showOverlay={false}>
-        <SheetHeader>
+      <SheetContent className="flex flex-col gap-2 overflow-y-auto p-4" showOverlay={false}>
+        <SheetHeader className="p-0">
           <SheetTitle>Call Params</SheetTitle>
         </SheetHeader>
         {!isDisabled && (
