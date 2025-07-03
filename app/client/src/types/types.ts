@@ -1054,6 +1054,27 @@ export interface RecentSpansResponse {
   project_uuid: string;
 }
 
+/**
+ * SearchQuery
+ * Search query parameters.
+ */
+export interface SearchQuery {
+  /** Query String */
+  query_string?: string | null;
+  /** Time Range Start */
+  time_range_start?: number | null;
+  /** Time Range End */
+  time_range_end?: number | null;
+  /**
+   * Limit
+   * @default 100
+   */
+  limit?: number;
+  scope?: Scope | null;
+  /** Type */
+  type?: string | null;
+}
+
 /** SettingsPublic */
 export interface SettingsPublic {
   /** Remote Client Url */

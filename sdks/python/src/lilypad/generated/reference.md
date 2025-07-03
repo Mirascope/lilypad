@@ -153,6 +153,96 @@ client.get_event_summaries_stripe_event_summaries_get()
 </dl>
 </details>
 
+<details><summary><code>client.<a href="src/mirascope/client.py">get_span_projects_project_uuid_spans_span_identifier_get</a>(...)</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Get span by uuid or span_id.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```python
+from mirascope import Lilypad
+
+client = Lilypad(
+    api_key="YOUR_API_KEY",
+    token="YOUR_TOKEN",
+    base_url="https://yourhost.com/path/to/api",
+)
+client.get_span_projects_project_uuid_spans_span_identifier_get(
+    project_uuid="project_uuid",
+    span_identifier="span_identifier",
+    environment_uuid="environment_uuid",
+)
+
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**span_identifier:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request_options:** `typing.Optional[RequestOptions]` — Request-specific configuration.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 <details><summary><code>client.<a href="src/mirascope/client.py">get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get</a>(...)</code></summary>
 <dl>
 <dd>
@@ -190,6 +280,7 @@ client = Lilypad(
 client.get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
     project_uuid="project_uuid",
     trace_id="trace_id",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -215,6 +306,14 @@ client.get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_g
 <dd>
 
 **trace_id:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -1124,20 +1223,6 @@ client.projects.update(
 <details><summary><code>client.spans.<a href="src/mirascope/spans/client.py">get</a>(...)</code></summary>
 <dl>
 <dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Get span by uuid.
-</dd>
-</dl>
-</dd>
-</dl>
 
 #### 🔌 Usage
 
@@ -3705,6 +3790,7 @@ client = Lilypad(
 )
 client.ee.projects.annotations.list(
     project_uuid="project_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -3722,6 +3808,14 @@ client.ee.projects.annotations.list(
 <dd>
 
 **project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -4454,6 +4548,7 @@ client = Lilypad(
 client.ee.projects.spans.annotations.list(
     project_uuid="project_uuid",
     span_uuid="span_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -4479,6 +4574,14 @@ client.ee.projects.spans.annotations.list(
 <dd>
 
 **span_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -5375,6 +5478,7 @@ client = Lilypad(
 )
 client.projects.functions.get_latest_versions(
     project_uuid="project_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -5392,6 +5496,14 @@ client.projects.functions.get_latest_versions(
 <dd>
 
 **project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -6122,6 +6234,7 @@ client = Lilypad(
 client.projects.spans.get_aggregates(
     project_uuid="project_uuid",
     time_frame="day",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6147,6 +6260,14 @@ client.projects.spans.get_aggregates(
 <dd>
 
 **time_frame:** `TimeFrame` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -6204,6 +6325,7 @@ client = Lilypad(
 )
 client.projects.spans.get_recent(
     project_uuid="project_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6221,6 +6343,14 @@ client.projects.spans.get_recent(
 <dd>
 
 **project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -6229,87 +6359,6 @@ client.projects.spans.get_recent(
 <dd>
 
 **since:** `typing.Optional[dt.datetime]` — Get spans created since this timestamp
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request_options:** `typing.Optional[RequestOptions]` — Request-specific configuration.
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.projects.spans.<a href="src/mirascope/projects/spans/client.py">get_by_id</a>(...)</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Get span by project_uuid and span_id.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```python
-from mirascope import Lilypad
-
-client = Lilypad(
-    api_key="YOUR_API_KEY",
-    token="YOUR_TOKEN",
-    base_url="https://yourhost.com/path/to/api",
-)
-client.projects.spans.get_by_id(
-    project_uuid="project_uuid",
-    span_id="span_id",
-)
-
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**project_uuid:** `str` 
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**span_id:** `str` 
     
 </dd>
 </dl>
@@ -6365,6 +6414,7 @@ client = Lilypad(
 )
 client.projects.spans.search(
     project_uuid="project_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6382,6 +6432,14 @@ client.projects.spans.search(
 <dd>
 
 **project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -6486,6 +6544,7 @@ client = Lilypad(
 client.projects.spans.delete(
     project_uuid="project_uuid",
     span_uuid="span_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6511,6 +6570,81 @@ client.projects.spans.delete(
 <dd>
 
 **span_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request_options:** `typing.Optional[RequestOptions]` — Request-specific configuration.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.projects.spans.<a href="src/mirascope/projects/spans/client.py">get_by_id</a>(...)</code></summary>
+<dl>
+<dd>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```python
+from mirascope import Lilypad
+
+client = Lilypad(
+    api_key="YOUR_API_KEY",
+    token="YOUR_TOKEN",
+    base_url="https://yourhost.com/path/to/api",
+)
+client.projects.spans.get_by_id(
+    project_uuid="project_uuid",
+    span_id="span_id",
+)
+
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**span_id:** `str` 
     
 </dd>
 </dl>
@@ -6568,6 +6702,7 @@ client = Lilypad(
 client.projects.traces.get_root(
     project_uuid="project_uuid",
     span_id="span_id",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6593,6 +6728,14 @@ client.projects.traces.get_root(
 <dd>
 
 **span_id:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -6648,6 +6791,7 @@ client = Lilypad(
 )
 client.projects.traces.list(
     project_uuid="project_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -6665,6 +6809,14 @@ client.projects.traces.list(
 <dd>
 
 **project_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -7234,6 +7386,7 @@ client.projects.functions.spans.get_aggregates(
     project_uuid="project_uuid",
     function_uuid="function_uuid",
     time_frame="day",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -7267,6 +7420,14 @@ client.projects.functions.spans.get_aggregates(
 <dd>
 
 **time_frame:** `TimeFrame` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>
@@ -7323,6 +7484,7 @@ client = Lilypad(
 client.projects.functions.spans.list_paginated(
     project_uuid="project_uuid",
     function_uuid="function_uuid",
+    environment_uuid="environment_uuid",
 )
 
 ```
@@ -7348,6 +7510,14 @@ client.projects.functions.spans.list_paginated(
 <dd>
 
 **function_uuid:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `str` 
     
 </dd>
 </dl>

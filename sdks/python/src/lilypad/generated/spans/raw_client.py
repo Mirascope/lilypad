@@ -21,12 +21,8 @@ class RawSpansClient:
     def __init__(self, *, client_wrapper: SyncClientWrapper):
         self._client_wrapper = client_wrapper
 
-    def get(
-        self, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[SpanMoreDetails]:
+    def get(self, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None) -> HttpResponse[None]:
         """
-        Get span by uuid.
-
         Parameters
         ----------
         span_uuid : str
@@ -36,8 +32,7 @@ class RawSpansClient:
 
         Returns
         -------
-        HttpResponse[SpanMoreDetails]
-            Successful Response
+        HttpResponse[None]
         """
         _response = self._client_wrapper.httpx_client.request(
             f"spans/{jsonable_encoder(span_uuid)}",
@@ -46,25 +41,7 @@ class RawSpansClient:
         )
         try:
             if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    SpanMoreDetails,
-                    construct_type(
-                        type_=SpanMoreDetails,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
+                return HttpResponse(response=_response, data=None)
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
@@ -143,10 +120,8 @@ class AsyncRawSpansClient:
 
     async def get(
         self, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[SpanMoreDetails]:
+    ) -> AsyncHttpResponse[None]:
         """
-        Get span by uuid.
-
         Parameters
         ----------
         span_uuid : str
@@ -156,8 +131,7 @@ class AsyncRawSpansClient:
 
         Returns
         -------
-        AsyncHttpResponse[SpanMoreDetails]
-            Successful Response
+        AsyncHttpResponse[None]
         """
         _response = await self._client_wrapper.httpx_client.request(
             f"spans/{jsonable_encoder(span_uuid)}",
@@ -166,25 +140,7 @@ class AsyncRawSpansClient:
         )
         try:
             if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    SpanMoreDetails,
-                    construct_type(
-                        type_=SpanMoreDetails,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
+                return AsyncHttpResponse(response=_response, data=None)
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)

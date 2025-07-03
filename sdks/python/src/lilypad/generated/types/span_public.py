@@ -34,6 +34,7 @@ class SpanPublic(UncheckedBaseModel):
     data: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = None
     parent_span_id: typing.Optional[str] = None
     session_id: typing.Optional[str] = None
+    environment_uuid: typing.Optional[str] = None
     uuid_: typing_extensions.Annotated[str, FieldMetadata(alias="uuid")]
     project_uuid: str
     display_name: typing.Optional[str] = None

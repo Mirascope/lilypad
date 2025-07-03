@@ -26,29 +26,20 @@ from ...services.spans import AggregateMetrics, SpanService, TimeFrame
 spans_router = APIRouter()
 
 
-@spans_router.get("/spans/{span_uuid}", response_model=SpanMoreDetails)
-async def get_span(
-    span_uuid: UUID,
-    span_service: Annotated[SpanService, Depends(SpanService)],
-) -> SpanMoreDetails:
-    """Get span by uuid."""
-    span = span_service.find_record_by_uuid(span_uuid)
-    if not span:
-        raise HTTPException(status_code=404, detail="Span not found")
-    return SpanMoreDetails.from_span(span)
-
-
 @spans_router.get(
     "/projects/{project_uuid}/spans/metadata",
     response_model=Sequence[AggregateMetrics],
 )
 async def get_aggregates_by_project_uuid(
     project_uuid: UUID,
-    time_frame: TimeFrame,
+    time_frame: Annotated[TimeFrame, Query()],
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> Sequence[AggregateMetrics]:
     """Get aggregated span by project uuid."""
-    return span_service.get_aggregated_metrics(project_uuid, time_frame=time_frame)
+    return span_service.get_aggregated_metrics(
+        project_uuid, time_frame=time_frame, environment_uuid=environment_uuid
+    )
 
 
 @spans_router.get(
@@ -57,8 +48,8 @@ async def get_aggregates_by_project_uuid(
 )
 async def get_recent_spans(
     project_uuid: UUID,
-    current_user: Annotated[UserPublic, Depends(get_current_user)],
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
     since: Annotated[
         datetime | None, Query(description="Get spans created since this timestamp")
     ] = None,
@@ -71,7 +62,7 @@ async def get_recent_spans(
         since = datetime.now(timezone.utc) - timedelta(seconds=30)
 
     # Get recent spans
-    recent_spans = span_service.get_spans_since(project_uuid, since)
+    recent_spans = span_service.get_spans_since(project_uuid, since, environment_uuid)
 
     return RecentSpansResponse(
         spans=[SpanPublic.model_validate(span) for span in recent_spans],
@@ -80,17 +71,28 @@ async def get_recent_spans(
     )
 
 
-# Order matters, this endpoint should be last
 @spans_router.get(
-    "/projects/{project_uuid}/spans/{span_id}", response_model=SpanMoreDetails
+    "/projects/{project_uuid}/spans/{span_identifier}", response_model=SpanMoreDetails
 )
-async def get_span_by_span_id(
+async def get_span(
     project_uuid: UUID,
-    span_id: str,
+    span_identifier: str,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> SpanMoreDetails:
-    """Get span by project_uuid and span_id."""
-    span = span_service.get_record_by_span_id(project_uuid, span_id)
+    """Get span by uuid or span_id."""
+    # Try to parse as UUID first
+    try:
+        span_uuid = UUID(span_identifier)
+        span = span_service.find_record_by_uuid(
+            span_uuid, project_uuid=project_uuid, environment_uuid=environment_uuid
+        )
+    except ValueError:
+        # If not a UUID, treat as span_id
+        span = span_service.get_record_by_span_id(
+            project_uuid, span_identifier, environment_uuid
+        )
+
     if not span:
         raise HTTPException(status_code=404, detail="Span not found")
     return SpanMoreDetails.from_span(span)
@@ -121,9 +123,12 @@ async def get_aggregates_by_function_uuid(
     function_uuid: UUID,
     time_frame: TimeFrame,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> Sequence[AggregateMetrics]:
     """Get aggregated span by function uuid."""
-    return span_service.get_aggregated_metrics(project_uuid, function_uuid, time_frame)
+    return span_service.get_aggregated_metrics(
+        project_uuid, function_uuid, time_frame, environment_uuid
+    )
 
 
 @spans_router.get("/projects/{project_uuid}/spans", response_model=Sequence[SpanPublic])
@@ -136,7 +141,9 @@ async def search_traces(
     """Search for traces in OpenSearch."""
     if not opensearch_service.is_enabled:
         return []
-    hits = opensearch_service.search_traces(project_uuid, search_query)
+    hits = opensearch_service.search_traces(
+        project_uuid, search_query.environment_uuid, search_query
+    )
     # Extract function UUIDs and fetch functions in batch
     function_uuids = {
         UUID(hit["_source"]["function_uuid"])
@@ -198,11 +205,14 @@ async def search_traces(
 async def delete_span_in_opensearch(
     project_uuid: UUID,
     span_uuid: UUID,
+    environment_uuid: UUID,
     opensearch_service: OpenSearchService,
 ) -> None:
     """Delete span in OpenSearch."""
     if opensearch_service.is_enabled:
-        opensearch_service.delete_trace_by_uuid(project_uuid, span_uuid)
+        opensearch_service.delete_trace_by_uuid(
+            project_uuid, environment_uuid, span_uuid
+        )
 
 
 @spans_router.delete("/projects/{project_uuid}/spans/{span_uuid}")
@@ -212,13 +222,18 @@ async def delete_spans(
     span_service: Annotated[SpanService, Depends(SpanService)],
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
     background_tasks: BackgroundTasks,
+    environment_uuid: Annotated[UUID, Query()],
 ) -> bool:
     """Delete spans by UUID."""
     try:
         span_service.delete_record_by_uuid(span_uuid)
         if opensearch_service.is_enabled:
             background_tasks.add_task(
-                delete_span_in_opensearch, project_uuid, span_uuid, opensearch_service
+                delete_span_in_opensearch,
+                project_uuid,
+                span_uuid,
+                environment_uuid,
+                opensearch_service,
             )
     except Exception:
         return False
@@ -233,6 +248,7 @@ async def get_spans_by_function_uuid_paginated(
     project_uuid: UUID,
     function_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
     order: Literal["asc", "desc"] = Query(
@@ -243,11 +259,14 @@ async def get_spans_by_function_uuid_paginated(
     items = span_service.find_records_by_function_uuid_paged(
         project_uuid,
         function_uuid,
+        environment_uuid=environment_uuid,
         limit=limit,
         offset=offset,
         order=order,
     )
-    total = span_service.count_records_by_function_uuid(project_uuid, function_uuid)
+    total = span_service.count_records_by_function_uuid(
+        project_uuid, function_uuid, environment_uuid
+    )
     return Paginated(
         items=[SpanPublic.model_validate(i) for i in items],
         limit=limit,

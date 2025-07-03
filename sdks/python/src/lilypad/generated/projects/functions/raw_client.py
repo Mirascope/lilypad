@@ -357,7 +357,7 @@ class RawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     def get_latest_versions(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> HttpResponse[typing.List[FunctionPublic]]:
         """
         Get all unique function names.
@@ -365,6 +365,8 @@ class RawFunctionsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -377,6 +379,9 @@ class RawFunctionsClient:
         _response = self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/metadata/names/versions",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -1173,7 +1178,7 @@ class AsyncRawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     async def get_latest_versions(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> AsyncHttpResponse[typing.List[FunctionPublic]]:
         """
         Get all unique function names.
@@ -1181,6 +1186,8 @@ class AsyncRawFunctionsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1193,6 +1200,9 @@ class AsyncRawFunctionsClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/metadata/names/versions",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:

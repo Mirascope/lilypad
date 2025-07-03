@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..._utils import (
     construct_function,
@@ -153,9 +153,12 @@ async def get_unique_function_names(
 async def get_latest_version_unique_function_names(
     project_uuid: UUID,
     function_service: Annotated[FunctionService, Depends(FunctionService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> Sequence[FunctionTable]:
     """Get all unique function names."""
-    return function_service.find_unique_function_names(project_uuid)
+    return function_service.find_unique_function_names(
+        project_uuid, environment_uuid=environment_uuid
+    )
 
 
 @functions_router.get(

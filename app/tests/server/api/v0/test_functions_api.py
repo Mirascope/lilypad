@@ -171,11 +171,14 @@ def test_get_unique_function_names(
 
 
 def test_get_latest_version_unique_function_names(
-    client: TestClient, test_project: ProjectTable, test_function: FunctionTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_function_environment,
 ):
     """Test getting latest version of unique function names."""
     response = client.get(
-        f"/projects/{test_project.uuid}/functions/metadata/names/versions"
+        f"/projects/{test_project.uuid}/functions/metadata/names/versions?environment_uuid={test_function_environment.environment_uuid}"
     )
 
     assert response.status_code == 200

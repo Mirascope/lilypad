@@ -293,7 +293,7 @@ class FunctionsClient:
         return _response.data
 
     def get_latest_versions(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> typing.List[FunctionPublic]:
         """
         Get all unique function names.
@@ -301,6 +301,8 @@ class FunctionsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -321,9 +323,12 @@ class FunctionsClient:
         )
         client.projects.functions.get_latest_versions(
             project_uuid="project_uuid",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.get_latest_versions(project_uuid, request_options=request_options)
+        _response = self._raw_client.get_latest_versions(
+            project_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     def get_by_hash(
@@ -968,7 +973,7 @@ class AsyncFunctionsClient:
         return _response.data
 
     async def get_latest_versions(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> typing.List[FunctionPublic]:
         """
         Get all unique function names.
@@ -976,6 +981,8 @@ class AsyncFunctionsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1001,12 +1008,15 @@ class AsyncFunctionsClient:
         async def main() -> None:
             await client.projects.functions.get_latest_versions(
                 project_uuid="project_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.get_latest_versions(project_uuid, request_options=request_options)
+        _response = await self._raw_client.get_latest_versions(
+            project_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     async def get_by_hash(

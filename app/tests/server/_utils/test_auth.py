@@ -110,7 +110,7 @@ async def test_validate_api_key_project_success(mock_session):
     mock_session.exec.return_value = mock_result
 
     result = await validate_api_key_project(project_uuid, api_key, mock_session)
-    assert result is True
+    assert result is not None
 
 
 @pytest.mark.asyncio
@@ -145,7 +145,7 @@ async def test_validate_api_key_project_invalid_key_no_strict(mock_session):
     result = await validate_api_key_project(
         project_uuid, api_key, mock_session, strict=False
     )
-    assert result is False
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -188,7 +188,7 @@ async def test_validate_api_key_project_wrong_project_no_strict(mock_session):
     result = await validate_api_key_project(
         project_uuid, api_key, mock_session, strict=False
     )
-    assert result is False
+    assert result is None
 
 
 @pytest.mark.asyncio

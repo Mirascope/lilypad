@@ -27,6 +27,7 @@ class RawSpansClient:
         function_uuid: str,
         *,
         time_frame: TimeFrame,
+        environment_uuid: str,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[typing.List[AggregateMetrics]]:
         """
@@ -39,6 +40,8 @@ class RawSpansClient:
         function_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -53,6 +56,7 @@ class RawSpansClient:
             method="GET",
             params={
                 "time_frame": time_frame,
+                "environment_uuid": environment_uuid,
             },
             request_options=request_options,
         )
@@ -87,6 +91,7 @@ class RawSpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -100,6 +105,8 @@ class RawSpansClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -119,6 +126,7 @@ class RawSpansClient:
             f"projects/{jsonable_encoder(project_uuid)}/functions/{jsonable_encoder(function_uuid)}/spans/paginated",
             method="GET",
             params={
+                "environment_uuid": environment_uuid,
                 "limit": limit,
                 "offset": offset,
                 "order": order,
@@ -162,6 +170,7 @@ class AsyncRawSpansClient:
         function_uuid: str,
         *,
         time_frame: TimeFrame,
+        environment_uuid: str,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[typing.List[AggregateMetrics]]:
         """
@@ -174,6 +183,8 @@ class AsyncRawSpansClient:
         function_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -188,6 +199,7 @@ class AsyncRawSpansClient:
             method="GET",
             params={
                 "time_frame": time_frame,
+                "environment_uuid": environment_uuid,
             },
             request_options=request_options,
         )
@@ -222,6 +234,7 @@ class AsyncRawSpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -235,6 +248,8 @@ class AsyncRawSpansClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -254,6 +269,7 @@ class AsyncRawSpansClient:
             f"projects/{jsonable_encoder(project_uuid)}/functions/{jsonable_encoder(function_uuid)}/spans/paginated",
             method="GET",
             params={
+                "environment_uuid": environment_uuid,
                 "limit": limit,
                 "offset": offset,
                 "order": order,

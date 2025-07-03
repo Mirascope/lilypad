@@ -42,6 +42,7 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/annotations/$
 const AnnotationLayout = () => {
   const { projectUuid, _splat: annotationUuid } = useParams({ from: Route.id });
   const { data: annotations } = useSuspenseQuery(annotationsByProjectQueryOptions(projectUuid));
+  console.log("Annotations:", annotations);
   const navigate = useNavigate();
   const [activeAnnotation, setActiveAnnotation] = useState<AnnotationPublic | null>(
     annotations[0] || null
@@ -55,7 +56,7 @@ const AnnotationLayout = () => {
         navigate({
           to: Route.fullPath,
           replace: true,
-          params: { projectUuid, _splat: undefined },
+          params: { projectUuid, _splat: "" },
         }).catch(() => {
           toast.error("Failed to navigate");
         });
@@ -73,7 +74,7 @@ const AnnotationLayout = () => {
     navigate({
       to: Route.fullPath,
       replace: true,
-      params: { projectUuid, _splat: activeAnnotation?.uuid },
+      params: { projectUuid, _splat: activeAnnotation?.uuid ?? "" },
     }).catch(() => {
       toast.error("Failed to navigate");
     });
@@ -231,7 +232,7 @@ const AnnotationList = ({
                   navigate({
                     to: Route.fullPath,
                     replace: true,
-                    params: { projectUuid, _splat: undefined },
+                    params: { projectUuid, _splat: "" },
                   }).catch(() => {
                     toast.error("Failed to navigate");
                   });

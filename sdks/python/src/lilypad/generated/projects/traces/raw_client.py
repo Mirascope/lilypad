@@ -22,7 +22,12 @@ class RawTracesClient:
         self._client_wrapper = client_wrapper
 
     def get_root(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_id: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[SpanPublic]:
         """
         Get traces by project UUID.
@@ -32,6 +37,8 @@ class RawTracesClient:
         project_uuid : str
 
         span_id : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -44,6 +51,9 @@ class RawTracesClient:
         _response = self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/traces/{jsonable_encoder(span_id)}/root",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -76,6 +86,7 @@ class RawTracesClient:
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -87,6 +98,8 @@ class RawTracesClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -106,6 +119,7 @@ class RawTracesClient:
             f"projects/{jsonable_encoder(project_uuid)}/traces",
             method="GET",
             params={
+                "environment_uuid": environment_uuid,
                 "limit": limit,
                 "offset": offset,
                 "order": order,
@@ -193,7 +207,12 @@ class AsyncRawTracesClient:
         self._client_wrapper = client_wrapper
 
     async def get_root(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_id: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[SpanPublic]:
         """
         Get traces by project UUID.
@@ -203,6 +222,8 @@ class AsyncRawTracesClient:
         project_uuid : str
 
         span_id : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -215,6 +236,9 @@ class AsyncRawTracesClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/traces/{jsonable_encoder(span_id)}/root",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -247,6 +271,7 @@ class AsyncRawTracesClient:
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -258,6 +283,8 @@ class AsyncRawTracesClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -277,6 +304,7 @@ class AsyncRawTracesClient:
             f"projects/{jsonable_encoder(project_uuid)}/traces",
             method="GET",
             params={
+                "environment_uuid": environment_uuid,
                 "limit": limit,
                 "offset": offset,
                 "order": order,

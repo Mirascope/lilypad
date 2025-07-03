@@ -93,6 +93,16 @@
               "format": "uuid",
               "title": "Project Uuid"
             }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
           }
         ],
         "responses": {
@@ -345,6 +355,16 @@
               "type": "string",
               "format": "uuid",
               "title": "Span Uuid"
+            }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
             }
           }
         ],
@@ -1438,6 +1458,16 @@
               "format": "uuid",
               "title": "Project Uuid"
             }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
           }
         ],
         "responses": {
@@ -2285,112 +2315,6 @@
         }
       }
     },
-    "/spans/{span_uuid}": {
-      "get": {
-        "summary": "Get Span",
-        "description": "Get span by uuid.",
-        "operationId": "get_span_spans__span_uuid__get",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          },
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "span_uuid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Span Uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpanMoreDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "summary": "Update Span",
-        "description": "Update span by uuid.",
-        "operationId": "update_span_spans__span_uuid__patch",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          },
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "span_uuid",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Span Uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SpanUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SpanMoreDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/projects/{project_uuid}/spans/metadata": {
       "get": {
         "summary": "Get Aggregates By Project Uuid",
@@ -2421,6 +2345,16 @@
             "required": true,
             "schema": {
               "$ref": "#/components/schemas/TimeFrame"
+            }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
             }
           }
         ],
@@ -2477,6 +2411,16 @@
             }
           },
           {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
+          },
+          {
             "name": "since",
             "in": "query",
             "required": false,
@@ -2520,11 +2464,11 @@
         }
       }
     },
-    "/projects/{project_uuid}/spans/{span_id}": {
+    "/projects/{project_uuid}/spans/{span_identifier}": {
       "get": {
-        "summary": "Get Span By Span Id",
-        "description": "Get span by project_uuid and span_id.",
-        "operationId": "get_span_by_span_id_projects__project_uuid__spans__span_id__get",
+        "summary": "Get Span",
+        "description": "Get span by uuid or span_id.",
+        "operationId": "get_span_projects__project_uuid__spans__span_identifier__get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2545,15 +2489,84 @@
             }
           },
           {
-            "name": "span_id",
+            "name": "span_identifier",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Span Id"
+              "title": "Span Identifier"
+            }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpanMoreDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/spans/{span_uuid}": {
+      "patch": {
+        "summary": "Update Span",
+        "description": "Update span by uuid.",
+        "operationId": "update_span_spans__span_uuid__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "span_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Span Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpanUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2618,6 +2631,16 @@
             "required": true,
             "schema": {
               "$ref": "#/components/schemas/TimeFrame"
+            }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
             }
           }
         ],
@@ -2762,6 +2785,16 @@
               ],
               "title": "Type"
             }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
           }
         ],
         "responses": {
@@ -2825,6 +2858,16 @@
               "format": "uuid",
               "title": "Span Uuid"
             }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
           }
         ],
         "responses": {
@@ -2884,6 +2927,16 @@
               "type": "string",
               "format": "uuid",
               "title": "Function Uuid"
+            }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
             }
           },
           {
@@ -2984,6 +3037,16 @@
               "type": "string",
               "title": "Span Id"
             }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
           }
         ],
         "responses": {
@@ -3042,6 +3105,16 @@
               "type": "string",
               "title": "Trace Id"
             }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
+            }
           }
         ],
         "responses": {
@@ -3094,6 +3167,16 @@
               "type": "string",
               "format": "uuid",
               "title": "Project Uuid"
+            }
+          },
+          {
+            "name": "environment_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Environment Uuid"
             }
           },
           {
@@ -7369,6 +7452,18 @@
               }
             ],
             "title": "Session Id"
+          },
+          "environment_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Uuid"
           },
           "uuid": {
             "type": "string",
