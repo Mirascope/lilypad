@@ -902,13 +902,6 @@ def trace(
                     return output
 
                 with Span(trace_name) as span:
-                    # If span is in no-op mode, just execute the function
-                    if span.is_noop:
-                        output = await fn(*args, **kwargs)
-                        if mode == "wrap":
-                            return NoOpAsyncTrace(response=output)
-                        return output
-
                     final_args = args
                     final_kwargs = kwargs
                     needs_trace_ctx = "trace_ctx" in signature.parameters
@@ -920,6 +913,13 @@ def trace(
                         pass
                     if needs_trace_ctx and not has_user_provided_trace_ctx:
                         final_args = (span, *args)
+
+                    # If span is in no-op mode, just execute the function with proper args
+                    if span.is_noop:
+                        output = await fn(*final_args, **final_kwargs)
+                        if mode == "wrap":
+                            return NoOpAsyncTrace(response=output)
+                        return output
                     arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
                     arg_values.pop("trace_ctx", None)
                     arg_types.pop("trace_ctx", None)
@@ -1097,13 +1097,6 @@ def trace(
                     return output
 
                 with Span(trace_name) as span:
-                    # If span is in no-op mode, just execute the function
-                    if span.is_noop:
-                        output = fn(*args, **kwargs)
-                        if mode == "wrap":
-                            return NoOpTrace(response=output)
-                        return output
-
                     final_args = args
                     final_kwargs = kwargs
                     needs_trace_ctx = "trace_ctx" in signature.parameters
@@ -1116,6 +1109,13 @@ def trace(
 
                     if needs_trace_ctx and not has_user_provided_trace_ctx:
                         final_args = (span, *args)
+
+                    # If span is in no-op mode, just execute the function with proper args
+                    if span.is_noop:
+                        output = fn(*final_args, **final_kwargs)
+                        if mode == "wrap":
+                            return NoOpTrace(response=output)
+                        return output
                     arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
                     arg_values.pop("trace_ctx", None)
                     arg_types.pop("trace_ctx", None)

@@ -219,7 +219,7 @@ def recursive_process_value(value: Any) -> dict | list | str | int | float | boo
         return result
 
     # Handle basic types directly
-    if isinstance(value, str | int | float | bool):
+    if isinstance(value, (str, int, float, bool)):
         return value
 
     # Handle lists
