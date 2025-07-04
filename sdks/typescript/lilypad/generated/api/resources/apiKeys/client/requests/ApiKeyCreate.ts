@@ -6,13 +6,14 @@
  * @example
  *     {
  *         name: "name",
- *         project_uuid: "project_uuid"
+ *         project_uuid: "project_uuid",
+ *         environment_uuid: "environment_uuid"
  *     }
  */
 export interface ApiKeyCreate {
     name: string;
     expires_at?: string;
     project_uuid: string;
-    environment_uuid?: string;
+    environment_uuid: string;
     key_hash?: string;
 }

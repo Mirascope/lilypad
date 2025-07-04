@@ -52,7 +52,8 @@ export class Spans {
      *
      * @example
      *     await client.projects.functions.spans.getAggregates("project_uuid", "function_uuid", {
-     *         time_frame: "day"
+     *         time_frame: "day",
+     *         environment_uuid: "environment_uuid"
      *     })
      */
     public getAggregates(
@@ -72,9 +73,10 @@ export class Spans {
         request: Lilypad.projects.functions.SpansGetAggregatesRequest,
         requestOptions?: Spans.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.AggregateMetrics[]>> {
-        const { time_frame: timeFrame } = request;
+        const { time_frame: timeFrame, environment_uuid: environmentUuid } = request;
         const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
         _queryParams["time_frame"] = timeFrame;
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -145,12 +147,14 @@ export class Spans {
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.functions.spans.listPaginated("project_uuid", "function_uuid")
+     *     await client.projects.functions.spans.listPaginated("project_uuid", "function_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public listPaginated(
         projectUuid: string,
         functionUuid: string,
-        request: Lilypad.projects.functions.SpansListPaginatedRequest = {},
+        request: Lilypad.projects.functions.SpansListPaginatedRequest,
         requestOptions?: Spans.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.PaginatedSpanPublic> {
         return core.HttpResponsePromise.fromPromise(
@@ -161,11 +165,12 @@ export class Spans {
     private async __listPaginated(
         projectUuid: string,
         functionUuid: string,
-        request: Lilypad.projects.functions.SpansListPaginatedRequest = {},
+        request: Lilypad.projects.functions.SpansListPaginatedRequest,
         requestOptions?: Spans.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.PaginatedSpanPublic>> {
-        const { limit, offset, order } = request;
+        const { environment_uuid: environmentUuid, limit, offset, order } = request;
         const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         if (limit != null) {
             _queryParams["limit"] = limit.toString();
         }

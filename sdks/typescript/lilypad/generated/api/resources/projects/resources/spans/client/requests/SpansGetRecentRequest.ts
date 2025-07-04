@@ -4,9 +4,12 @@
 
 /**
  * @example
- *     {}
+ *     {
+ *         environment_uuid: "environment_uuid"
+ *     }
  */
 export interface SpansGetRecentRequest {
+    environment_uuid: string;
     /**
      * Get spans created since this timestamp
      */
