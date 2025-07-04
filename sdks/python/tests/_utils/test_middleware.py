@@ -126,7 +126,7 @@ def test_custom_context_manager_with_span_context_holder():
 
 
 def test_custom_context_manager_async_exit():
-    """Test _get_custom_context_manager async exit behavior."""
+    """Test _get_custom_context_manager exit behavior with async flag."""
     from lilypad._utils.middleware import _get_custom_context_manager
 
     mock_function = MagicMock()
@@ -148,11 +148,11 @@ def test_custom_context_manager_async_exit():
         mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
 
         with context_manager(mock_fn):
-            # Should handle async exit path (line 122)
+            # Should handle exit path
             pass
 
-        # Verify async exit was called
-        mock_span.__aexit__.assert_called_with(None, None, None)
+        # Verify exit was called (synchronous context manager)
+        mock_span.__exit__.assert_called_with(None, None, None)
 
 
 def test_custom_context_manager_async_exception_exit():
@@ -184,10 +184,10 @@ def test_custom_context_manager_async_exception_exit():
         except ValueError:
             pass
 
-        # Verify async exception exit was called
-        # Check that __aexit__ was called with exception info
-        assert mock_span.__aexit__.called
-        call_args = mock_span.__aexit__.call_args[0]
+        # Verify exception exit was called (synchronous context manager)
+        # Check that __exit__ was called with exception info
+        assert mock_span.__exit__.called
+        call_args = mock_span.__exit__.call_args[0]
         assert call_args[0] == Exception
         assert isinstance(call_args[1], ValueError)
         assert call_args[2] is None
@@ -1051,9 +1051,9 @@ def test_encode_gemini_part_with_real_webp():
         webp_image = PIL.Image.open(webp_bytes)
 
         # Verify it's the right type
-        assert isinstance(
-            webp_image, PIL.WebPImagePlugin.WebPImageFile
-        ), f"Expected WebPImageFile, got {type(webp_image)}"
+        assert isinstance(webp_image, PIL.WebPImagePlugin.WebPImageFile), (
+            f"Expected WebPImageFile, got {type(webp_image)}"
+        )
 
         # Encode it
         result = encode_gemini_part(webp_image)

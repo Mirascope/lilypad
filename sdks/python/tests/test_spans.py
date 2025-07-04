@@ -730,9 +730,13 @@ def test_span_creation_with_real_tracer_provider() -> None:
     # Set up a real tracer provider
     provider = RealTracerProvider()
 
+    def mock_get_tracer(name, **kwargs):
+        # Pass the provider to real_get_tracer
+        return real_get_tracer(name, tracer_provider=provider)
+
     with (
         patch("lilypad.spans.get_tracer_provider", return_value=provider),
-        patch("lilypad.spans.get_tracer", side_effect=real_get_tracer),
+        patch("lilypad.spans.get_tracer", side_effect=mock_get_tracer),
         span("real tracer test") as s,
     ):
         s.info("Using real tracer")
