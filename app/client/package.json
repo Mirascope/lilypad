@@ -13,6 +13,8 @@
     "typecheck": "bun run tsc --noEmit",
     "preview": "bun vite preview",
     "prettier": "prettier --write .",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
     "generate:api:v0": "node scripts/generate-api-types.js generate --url http://127.0.0.1:8000/v0/openapi.json --output src/types",
     "generate:api:pipe:v0": "node scripts/generate-api-types.js generate --stdin --output src/types",
     "storybook": "storybook dev -p 6006",
