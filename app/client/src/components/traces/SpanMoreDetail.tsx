@@ -5,6 +5,7 @@ import { Typography } from "@/src/components/ui/typography";
 import { SpanMoreDetails, SpanPublic } from "@/src/types/types";
 import { spanQueryOptions } from "@/src/utils/spans";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useParams } from "@tanstack/react-router";
 import { Maximize2 } from "lucide-react";
 
 export const SpanMoreDetail = ({
@@ -14,7 +15,11 @@ export const SpanMoreDetail = ({
   data: SpanPublic;
   handleFullView: (span: SpanMoreDetails) => void;
 }) => {
-  const { data: span } = useSuspenseQuery(spanQueryOptions(data.uuid));
+  const { projectUuid } = useParams({ strict: false });
+  if (!projectUuid) {
+    throw new Error("LilypadPanel requires an active project");
+  }
+  const { data: span } = useSuspenseQuery(spanQueryOptions(projectUuid, data.uuid));
 
   if (!span.project_uuid) {
     return (

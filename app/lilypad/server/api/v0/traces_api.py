@@ -25,6 +25,7 @@ from ..._utils import (
 )
 from ..._utils.opensearch import index_traces_in_opensearch
 from ..._utils.span_processing import create_span_from_data
+from ...models.api_keys import APIKeyTable
 from ...models.spans import SpanTable
 from ...schemas.pagination import Paginated
 from ...schemas.spans import SpanCreate, SpanPublic
@@ -53,6 +54,7 @@ async def get_trace_by_span_uuid(
     project_uuid: UUID,
     span_id: str,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> SpanTable:
     """Get traces by project UUID."""
     span = span_service.find_root_parent_span(span_id)
@@ -69,9 +71,12 @@ async def get_spans_by_trace_id(
     project_uuid: UUID,
     trace_id: str,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> list[SpanPublic]:
     """Get all spans for a given trace ID."""
-    spans = span_service.find_spans_by_trace_id(project_uuid, trace_id)
+    spans = span_service.find_spans_by_trace_id(
+        project_uuid, trace_id, environment_uuid
+    )
     if not spans:
         raise HTTPException(
             status_code=404, detail=f"No spans found for trace_id: {trace_id}"
@@ -85,6 +90,7 @@ async def get_spans_by_trace_id(
 async def get_traces_by_project_uuid(
     project_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID, Query()],
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     order: Literal["asc", "desc"] = Query(
@@ -93,9 +99,13 @@ async def get_traces_by_project_uuid(
 ) -> Paginated[SpanPublic]:
     """Get traces by project UUID."""
     items = span_service.find_all_no_parent_spans(
-        project_uuid, limit=limit, offset=offset, order=order
+        project_uuid,
+        environment_uuid=environment_uuid,
+        limit=limit,
+        offset=offset,
+        order=order,
     )
-    total = span_service.count_no_parent_spans(project_uuid)
+    total = span_service.count_no_parent_spans(project_uuid, environment_uuid)
     return Paginated(
         items=[SpanPublic.model_validate(item) for item in items],
         limit=limit,
@@ -137,7 +147,7 @@ async def _process_span(
     "/projects/{project_uuid}/traces", response_model=TracesQueueResponse
 )
 async def traces(
-    match_api_key: Annotated[bool, Depends(validate_api_key_project_strict)],
+    api_key: Annotated[APIKeyTable, Depends(validate_api_key_project_strict)],
     license: Annotated[LicenseInfo, Depends(get_organization_license)],
     is_lilypad_cloud: Annotated[bool, Depends(is_lilypad_cloud)],
     project_uuid: UUID,
@@ -175,11 +185,12 @@ async def traces(
         f"[TRACES-API] 📨 Received {len(traces_json)} spans - Project: {project_uuid}, User: {user.uuid}"
     )
     logger.debug(f"[TRACES-API] Span data: {traces_json}")
-    # Add project UUID to each span's attributes for queue processing
+    # Add project and environment UUID to each span's attributes for queue processing
     for trace in traces_json:
         if "attributes" not in trace:
             trace["attributes"] = {}
         trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
+        trace["attributes"]["lilypad.environment.uuid"] = str(api_key.environment_uuid)
 
     # Extract unique trace IDs from spans
     trace_ids = list(
@@ -193,11 +204,10 @@ async def traces(
     logger.info("[TRACES-API] Calling kafka_service.send_batch()")
     kafka_available = await kafka_service.send_batch(traces_json)
     logger.info(f"[TRACES-API] kafka_service.send_batch() returned: {kafka_available}")
-
     if kafka_available:
         # Queue processing successful
         logger.info(
-            f"[TRACES-API] ✅ Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}"
+            f"[TRACES-API] ✅ Successfully queued {len(traces_json)} spans to Kafka - Project: {project_uuid}, User: {user.uuid}, Environment: {api_key.environment_uuid}"
         )
         traces_queue_response = TracesQueueResponse(
             trace_status="queued",
@@ -238,11 +248,12 @@ async def traces(
         except Exception as e:
             # if reporting fails, we don't want to fail the entire span creation
             logger.error("Error reporting span usage: %s", e)
-        if opensearch_service.is_enabled:
+        if opensearch_service.is_enabled and api_key.environment_uuid:
             trace_dicts = [span.model_dump() for span in span_tables]
             background_tasks.add_task(
                 index_traces_in_opensearch,
                 project_uuid,
+                api_key.environment_uuid,
                 trace_dicts,
                 opensearch_service,
             )

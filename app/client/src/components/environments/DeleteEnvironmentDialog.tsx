@@ -1,3 +1,4 @@
+import { useAuth } from "@/src/auth";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -16,11 +17,14 @@ import { Trash } from "lucide-react";
 import { toast } from "sonner";
 export const DeleteEnvironmentDialog = ({ environment }: { environment: EnvironmentPublic }) => {
   const deleteEnvironment = useDeleteEnvironmentMutation();
+  const { setEnvironment } = useAuth();
 
   const handleEnvironmentDelete = async (environmentUuid: string) => {
     await deleteEnvironment
       .mutateAsync(environmentUuid)
       .catch(() => toast.error("Failed to delete environment"));
+
+    setEnvironment(null);
     toast.success("Successfully deleted environment");
   };
 

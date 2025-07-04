@@ -1,5 +1,6 @@
 """Pytest configuration for FastAPI tests."""
 
+import hashlib
 from collections.abc import AsyncGenerator, Generator
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
@@ -22,6 +23,7 @@ from lilypad.server.models import (
     ProjectTable,
     UserTable,
 )
+from lilypad.server.models.function_environment_link import FunctionEnvironmentLink
 from lilypad.server.schemas.users import UserPublic
 
 # Create a single test engine for all tests
@@ -285,8 +287,10 @@ def test_api_key(
     if not test_project.uuid:
         raise ValueError("Project UUID is required for API key creation")
 
+    raw_key = "test_key"
+    api_key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     api_key = APIKeyTable(
-        key_hash="test_key",
+        key_hash=api_key_hash,
         user_uuid=test_user.uuid,  # pyright: ignore [reportArgumentType]
         organization_uuid=ORGANIZATION_UUID,
         name="test_key",
@@ -329,6 +333,31 @@ def test_function(
         arg_types={},
         organization_uuid=test_project.organization_uuid,
         version_num=1,
+    )
+    session.add(function)
+    session.commit()
+    session.refresh(function)
+    yield function
+
+
+@pytest.fixture
+def test_function_environment(
+    session: Session, test_function: FunctionTable
+) -> Generator[FunctionEnvironmentLink, None, None]:
+    """Create a test function.
+
+    Args:
+        session: Database session
+        test_function: Parent function
+
+    Yields:
+        FunctionEnvironmentLink: Test function environment link
+    """
+    environment_uuid = uuid4()  # Simulate an environment UUID
+    assert test_function.uuid, "Test function UUID must be set"
+    function = FunctionEnvironmentLink(
+        function_uuid=test_function.uuid,
+        environment_uuid=environment_uuid,  # pyright: ignore [reportArgumentType]
     )
     session.add(function)
     session.commit()

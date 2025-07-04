@@ -1,5 +1,7 @@
 """Tests for auth utility functions."""
 
+import base64
+import hashlib
 from unittest.mock import Mock, patch
 from uuid import uuid4
 
@@ -79,18 +81,27 @@ def test_create_api_key():
     # Mock the random generation
     test_bytes = b"test_random_bytes_for_api_key_12"
     with patch("secrets.token_bytes", return_value=test_bytes):
-        key_hash = create_api_key()
+        api_key, key_hash = create_api_key("prod")
+
+        # Verify the API key format
+        assert api_key.startswith("lp_prod_")
+        expected_b64 = base64.b64encode(test_bytes).decode("utf-8")
+        assert api_key == f"lp_prod_{expected_b64}"
 
         # Verify it's a proper SHA256 hash
         assert len(key_hash) == 64  # SHA256 produces 64 hex characters
         assert all(c in "0123456789abcdef" for c in key_hash)
+
+        # Verify the hash matches the API key
+        expected_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        assert key_hash == expected_hash
 
 
 def test_create_api_key_uniqueness():
     """Test that create_api_key generates unique keys."""
     keys = set()
     for _ in range(10):
-        key = create_api_key()
+        key = create_api_key("prod")
         assert key not in keys
         keys.add(key)
 
@@ -110,7 +121,7 @@ async def test_validate_api_key_project_success(mock_session):
     mock_session.exec.return_value = mock_result
 
     result = await validate_api_key_project(project_uuid, api_key, mock_session)
-    assert result is True
+    assert result is not None
 
 
 @pytest.mark.asyncio
@@ -145,7 +156,7 @@ async def test_validate_api_key_project_invalid_key_no_strict(mock_session):
     result = await validate_api_key_project(
         project_uuid, api_key, mock_session, strict=False
     )
-    assert result is False
+    assert result is None
 
 
 @pytest.mark.asyncio
@@ -188,7 +199,7 @@ async def test_validate_api_key_project_wrong_project_no_strict(mock_session):
     result = await validate_api_key_project(
         project_uuid, api_key, mock_session, strict=False
     )
-    assert result is False
+    assert result is None
 
 
 @pytest.mark.asyncio

@@ -509,12 +509,16 @@ class TestSpanQueueProcessor:
         # Test the _process_trace_sync method directly which contains lines 486-492
         trace_id = "test-trace"
         test_project_uuid = uuid4()
+        environment_uuid = uuid4()
         test_user_id = uuid4()
         ordered_spans = [
             {
                 "span_id": "span-1",
                 "user_id": str(test_user_id),
-                "attributes": {"lilypad.project.uuid": str(test_project_uuid)},
+                "attributes": {
+                    "lilypad.project.uuid": str(test_project_uuid),
+                    "lilypad.environment.uuid": str(environment_uuid),
+                },
                 "data": {"test": "data"},
             }
         ]
@@ -578,6 +582,7 @@ class TestSpanQueueProcessor:
         mock_spans = [Mock()]
         mock_org_uuid = uuid4()
         mock_user_id = uuid4()
+        environment_uuid = uuid4()
 
         # Create a trace buffer with proper span data
         buffer = TraceBuffer("test-trace")
@@ -592,7 +597,13 @@ class TestSpanQueueProcessor:
         )
 
         # Mock the _process_trace_sync to return successful result
-        mock_result = (mock_spans, mock_org_uuid, mock_user_id, test_project_uuid)
+        mock_result = (
+            mock_spans,
+            mock_org_uuid,
+            mock_user_id,
+            test_project_uuid,
+            environment_uuid,
+        )
 
         # Mock executor and external dependencies
         with (
@@ -1180,6 +1191,7 @@ class TestSpanQueueProcessor:
                     "org-uuid-123",  # org_uuid
                     "user-uuid-123",  # user_uuid
                     "project-uuid-123",  # project_uuid
+                    "env-uuid-123",  # environment_uuid
                 )
             )
 
@@ -1664,7 +1676,10 @@ class TestAdditionalCoverage:
         ordered_spans = [
             {
                 "span_id": "span-1",
-                "attributes": {"lilypad.project.uuid": str(uuid4())},
+                "attributes": {
+                    "lilypad.project.uuid": str(uuid4()),
+                    "lilypad.environment.uuid": str(uuid4()),
+                },
                 # Missing user_id
             }
         ]
@@ -1696,7 +1711,10 @@ class TestAdditionalCoverage:
             {
                 "span_id": "span-1",
                 "user_id": str(user_id),
-                "attributes": {"lilypad.project.uuid": str(uuid4())},
+                "attributes": {
+                    "lilypad.project.uuid": str(uuid4()),
+                    "lilypad.environment.uuid": str(uuid4()),
+                },
             }
         ]
 
@@ -1736,7 +1754,10 @@ class TestAdditionalCoverage:
             {
                 "span_id": "span-1",
                 "user_id": str(user_id),
-                "attributes": {"lilypad.project.uuid": str(project_uuid)},
+                "attributes": {
+                    "lilypad.project.uuid": str(project_uuid),
+                    "lilypad.environment.uuid": str(uuid4()),
+                },
             }
         ]
 
@@ -2048,7 +2069,8 @@ class TestAdditionalCoverage:
         org_uuid = uuid4()
         user_uuid = uuid4()
         project_uuid = uuid4()
-        mock_result = (mock_spans, org_uuid, user_uuid, project_uuid)
+        environment_uuid = uuid4()
+        mock_result = (mock_spans, org_uuid, user_uuid, project_uuid, environment_uuid)
 
         with (
             patch("asyncio.get_event_loop") as mock_get_loop,

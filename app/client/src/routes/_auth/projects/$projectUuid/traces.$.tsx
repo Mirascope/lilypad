@@ -47,7 +47,7 @@ const TraceContainer = () => {
     navigate({
       to: Route.fullPath,
       replace: true,
-      params: { projectUuid, _splat: undefined },
+      params: { projectUuid, _splat: "" },
     }).catch(() => {
       toast.error("Failed to navigate");
     });

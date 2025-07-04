@@ -3,7 +3,7 @@ repos:
     rev: 0.7.15
     hooks:
       - id: uv-sync
-        args: [ "--group", "examples", "--locked" ]
+        args: ["--group", "examples", "--locked"]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:

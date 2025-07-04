@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..._utils import (
     construct_function,
@@ -153,9 +153,12 @@ async def get_unique_function_names(
 async def get_latest_version_unique_function_names(
     project_uuid: UUID,
     function_service: Annotated[FunctionService, Depends(FunctionService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> Sequence[FunctionTable]:
     """Get all unique function names."""
-    return function_service.find_unique_function_names(project_uuid)
+    return function_service.find_unique_function_names(
+        project_uuid, environment_uuid=environment_uuid
+    )
 
 
 @functions_router.get(
@@ -249,6 +252,7 @@ async def archive_functions_by_name(
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     span_service: Annotated[SpanService, Depends(SpanService)],
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> bool:
     """Archive a function by name and delete spans by function name."""
     try:
@@ -260,7 +264,7 @@ async def archive_functions_by_name(
             for function in archived_functions:
                 if function.uuid:
                     opensearch_service.delete_traces_by_function_uuid(
-                        project_uuid, function.uuid
+                        project_uuid, environment_uuid, function.uuid
                     )
     except Exception:
         return False
@@ -274,6 +278,7 @@ async def archive_function(
     function_service: Annotated[FunctionService, Depends(FunctionService)],
     span_service: Annotated[SpanService, Depends(SpanService)],
     opensearch_service: Annotated[OpenSearchService, Depends(get_opensearch_service)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> bool:
     """Archive a function and delete spans by function UUID."""
     try:
@@ -281,7 +286,7 @@ async def archive_function(
         span_service.delete_records_by_function_uuid(project_uuid, function_uuid)
         if opensearch_service.is_enabled:
             opensearch_service.delete_traces_by_function_uuid(
-                project_uuid, function_uuid
+                project_uuid, environment_uuid, function_uuid
             )
     except Exception:
         return False

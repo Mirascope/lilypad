@@ -21,8 +21,8 @@ import { AnnotationPublic, Event, MessageParam, SpanMoreDetails } from "@/src/ty
 import { commentsBySpanQueryOptions } from "@/src/utils/comments";
 import { safelyParseJSON, stringToBytes } from "@/src/utils/strings";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ReactNode } from "@tanstack/react-router";
 import { MessageSquareMore, NotebookPen } from "lucide-react";
+import { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 export interface MessageCardProps {
   role: string;

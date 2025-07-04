@@ -25,6 +25,7 @@ class SearchQuery(BaseModel):
     limit: int = 100
     scope: Scope | None = None
     type: str | None = None
+    environment_uuid: UUID
 
 
 class SearchResult(BaseModel):
@@ -70,16 +71,16 @@ class OpenSearchService:
                 self._client = None
         return self._client
 
-    def get_index_name(self, project_uuid: UUID) -> str:
+    def get_index_name(self, project_uuid: UUID, environment_uuid: UUID) -> str:
         """Get the index name for a project."""
-        return f"{OPENSEARCH_INDEX_PREFIX}{str(project_uuid)}"
+        return f"{OPENSEARCH_INDEX_PREFIX}{str(project_uuid)}_{str(environment_uuid)}"
 
-    def ensure_index_exists(self, project_uuid: UUID) -> bool:
+    def ensure_index_exists(self, project_uuid: UUID, environment_uuid: UUID) -> bool:
         """Create the index if it doesn't exist. Returns True if successful."""
         if not self.client:
             return False
 
-        index_name = self.get_index_name(project_uuid)
+        index_name = self.get_index_name(project_uuid, environment_uuid)
         try:
             if not self.client.indices.exists(index=index_name):
                 # Define the mapping for the trace documents
@@ -109,7 +110,9 @@ class OpenSearchService:
             logger.error(f"Error ensuring index exists: {str(e)}")
             return False
 
-    def index_traces(self, project_uuid: UUID, trace: dict) -> bool:
+    def index_traces(
+        self, project_uuid: UUID, environment_uuid: UUID, trace: dict
+    ) -> bool:
         """Index a single trace in OpenSearch. Returns True if successful."""
         if not trace:
             return False
@@ -118,12 +121,12 @@ class OpenSearchService:
             logger.warning("OpenSearch client not available")
             return False
 
-        if not self.ensure_index_exists(project_uuid):
+        if not self.ensure_index_exists(project_uuid, environment_uuid):
             return False
 
         try:
             self.client.index(
-                index=self.get_index_name(project_uuid),
+                index=self.get_index_name(project_uuid, environment_uuid),
                 body=trace,
                 id=str(trace.get("uuid")),
             )
@@ -132,7 +135,9 @@ class OpenSearchService:
             logger.error(f"Error indexing trace: {str(e)}")
             return False
 
-    def bulk_index_traces(self, project_uuid: UUID, traces: list[dict]) -> bool:
+    def bulk_index_traces(
+        self, project_uuid: UUID, environment_uuid: UUID, traces: list[dict]
+    ) -> bool:
         """Bulk index traces in OpenSearch. Returns True if successful."""
         if not traces:
             logger.warning("Empty traces list")
@@ -142,11 +147,11 @@ class OpenSearchService:
             logger.warning("OpenSearch client not available")
             return False
 
-        if not self.ensure_index_exists(project_uuid):
+        if not self.ensure_index_exists(project_uuid, environment_uuid):
             logger.error(f"Failed to ensure index exists for project {project_uuid}")
             return False
 
-        index_name = self.get_index_name(project_uuid)
+        index_name = self.get_index_name(project_uuid, environment_uuid)
         # Prepare bulk indexing actions
         actions = []
         for trace_dict in traces:
@@ -180,13 +185,15 @@ class OpenSearchService:
                 return False
         return False
 
-    def search_traces(self, project_uuid: UUID, search_query: SearchQuery) -> Any:
+    def search_traces(
+        self, project_uuid: UUID, environment_uuid: UUID, search_query: SearchQuery
+    ) -> Any:
         """Search for traces in OpenSearch."""
         if not self.client:
             logger.warning("OpenSearch client not available")
             return []
 
-        index_name = self.get_index_name(project_uuid)
+        index_name = self.get_index_name(project_uuid, environment_uuid)
 
         # Check if index exists
         try:
@@ -247,13 +254,15 @@ class OpenSearchService:
             logger.error(f"OpenSearch error: {str(e)}")
             return []
 
-    def delete_trace_by_uuid(self, project_uuid: UUID, span_uuid: UUID) -> bool:
+    def delete_trace_by_uuid(
+        self, project_uuid: UUID, environment_uuid: UUID, span_uuid: UUID
+    ) -> bool:
         """Delete a single trace by its UUID."""
         if not self.client:
             logger.warning("OpenSearch client not available")
             return False
 
-        index_name = self.get_index_name(project_uuid)
+        index_name = self.get_index_name(project_uuid, environment_uuid)
 
         try:
             if not self.client.indices.exists(index=index_name):
@@ -282,14 +291,14 @@ class OpenSearchService:
             return False
 
     def delete_traces_by_function_uuid(
-        self, project_uuid: UUID, function_uuid: UUID
+        self, project_uuid: UUID, environment_uuid: UUID, function_uuid: UUID
     ) -> bool:
         """Delete all traces associated with a specific function UUID."""
         if not self.client:
             logger.warning("OpenSearch client not available")
             return False
 
-        index_name = self.get_index_name(project_uuid)
+        index_name = self.get_index_name(project_uuid, environment_uuid)
 
         try:
             if not self.client.indices.exists(index=index_name):

@@ -429,9 +429,9 @@ class TestGetAnnotations:
         """Test getting annotations by span UUID."""
         # Use a random UUID for a non-existent span
         span_uuid = uuid4()
-
+        environment_uuid = uuid4()
         response = client.get(
-            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/annotations"
+            f"/ee/projects/{test_project.uuid}/spans/{span_uuid}/annotations?environment_uuid={environment_uuid}"
         )
 
         # Should return empty list for non-existent span
@@ -444,7 +444,10 @@ class TestGetAnnotations:
         test_project: ProjectTable,
     ):
         """Test getting annotations by project UUID."""
-        response = client.get(f"/ee/projects/{test_project.uuid}/annotations")
+        environment_uuid = uuid4()
+        response = client.get(
+            f"/ee/projects/{test_project.uuid}/annotations?environment_uuid={environment_uuid}"
+        )
 
         # Should return empty list since no annotations exist for this project
         assert response.status_code == 200

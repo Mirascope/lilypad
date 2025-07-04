@@ -30,7 +30,7 @@ export const SpanFullDetail = ({
   spanUuid: string;
   handleBackToTraces: () => void;
 }) => {
-  const { data: span } = useSuspenseQuery(spanQueryOptions(spanUuid));
+  const { data: span } = useSuspenseQuery(spanQueryOptions(projectUuid, spanUuid));
   const { data: trace } = useSuspenseQuery(rootTraceQueryOptions(projectUuid, span.span_id));
   const features = useFeatureAccess();
 
