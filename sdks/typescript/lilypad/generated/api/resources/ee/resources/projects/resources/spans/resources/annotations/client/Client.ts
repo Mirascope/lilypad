@@ -45,26 +45,34 @@ export class Annotations {
      *
      * @param {string} projectUuid
      * @param {string} spanUuid
+     * @param {Lilypad.ee.projects.spans.AnnotationsListRequest} request
      * @param {Annotations.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.ee.projects.spans.annotations.list("project_uuid", "span_uuid")
+     *     await client.ee.projects.spans.annotations.list("project_uuid", "span_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public list(
         projectUuid: string,
         spanUuid: string,
+        request: Lilypad.ee.projects.spans.AnnotationsListRequest,
         requestOptions?: Annotations.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.AnnotationPublic[]> {
-        return core.HttpResponsePromise.fromPromise(this.__list(projectUuid, spanUuid, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__list(projectUuid, spanUuid, request, requestOptions));
     }
 
     private async __list(
         projectUuid: string,
         spanUuid: string,
+        request: Lilypad.ee.projects.spans.AnnotationsListRequest,
         requestOptions?: Annotations.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.AnnotationPublic[]>> {
+        const { environment_uuid: environmentUuid } = request;
+        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -80,6 +88,7 @@ export class Annotations {
                 }),
                 requestOptions?.headers,
             ),
+            queryParameters: _queryParams,
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
             abortSignal: requestOptions?.abortSignal,

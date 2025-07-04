@@ -7,9 +7,11 @@ import * as Lilypad from "../../../../../../../../index.js";
 /**
  * @example
  *     {
- *         time_frame: "day"
+ *         time_frame: "day",
+ *         environment_uuid: "environment_uuid"
  *     }
  */
 export interface SpansGetAggregatesRequest {
     time_frame: Lilypad.TimeFrame;
+    environment_uuid: string;
 }
