@@ -296,7 +296,8 @@ class NoOpTrace(Generic[_T]):
 
     def annotate(self, *annotation: Annotation) -> None:
         """No-op annotate method."""
-        ...
+        if not annotation:
+            raise ValueError("At least one annotation must be provided")
 
     def assign(self, *email: str) -> None:
         """No-op assign method."""
@@ -317,7 +318,8 @@ class NoOpAsyncTrace(Generic[_T]):
 
     async def annotate(self, *annotation: Annotation) -> None:
         """No-op annotate method."""
-        ...
+        if not annotation:
+            raise ValueError("At least one annotation must be provided")
 
     async def assign(self, *email: str) -> None:
         """No-op assign method."""

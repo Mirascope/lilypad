@@ -882,6 +882,7 @@ def test_trace_fallback_on_error():
                     mock_span = Mock()
                     mock_span.span_id = 12345
                     mock_span.opentelemetry_span = Mock()
+                    mock_span.is_noop = False  # Not in no-op mode
                     mock_span_context = Mock()
                     mock_span_context.__enter__ = Mock(return_value=mock_span)
                     mock_span_context.__exit__ = Mock(return_value=None)
@@ -928,6 +929,7 @@ async def test_async_trace_fallback():
                     mock_span = Mock()
                     mock_span.span_id = 12345
                     mock_span.opentelemetry_span = Mock()
+                    mock_span.is_noop = False  # Not in no-op mode
                     mock_span_context = Mock()
                     mock_span_context.__enter__ = Mock(return_value=mock_span)
                     mock_span_context.__exit__ = Mock(return_value=None)
@@ -1079,7 +1081,7 @@ def test_function_creation_when_not_found():
                     mock_lilypad.projects.functions.create.return_value = Mock(uuid_="new-uuid")
 
                     with patch("lilypad.traces.Span") as mock_span_class:
-                        mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+                        mock_span = Mock(span_id=12345, opentelemetry_span=Mock(), is_noop=False)
                         mock_span_context = Mock()
                         mock_span_context.__enter__ = Mock(return_value=mock_span)
                         mock_span_context.__exit__ = Mock(return_value=None)
@@ -1382,9 +1384,9 @@ def test_trace_assign_span_not_found():
             # Call the function to get a trace
             result = test_func()
 
-            # Try to assign when span is not found
-            with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found"):
-                result.assign("test@example.com")
+            # When not configured, assign should be a no-op (not raise error)
+            # This is because NoOpTrace doesn't make API calls
+            result.assign("test@example.com")  # Should not raise
 
 
 # =============================================================================
@@ -1893,8 +1895,10 @@ async def test_async_trace_wrap_mode_return():
                 # Call function
                 result = await test_func(5)
 
-                # Should return AsyncTrace
-                assert isinstance(result, AsyncTrace)
+                # When tracing is not properly configured, should return NoOpAsyncTrace
+                from lilypad.traces import NoOpAsyncTrace
+
+                assert isinstance(result, NoOpAsyncTrace)
                 assert result.response == 15
 
 

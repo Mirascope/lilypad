@@ -249,10 +249,10 @@ def test_trace_with_user_provided_trace_ctx():
             mock_trace_ctx = Mock(spec=Span)
 
             result = sample_function(mock_trace_ctx, 1, 2)
-            # In wrap mode, result should be wrapped in Trace object
-            from lilypad.traces import Trace
+            # When not configured, should return NoOpTrace in wrap mode
+            from lilypad.traces import NoOpTrace
 
-            assert isinstance(result, Trace)
+            assert isinstance(result, NoOpTrace)
             assert result.response == 3
 
     test_inner()
@@ -290,10 +290,10 @@ async def test_async_trace_with_user_provided_trace_ctx():
             mock_trace_ctx = Mock(spec=Span)
 
             result = await sample_async_function(mock_trace_ctx, 1, 2)
-            # In wrap mode, result should be wrapped in AsyncTrace object
-            from lilypad.traces import AsyncTrace
+            # When not configured, should return NoOpAsyncTrace in wrap mode
+            from lilypad.traces import NoOpAsyncTrace
 
-            assert isinstance(result, AsyncTrace)
+            assert isinstance(result, NoOpAsyncTrace)
             assert result.response == 3
 
     await test_inner()
