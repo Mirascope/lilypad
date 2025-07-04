@@ -89,12 +89,17 @@ def test_custom_context_manager_serialization_error():
         mock_span = MagicMock()
         mock_tracer.return_value.start_as_current_span.return_value.__enter__.return_value = mock_span
 
-        with context_manager(mock_fn):
-            # Should handle serialization error and use "could not serialize"
-            pass
+        from opentelemetry.sdk.trace import TracerProvider
 
-        # Verify span was created and attributes set
-        mock_span.set_attributes.assert_called()
+        with patch("lilypad._utils.middleware.get_tracer_provider") as mock_get_tracer_provider:
+            mock_get_tracer_provider.return_value = TracerProvider()
+
+            with context_manager(mock_fn):
+                # Should handle serialization error and use "could not serialize"
+                pass
+
+            # Verify span was created and attributes set
+            mock_span.set_attributes.assert_called()
 
 
 def test_custom_context_manager_with_span_context_holder():
@@ -1051,9 +1056,9 @@ def test_encode_gemini_part_with_real_webp():
         webp_image = PIL.Image.open(webp_bytes)
 
         # Verify it's the right type
-        assert isinstance(
-            webp_image, PIL.WebPImagePlugin.WebPImageFile
-        ), f"Expected WebPImageFile, got {type(webp_image)}"
+        assert isinstance(webp_image, PIL.WebPImagePlugin.WebPImageFile), (
+            f"Expected WebPImageFile, got {type(webp_image)}"
+        )
 
         # Encode it
         result = encode_gemini_part(webp_image)

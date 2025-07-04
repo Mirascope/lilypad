@@ -478,7 +478,7 @@ def test_trace_with_wrap_mode():
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
         with patch("lilypad.traces.get_sync_client") as mock_client, patch("lilypad.traces.Span") as mock_span_class:
-            mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+            mock_span = Mock(span_id=12345, opentelemetry_span=Mock(), is_noop=False)
             mock_span_context = Mock()
             mock_span_context.__enter__ = Mock(return_value=mock_span)
             mock_span_context.__exit__ = Mock(return_value=None)
@@ -486,12 +486,18 @@ def test_trace_with_wrap_mode():
 
             # Mock other required functions
             with mock_trace_decorator_context():
-                # Apply decorator after mocks are set up
-                @trace(mode="wrap")
-                def wrapped_func():
-                    return "wrapped"
+                # Mock get_tracer_provider to return a TracerProvider
+                from opentelemetry.sdk.trace import TracerProvider
 
-                result = wrapped_func()
+                with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                    mock_get_tracer.return_value = TracerProvider()
+
+                    # Apply decorator after mocks are set up
+                    @trace(mode="wrap")
+                    def wrapped_func():
+                        return "wrapped"
+
+                    result = wrapped_func()
 
             # In wrap mode, should return Trace object
             assert isinstance(result, Trace)
@@ -536,7 +542,7 @@ def test_trace_with_mirascope():
                     mock_mirascope.side_effect = mock_middleware
 
                     with patch("lilypad.traces.Span") as mock_span_class:
-                        mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+                        mock_span = Mock(span_id=12345, opentelemetry_span=Mock(), is_noop=False)
                         mock_span_context = Mock()
                         mock_span_context.__enter__ = Mock(return_value=mock_span)
                         mock_span_context.__exit__ = Mock(return_value=None)
@@ -544,20 +550,26 @@ def test_trace_with_mirascope():
 
                         # Mock get_qualified_name
                         with mock_trace_decorator_context():
-                            # Create function with mirascope attributes first
-                            def mirascope_func():
-                                return "mirascope"
+                            # Mock get_tracer_provider to return a TracerProvider
+                            from opentelemetry.sdk.trace import TracerProvider
 
-                            # Add mirascope attributes before decoration
-                            mirascope_func.__mirascope_call__ = True
-                            mirascope_func._prompt_template = "Test prompt"
+                            with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                                mock_get_tracer.return_value = TracerProvider()
 
-                            # Apply decorator after attributes are set
-                            decorated_func = trace(versioning="automatic")(mirascope_func)
+                                # Create function with mirascope attributes first
+                                def mirascope_func():
+                                    return "mirascope"
 
-                            # Test that the function still returns its original result
-                            # The middleware is applied but we're testing the decorator itself
-                            result = decorated_func()
+                                # Add mirascope attributes before decoration
+                                mirascope_func.__mirascope_call__ = True
+                                mirascope_func._prompt_template = "Test prompt"
+
+                                # Apply decorator after attributes are set
+                                decorated_func = trace(versioning="automatic")(mirascope_func)
+
+                                # Test that the function still returns its original result
+                                # The middleware is applied but we're testing the decorator itself
+                                result = decorated_func()
                             assert result == "mirascope"
 
                             # Verify mirascope middleware was called
@@ -570,7 +582,7 @@ def test_trace_with_tags():
         mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
         with patch("lilypad.traces.get_sync_client") as mock_client, patch("lilypad.traces.Span") as mock_span_class:
-            mock_span = Mock(span_id=12345, opentelemetry_span=Mock())
+            mock_span = Mock(span_id=12345, opentelemetry_span=Mock(), is_noop=False)
             mock_span_context = Mock()
             mock_span_context.__enter__ = Mock(return_value=mock_span)
             mock_span_context.__exit__ = Mock(return_value=None)
@@ -584,12 +596,18 @@ def test_trace_with_tags():
 
                 # Mock other required functions
                 with mock_trace_decorator_context():
-                    # Apply decorator after mocks are set up
-                    @trace(tags=["tag1", "tag2"])
-                    def tagged_func():
-                        return "tagged"
+                    # Mock get_tracer_provider to return a TracerProvider
+                    from opentelemetry.sdk.trace import TracerProvider
 
-                    result = tagged_func()
+                    with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                        mock_get_tracer.return_value = TracerProvider()
+
+                        # Apply decorator after mocks are set up
+                        @trace(tags=["tag1", "tag2"])
+                        def tagged_func():
+                            return "tagged"
+
+                        result = tagged_func()
                 assert result == "tagged"
 
                 # Check tags were passed
@@ -875,14 +893,20 @@ def test_trace_fallback_on_error():
                         )
                         mock_closure_class.from_fn.return_value = mock_closure
 
-                        # Apply decorator after mock is set up
-                        @trace(versioning="automatic")
-                        def fallback_func(x: int) -> int:
-                            return x + 1000
+                        # Mock get_tracer_provider to return a TracerProvider
+                        from opentelemetry.sdk.trace import TracerProvider
 
-                        # Function should raise error when registration fails
-                        with pytest.raises(Exception, match="Registration failed"):
-                            result = fallback_func(1)
+                        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                            mock_get_tracer.return_value = TracerProvider()
+
+                            # Apply decorator after mock is set up
+                            @trace(versioning="automatic")
+                            def fallback_func(x: int) -> int:
+                                return x + 1000
+
+                            # Function should raise error when registration fails
+                            with pytest.raises(Exception, match="Registration failed"):
+                                result = fallback_func(1)
 
 
 @pytest.mark.asyncio
@@ -915,14 +939,20 @@ async def test_async_trace_fallback():
                         )
                         mock_closure_class.from_fn.return_value = mock_closure
 
-                        # Apply decorator after mock is set up
-                        @trace(versioning="automatic")
-                        async def async_fallback_func(x: int) -> int:
-                            return x + 2000
+                        # Mock get_tracer_provider to return a TracerProvider
+                        from opentelemetry.sdk.trace import TracerProvider
 
-                        # Function should raise error when registration fails
-                        with pytest.raises(Exception, match="Async registration failed"):
-                            result = await async_fallback_func(1)
+                        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                            mock_get_tracer.return_value = TracerProvider()
+
+                            # Apply decorator after mock is set up
+                            @trace(versioning="automatic")
+                            async def async_fallback_func(x: int) -> int:
+                                return x + 2000
+
+                            # Function should raise error when registration fails
+                            with pytest.raises(Exception, match="Async registration failed"):
+                                result = await async_fallback_func(1)
 
 
 def test_trace_with_trace_ctx_parameter():
@@ -965,15 +995,21 @@ def test_trace_with_trace_ctx_parameter():
                         )
                         mock_closure_class.from_fn.return_value = mock_closure
 
-                        # Apply decorator after mocks are set up
-                        @trace()
-                        def func_with_trace_ctx(trace_ctx, x: int) -> int:
-                            # trace_ctx is first parameter, x is second
-                            return x * 2
+                        # Mock get_tracer_provider to return a TracerProvider
+                        from opentelemetry.sdk.trace import TracerProvider
 
-                        # Call without trace_ctx - decorator will pass span as first arg
-                        result = func_with_trace_ctx(5)
-                        assert result == 10
+                        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                            mock_get_tracer.return_value = TracerProvider()
+
+                            # Apply decorator after mocks are set up
+                            @trace()
+                            def func_with_trace_ctx(trace_ctx, x: int) -> int:
+                                # trace_ctx is first parameter, x is second
+                                return x * 2
+
+                            # Call without trace_ctx - decorator will pass span as first arg
+                            result = func_with_trace_ctx(5)
+                            assert result == 10
 
                         # Call with explicit trace_ctx - normal call
                         result = func_with_trace_ctx(Mock(), 5)
@@ -1049,13 +1085,19 @@ def test_function_creation_when_not_found():
                         mock_span_context.__exit__ = Mock(return_value=None)
                         mock_span_class.return_value = mock_span_context
 
-                        # Apply decorator after mocks are set up
-                        @trace(versioning="automatic")
-                        def new_func():
-                            return "new"
+                        # Mock get_tracer_provider to return a TracerProvider
+                        from opentelemetry.sdk.trace import TracerProvider
 
-                        result = new_func()
-                        assert result == "new"
+                        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                            mock_get_tracer.return_value = TracerProvider()
+
+                            # Apply decorator after mocks are set up
+                            @trace(versioning="automatic")
+                            def new_func():
+                                return "new"
+
+                            result = new_func()
+                            assert result == "new"
 
                         # Verify function was created
                         mock_lilypad.projects.functions.create.assert_called_once()
@@ -1139,18 +1181,26 @@ def format_span_id(span_id: int) -> str:
 
 def test_trace_annotate_no_annotations():
     """Test trace.annotate with no annotations - covers line 141."""
+    from opentelemetry.sdk.trace import TracerProvider
+
     with patch("lilypad.traces.get_settings") as mock_settings, patch("lilypad.traces.get_sync_client") as mock_client:
-        # Create a trace instance with wrap mode to get Trace object
-        @trace(mode="wrap")
-        def test_func():
-            return "result"
+        mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
 
-        # Call the function to get a trace
-        result = test_func()
+        # Mock get_tracer_provider to return a TracerProvider
+        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+            mock_get_tracer.return_value = TracerProvider()
 
-        # Try to annotate with no annotations
-        with pytest.raises(ValueError, match="At least one annotation must be provided"):
-            result.annotate()
+            # Create a trace instance with wrap mode to get Trace object
+            @trace(mode="wrap")
+            def test_func():
+                return "result"
+
+            # Call the function to get a trace
+            result = test_func()
+
+            # Try to annotate with no annotations
+            with pytest.raises(ValueError, match="At least one annotation must be provided"):
+                result.annotate()
 
 
 def test_trace_automatic_versioning_with_recording_enabled():
@@ -1318,17 +1368,23 @@ def test_trace_assign_span_not_found():
         client_instance.projects.functions.spans.list_paginated.return_value = mock_response
         mock_client.return_value = client_instance
 
-        # Create a trace instance with wrap mode to get Trace object
-        @trace(mode="wrap")
-        def test_func():
-            return "result"
+        # Mock get_tracer_provider to return a TracerProvider
+        from opentelemetry.sdk.trace import TracerProvider
 
-        # Call the function to get a trace
-        result = test_func()
+        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+            mock_get_tracer.return_value = TracerProvider()
 
-        # Try to assign when span is not found
-        with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found"):
-            result.assign("test@example.com")
+            # Create a trace instance with wrap mode to get Trace object
+            @trace(mode="wrap")
+            def test_func():
+                return "result"
+
+            # Call the function to get a trace
+            result = test_func()
+
+            # Try to assign when span is not found
+            with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found"):
+                result.assign("test@example.com")
 
 
 # =============================================================================
@@ -1791,16 +1847,22 @@ async def test_async_trace_with_trace_ctx_parameter():
         with patch("lilypad.traces.get_async_client") as mock_client:
             mock_client.return_value = Mock()
 
-            # Create function that expects trace_ctx
-            @trace()
-            async def test_func(trace_ctx: Span, x: int) -> int:
-                # Verify trace_ctx is a Span
-                assert hasattr(trace_ctx, "opentelemetry_span")
-                return x * 2
+            # Mock get_tracer_provider to return a TracerProvider
+            from opentelemetry.sdk.trace import TracerProvider
 
-            # Call without providing trace_ctx - it should be injected
-            result = await test_func(5)
-            assert result == 10
+            with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                mock_get_tracer.return_value = TracerProvider()
+
+                # Create function that expects trace_ctx
+                @trace()
+                async def test_func(trace_ctx: Span, x: int) -> int:
+                    # Verify trace_ctx is a Span
+                    assert hasattr(trace_ctx, "opentelemetry_span")
+                    return x * 2
+
+                # Call without providing trace_ctx - it should be injected
+                result = await test_func(5)
+                assert result == 10
 
 
 # =============================================================================
@@ -1817,17 +1879,23 @@ async def test_async_trace_wrap_mode_return():
         with patch("lilypad.traces.get_async_client") as mock_client:
             mock_client.return_value = Mock()
 
-            # Create function with wrap mode
-            @trace(mode="wrap")
-            async def test_func(x: int) -> int:
-                return x * 3
+            # Mock get_tracer_provider to return a TracerProvider
+            from opentelemetry.sdk.trace import TracerProvider
 
-            # Call function
-            result = await test_func(5)
+            with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+                mock_get_tracer.return_value = TracerProvider()
 
-            # Should return AsyncTrace
-            assert isinstance(result, AsyncTrace)
-            assert result.response == 15
+                # Create function with wrap mode
+                @trace(mode="wrap")
+                async def test_func(x: int) -> int:
+                    return x * 3
+
+                # Call function
+                result = await test_func(5)
+
+                # Should return AsyncTrace
+                assert isinstance(result, AsyncTrace)
+                assert result.response == 15
 
 
 # =============================================================================
@@ -2116,3 +2184,64 @@ def test_protocol_ellipsis_evaluation():
     with contextlib.suppress(Exception):
         wrapped_versioned_call = WrappedVersionedFunctionTraceDecorator.__call__
         assert wrapped_versioned_call is not None
+
+
+def test_trace_without_configuration():
+    """Test @trace decorator when lilypad is not configured."""
+    from lilypad.traces import trace, NoOpTrace
+
+    @trace()
+    def sync_func(x: int) -> int:
+        return x * 2
+
+    @trace(mode="wrap")
+    def wrap_func(x: int) -> int:
+        return x * 3
+
+    # Mock get_tracer_provider to return non-TracerProvider
+    with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+        mock_get_tracer.return_value = Mock(spec=object)  # Not a TracerProvider
+
+        with (
+            patch("lilypad.traces._trace_warning_shown", False),
+            patch("lilypad.traces.logger.warning") as mock_warning,
+            mock_trace_decorator_context(),
+        ):
+            # Normal mode: returns raw result
+            result1 = sync_func(10)
+            assert result1 == 20
+
+            # Wrap mode: returns NoOpTrace
+            result2 = wrap_func(10)
+            assert isinstance(result2, NoOpTrace)
+            assert result2.response == 30
+
+            # Warning logged once
+            mock_warning.assert_called_once()
+            assert "Lilypad has not been configured" in mock_warning.call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_async_trace_without_configuration():
+    """Test async @trace decorator when lilypad is not configured."""
+    from lilypad.traces import trace, NoOpAsyncTrace
+
+    @trace()
+    async def async_func_default(x: int) -> int:
+        return x * 2
+
+    @trace(mode="wrap")
+    async def async_func_wrap(x: int) -> int:
+        return x * 3
+
+    # Mock get_tracer_provider to return non-TracerProvider
+    with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+        mock_get_tracer.return_value = Mock(spec=object)  # Not a TracerProvider
+
+        with patch("lilypad.traces._trace_warning_shown", False), mock_trace_decorator_context():
+            result1 = await async_func_default(10)
+            assert result1 == 20
+
+            result2 = await async_func_wrap(10)
+            assert isinstance(result2, NoOpAsyncTrace)
+            assert result2.response == 30

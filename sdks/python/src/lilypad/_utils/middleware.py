@@ -45,6 +45,24 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+class AsyncCompatibleSpanWrapper:
+    """Wrapper for NonRecordingSpan to make it async-compatible."""
+
+    def __init__(self, span: Span):
+        self._span = span
+
+    def __getattr__(self, name: str) -> Any:
+        """Delegate all other attributes to the wrapped span."""
+        return getattr(self._span, name)
+
+    async def __aenter__(self) -> "AsyncCompatibleSpanWrapper":
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if hasattr(self._span, "__exit__"):
+            self._span.__exit__(exc_type, exc_val, exc_tb)
+
+
 class SpanContextHolder:
     """Holds the OpenTelemetry SpanContext."""
 
@@ -87,7 +105,13 @@ def _get_custom_context_manager(
             create_span = False
         else:
             tracer = get_tracer("lilypad")
-            _current_span = tracer.start_as_current_span(f"{fn.__name__}").__enter__()
+            span_cm = tracer.start_as_current_span(f"{fn.__name__}")
+            _current_span = span_cm.__enter__()
+            # Check if we got a NonRecordingSpan (happens when tracing is not configured)
+            if hasattr(_current_span, "__class__") and _current_span.__class__.__name__ == "NonRecordingSpan":
+                # NonRecordingSpan doesn't support async context manager protocol
+                # Wrap it to make it async-compatible
+                _current_span = AsyncCompatibleSpanWrapper(_current_span)
             create_span = True
 
         try:
@@ -112,21 +136,20 @@ def _get_custom_context_manager(
             attributes[f"lilypad.{attribute_type}.arg_values"] = json_dumps(jsonable_arg_values)
             attributes[f"lilypad.{attribute_type}.prompt_template"] = prompt_template or ""
             filtered_attributes = {k: v for k, v in attributes.items() if v is not None}
-            _current_span.set_attributes(filtered_attributes)
-            if span_context_holder:
-                span_context_holder.set_span_context(_current_span)
+            if _current_span:
+                _current_span.set_attributes(filtered_attributes)
+                if span_context_holder:
+                    span_context_holder.set_span_context(_current_span)
             yield _current_span
 
-            if create_span:
-                if is_async:
-                    _current_span.__aexit__(None, None, None)
-                else:
+            if create_span and _current_span:
+                # For Span objects, use the appropriate exit method
+                # For NonRecordingSpan, it only has __exit__ not __aexit__
+                if hasattr(_current_span, "__exit__"):
                     _current_span.__exit__(None, None, None)
         except Exception as error:
-            if create_span:
-                if is_async:
-                    _current_span.__aexit__(Exception, error, None)
-                else:
+            if create_span and _current_span:
+                if hasattr(_current_span, "__exit__"):
                     _current_span.__exit__(Exception, error, None)
             raise error
 
@@ -224,7 +247,9 @@ def bytes_serializer(obj: bytes) -> str:
     return base64.b64encode(obj).decode("utf-8")
 
 
-def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span, trace_type: str) -> None:
+def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span | None, trace_type: str) -> None:
+    if span is None:
+        return
     try:
         output = safe_serialize(response)
     except TypeError:
@@ -244,9 +269,11 @@ def _set_call_response_attributes(response: mb.BaseCallResponse, span: Span, tra
 
 def _set_response_model_attributes(  # noqa: D401
     result: BaseModel | mb.BaseType,
-    span: Span,
+    span: Span | None,
     trace_type: str,
 ) -> None:
+    if span is None:
+        return
     if isinstance(result, BaseModel):
         completion: str | int | float | bool | None = fast_jsonable(result)
         response_obj: mb.BaseCallResponse | None = getattr(result, "_response", None)

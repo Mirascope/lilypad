@@ -170,14 +170,20 @@ def test_trace_parameter_binding_failure(mock_get_settings, mock_get_client):
     mock_client = Mock()
     mock_get_client.return_value = mock_client
 
-    @real_trace(mode="wrap")
-    def sample_function(trace_ctx, x: int, y: int) -> int:
-        return x + y
+    # Mock get_tracer_provider to return a TracerProvider
+    from opentelemetry.sdk.trace import TracerProvider
 
-    # Call with wrong number of arguments to trigger TypeError in bind
-    # This should still work because the decorator handles the TypeError
-    result = sample_function(1, 2)  # Missing trace_ctx, but decorator adds it
-    assert result.response == 3
+    with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+        mock_get_tracer.return_value = TracerProvider()
+
+        @real_trace(mode="wrap")
+        def sample_function(trace_ctx, x: int, y: int) -> int:
+            return x + y
+
+        # Call with wrong number of arguments to trigger TypeError in bind
+        # This should still work because the decorator handles the TypeError
+        result = sample_function(1, 2)  # Missing trace_ctx, but decorator adds it
+        assert result.response == 3
 
 
 @pytest.mark.asyncio
@@ -196,15 +202,21 @@ async def test_async_trace_parameter_binding_failure(mock_get_settings, mock_get
     mock_client = Mock()
     mock_get_client.return_value = mock_client
 
-    @real_trace(mode="wrap")
-    async def sample_async_function(trace_ctx, x: int, y: int) -> int:
-        await asyncio.sleep(0.01)
-        return x + y
+    # Mock get_tracer_provider to return a TracerProvider
+    from opentelemetry.sdk.trace import TracerProvider
 
-    # Call with wrong number of arguments to trigger TypeError in bind
-    # This should still work because the decorator handles the TypeError
-    result = await sample_async_function(1, 2)  # Missing trace_ctx, but decorator adds it
-    assert result.response == 3
+    with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+        mock_get_tracer.return_value = TracerProvider()
+
+        @real_trace(mode="wrap")
+        async def sample_async_function(trace_ctx, x: int, y: int) -> int:
+            await asyncio.sleep(0.01)
+            return x + y
+
+        # Call with wrong number of arguments to trigger TypeError in bind
+        # This should still work because the decorator handles the TypeError
+        result = await sample_async_function(1, 2)  # Missing trace_ctx, but decorator adds it
+        assert result.response == 3
 
 
 def test_trace_with_user_provided_trace_ctx():
@@ -223,19 +235,25 @@ def test_trace_with_user_provided_trace_ctx():
         mock_client = Mock()
         mock_get_client.return_value = mock_client
 
-        @real_trace(mode="wrap")
-        def sample_function(trace_ctx, x: int, y: int) -> int:
-            return x + y
+        # Mock get_tracer_provider to return a TracerProvider
+        from opentelemetry.sdk.trace import TracerProvider
 
-        # Provide a mock trace context
-        mock_trace_ctx = Mock(spec=Span)
+        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+            mock_get_tracer.return_value = TracerProvider()
 
-        result = sample_function(mock_trace_ctx, 1, 2)
-        # In wrap mode, result should be wrapped in Trace object
-        from lilypad.traces import Trace
+            @real_trace(mode="wrap")
+            def sample_function(trace_ctx, x: int, y: int) -> int:
+                return x + y
 
-        assert isinstance(result, Trace)
-        assert result.response == 3
+            # Provide a mock trace context
+            mock_trace_ctx = Mock(spec=Span)
+
+            result = sample_function(mock_trace_ctx, 1, 2)
+            # In wrap mode, result should be wrapped in Trace object
+            from lilypad.traces import Trace
+
+            assert isinstance(result, Trace)
+            assert result.response == 3
 
     test_inner()
 
@@ -257,20 +275,26 @@ async def test_async_trace_with_user_provided_trace_ctx():
         mock_client = Mock()
         mock_get_client.return_value = mock_client
 
-        @real_trace(mode="wrap")
-        async def sample_async_function(trace_ctx, x: int, y: int) -> int:
-            await asyncio.sleep(0.01)
-            return x + y
+        # Mock get_tracer_provider to return a TracerProvider
+        from opentelemetry.sdk.trace import TracerProvider
 
-        # Provide a mock trace context
-        mock_trace_ctx = Mock(spec=Span)
+        with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+            mock_get_tracer.return_value = TracerProvider()
 
-        result = await sample_async_function(mock_trace_ctx, 1, 2)
-        # In wrap mode, result should be wrapped in AsyncTrace object
-        from lilypad.traces import AsyncTrace
+            @real_trace(mode="wrap")
+            async def sample_async_function(trace_ctx, x: int, y: int) -> int:
+                await asyncio.sleep(0.01)
+                return x + y
 
-        assert isinstance(result, AsyncTrace)
-        assert result.response == 3
+            # Provide a mock trace context
+            mock_trace_ctx = Mock(spec=Span)
+
+            result = await sample_async_function(mock_trace_ctx, 1, 2)
+            # In wrap mode, result should be wrapped in AsyncTrace object
+            from lilypad.traces import AsyncTrace
+
+            assert isinstance(result, AsyncTrace)
+            assert result.response == 3
 
     await test_inner()
 
