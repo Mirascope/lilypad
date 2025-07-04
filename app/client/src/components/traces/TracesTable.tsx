@@ -188,7 +188,7 @@ export const TracesTable = ({
     queryClient
       .prefetchQuery({
         queryKey: ["spans", row.uuid],
-        queryFn: () => fetchSpan(row.uuid),
+        queryFn: () => fetchSpan(projectUuid, row.uuid),
         staleTime: PREFETCH_STALE_TIME_MS,
       })
       .catch(() => toast.error("Failed to prefetch"));

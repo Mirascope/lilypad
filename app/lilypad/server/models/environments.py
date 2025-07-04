@@ -5,8 +5,10 @@ from uuid import UUID
 
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
-from lilypad.server.models import BaseOrganizationSQLModel
-from lilypad.server.models.table_names import ENVIRONMENT_TABLE_NAME
+from ..models import BaseOrganizationSQLModel
+from ..models.function_environment_link import FunctionEnvironmentLink
+from ..models.functions import FunctionTable
+from ..models.table_names import ENVIRONMENT_TABLE_NAME
 
 if TYPE_CHECKING:
     from .api_keys import APIKeyTable
@@ -39,4 +41,7 @@ class EnvironmentTable(EnvironmentBase, BaseOrganizationSQLModel, table=True):
     )
     api_keys: list["APIKeyTable"] = Relationship(
         back_populates="environment", cascade_delete=True
+    )
+    functions: list["FunctionTable"] = Relationship(
+        back_populates="environments", link_model=FunctionEnvironmentLink
     )

@@ -1,13 +1,16 @@
 import { TraceTab } from "@/src/types/traces";
-import { ProjectPublic, UserPublic } from "@/src/types/types";
+import { EnvironmentPublic, ProjectPublic, UserPublic } from "@/src/types/types";
 import {
   AUTH_STORAGE_KEY,
+  ENVIRONMENT_UUID_STORAGE_KEY,
   PRIVACY_STORAGE_KEY,
   TERMS_STORAGE_KEY,
   USER_CONFIG_STORAGE_KEY,
 } from "@/src/utils/constants";
+import { environmentsQueryOptions } from "@/src/utils/environments";
+import { useQuery } from "@tanstack/react-query";
 import { VisibilityState } from "@tanstack/react-table";
-import { createContext, ReactNode, useCallback, useContext, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 export interface UserConfig {
   defaultTraceTab?: TraceTab;
@@ -23,6 +26,8 @@ export interface AuthContext {
   setSession: (user: UserPublic | null) => void;
   setProject: (project: ProjectPublic | null | undefined) => void;
   activeProject: ProjectPublic | null | undefined;
+  setEnvironment: (environment: EnvironmentPublic | null | undefined) => void;
+  activeEnvironment: EnvironmentPublic | null | undefined;
   setTermsVersion: (termsVersion: string) => void;
   setPrivacyPolicyVersion: (privacyPolicyVersion: string) => void;
   loadPrivacyPolicyVersion: () => string | null;
@@ -47,6 +52,14 @@ const savePrivacyPolicyVersionToStorage = (privacyPolicyVersion: string) => {
 
 const saveTermsVersionToStorage = (termsVersion: string) => {
   localStorage.setItem(TERMS_STORAGE_KEY, termsVersion);
+};
+
+const saveEnvironmentToStorage = (environment: EnvironmentPublic | null | undefined) => {
+  if (environment) {
+    localStorage.setItem(ENVIRONMENT_UUID_STORAGE_KEY, JSON.stringify(environment));
+  } else {
+    localStorage.removeItem(ENVIRONMENT_UUID_STORAGE_KEY);
+  }
 };
 
 const loadFromStorage = (): UserPublic | null => {
@@ -89,6 +102,18 @@ const loadUserConfigFromStorage = (): UserConfig | null => {
   }
 };
 
+export const loadEnvironmentFromStorage = (): EnvironmentPublic | null => {
+  const stored = localStorage.getItem(ENVIRONMENT_UUID_STORAGE_KEY);
+  if (!stored) return null;
+
+  try {
+    return JSON.parse(stored) as EnvironmentPublic;
+  } catch {
+    localStorage.removeItem(ENVIRONMENT_UUID_STORAGE_KEY);
+    return null;
+  }
+};
+
 const saveUserConfigToStorage = (config: UserConfig | null) => {
   if (config) {
     localStorage.setItem(USER_CONFIG_STORAGE_KEY, JSON.stringify(config));
@@ -101,15 +126,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserPublic | null>(loadFromStorage());
   const [userConfig, setUserConfig] = useState<UserConfig | null>(loadUserConfigFromStorage());
   const [activeProject, setActiveProject] = useState<ProjectPublic | null | undefined>(null);
+  const [activeEnvironment, setActiveEnvironment] = useState<EnvironmentPublic | null | undefined>(
+    loadEnvironmentFromStorage()
+  );
   const isAuthenticated = !!user;
+
+  // Conditionally run the environments query only when authenticated
+  const { data: environments } = useQuery({
+    ...environmentsQueryOptions(),
+    enabled: isAuthenticated, // Only run query when user is authenticated
+  });
+
+  // Set the active environment when environments are loaded
+  useEffect(() => {
+    if (environments && environments.length > 0 && !activeEnvironment) {
+      // If no environment is saved in storage, use the first one
+      const defaultEnvironment = environments[0];
+      setActiveEnvironment(defaultEnvironment);
+      saveEnvironmentToStorage(defaultEnvironment);
+    }
+  }, [environments, activeEnvironment]);
 
   const setSession = useCallback((newSession: UserPublic | null) => {
     setUser(newSession);
     saveToStorage(newSession);
+
+    // If logging out, clear the active environment
+    if (!newSession) {
+      setActiveEnvironment(null);
+      saveEnvironmentToStorage(null);
+    }
   }, []);
 
   const setProject = useCallback((project: ProjectPublic | null | undefined) => {
     setActiveProject(project);
+  }, []);
+
+  const setEnvironment = useCallback((environment: EnvironmentPublic | null | undefined) => {
+    setActiveEnvironment(environment);
+    saveEnvironmentToStorage(environment);
   }, []);
 
   const updateUserConfig = useCallback(
@@ -129,6 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     saveToStorage(null);
+    setActiveEnvironment(null);
+    saveEnvironmentToStorage(null);
   }, []);
 
   return (
@@ -139,11 +196,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         setSession,
         setProject,
+        activeProject,
+        setEnvironment,
+        activeEnvironment,
         setTermsVersion: saveTermsVersionToStorage,
         setPrivacyPolicyVersion: savePrivacyPolicyVersionToStorage,
         loadPrivacyPolicyVersion: loadPrivacyPolicyVersionFromStorage,
         loadTermsVersion: loadTermsVersionFromStorage,
-        activeProject,
         updateUserConfig,
         userConfig,
       }}

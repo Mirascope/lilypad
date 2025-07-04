@@ -13,6 +13,7 @@ from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 from typing_extensions import Self, TypedDict
 
+from ..models.function_environment_link import FunctionEnvironmentLink
 from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import JSONTypeDecorator, get_json_column
 from .table_names import (
@@ -23,6 +24,7 @@ from .table_names import (
 if TYPE_CHECKING:
     from ...ee.server.models.annotations import AnnotationTable
     from .deployments import DeploymentTable
+    from .environments import EnvironmentTable
     from .projects import ProjectTable
     from .spans import SpanTable
 
@@ -185,4 +187,7 @@ class FunctionTable(_FunctionBase, BaseOrganizationSQLModel, table=True):
     )
     deployments: list["DeploymentTable"] = Relationship(
         back_populates="function", cascade_delete=True
+    )
+    environments: list["EnvironmentTable"] = Relationship(
+        back_populates="functions", link_model=FunctionEnvironmentLink
     )

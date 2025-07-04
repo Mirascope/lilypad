@@ -12,6 +12,7 @@ from .core.unchecked_base_model import construct_type
 from .errors.unprocessable_entity_error import UnprocessableEntityError
 from .types.event_summary_response import EventSummaryResponse
 from .types.http_validation_error import HttpValidationError
+from .types.span_more_details import SpanMoreDetails
 from .types.span_public import SpanPublic
 from .types.tier import Tier
 
@@ -145,8 +146,74 @@ class RawLilypad:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    def get_span_projects_project_uuid_spans_span_identifier_get(
+        self,
+        project_uuid: str,
+        span_identifier: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> HttpResponse[SpanMoreDetails]:
+        """
+        Get span by uuid or span_id.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        span_identifier : str
+
+        environment_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[SpanMoreDetails]
+            Successful Response
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_identifier)}",
+            method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    SpanMoreDetails,
+                    construct_type(
+                        type_=SpanMoreDetails,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return HttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
     def get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
-        self, project_uuid: str, trace_id: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        trace_id: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[typing.List[SpanPublic]]:
         """
         Get all spans for a given trace ID.
@@ -156,6 +223,8 @@ class RawLilypad:
         project_uuid : str
 
         trace_id : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -168,6 +237,9 @@ class RawLilypad:
         _response = self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/traces/by-trace-id/{jsonable_encoder(trace_id)}",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -323,8 +395,74 @@ class AsyncRawLilypad:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    async def get_span_projects_project_uuid_spans_span_identifier_get(
+        self,
+        project_uuid: str,
+        span_identifier: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
+    ) -> AsyncHttpResponse[SpanMoreDetails]:
+        """
+        Get span by uuid or span_id.
+
+        Parameters
+        ----------
+        project_uuid : str
+
+        span_identifier : str
+
+        environment_uuid : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[SpanMoreDetails]
+            Successful Response
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_identifier)}",
+            method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                _data = typing.cast(
+                    SpanMoreDetails,
+                    construct_type(
+                        type_=SpanMoreDetails,  # type: ignore
+                        object_=_response.json(),
+                    ),
+                )
+                return AsyncHttpResponse(response=_response, data=_data)
+            if _response.status_code == 422:
+                raise UnprocessableEntityError(
+                    headers=dict(_response.headers),
+                    body=typing.cast(
+                        HttpValidationError,
+                        construct_type(
+                            type_=HttpValidationError,  # type: ignore
+                            object_=_response.json(),
+                        ),
+                    ),
+                )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
     async def get_spans_by_trace_id_projects_project_uuid_traces_by_trace_id_trace_id_get(
-        self, project_uuid: str, trace_id: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        trace_id: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[typing.List[SpanPublic]]:
         """
         Get all spans for a given trace ID.
@@ -334,6 +472,8 @@ class AsyncRawLilypad:
         project_uuid : str
 
         trace_id : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -346,6 +486,9 @@ class AsyncRawLilypad:
         _response = await self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/traces/by-trace-id/{jsonable_encoder(trace_id)}",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:

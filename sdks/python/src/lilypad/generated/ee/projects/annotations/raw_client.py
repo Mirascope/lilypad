@@ -26,7 +26,7 @@ class RawAnnotationsClient:
         self._client_wrapper = client_wrapper
 
     def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> HttpResponse[typing.List[AnnotationPublic]]:
         """
         Get annotations by project.
@@ -34,6 +34,8 @@ class RawAnnotationsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -46,6 +48,9 @@ class RawAnnotationsClient:
         _response = self._client_wrapper.httpx_client.request(
             f"ee/projects/{jsonable_encoder(project_uuid)}/annotations",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -287,7 +292,7 @@ class AsyncRawAnnotationsClient:
         self._client_wrapper = client_wrapper
 
     async def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> AsyncHttpResponse[typing.List[AnnotationPublic]]:
         """
         Get annotations by project.
@@ -295,6 +300,8 @@ class AsyncRawAnnotationsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -307,6 +314,9 @@ class AsyncRawAnnotationsClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"ee/projects/{jsonable_encoder(project_uuid)}/annotations",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:

@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator, Sequence
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -191,13 +191,16 @@ async def get_annotations_by_spans(
     project_uuid: UUID,
     span_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> Sequence[AnnotationPublic]:
     """Get annotations by functions."""
     return [
         AnnotationPublic.model_validate(
             annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
         )
-        for annotation in annotations_service.find_records_by_span_uuid(span_uuid)
+        for annotation in annotations_service.find_records_by_span_uuid(
+            span_uuid, environment_uuid=environment_uuid
+        )
     ]
 
 
@@ -209,13 +212,16 @@ async def get_annotations_by_spans(
 async def get_annotations_by_project(
     project_uuid: UUID,
     annotations_service: Annotated[AnnotationService, Depends(AnnotationService)],
+    environment_uuid: Annotated[UUID, Query()],
 ) -> Sequence[AnnotationPublic]:
     """Get annotations by project."""
     return [
         AnnotationPublic.model_validate(
             annotation, update={"span": SpanMoreDetails.from_span(annotation.span)}
         )
-        for annotation in annotations_service.find_records_by_project_uuid(project_uuid)
+        for annotation in annotations_service.find_records_by_project_uuid(
+            project_uuid, environment_uuid=environment_uuid
+        )
     ]
 
 
