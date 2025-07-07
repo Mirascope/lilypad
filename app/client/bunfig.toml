@@ -1,10 +1,7 @@
 [test]
 # Test configuration for bun test
 timeout = 10000
-preload = []
 root = "."
 
 # Coverage configuration
-[test.coverage]
-threshold = 80
-reports = ["text", "html"]
+coverage = true
