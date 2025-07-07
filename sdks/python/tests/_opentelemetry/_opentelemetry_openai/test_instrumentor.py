@@ -407,3 +407,33 @@ class TestOpenAIInstrumentor:
         # Verify functions were called multiple times
         assert mock_get_tracer.call_count == 2
         assert mock_wrap_function_wrapper.call_count == 8  # 4 successful calls per instrument
+
+    @patch("lilypad._opentelemetry._opentelemetry_openai.logger")
+    @patch("lilypad._opentelemetry._opentelemetry_openai.wrap_function_wrapper")
+    def test_wrap_parse_methods_version_exception(
+        self,
+        mock_wrap_function_wrapper,
+        mock_logger,
+    ):
+        """Test _wrap_parse_methods when getting OpenAI version raises exception."""
+        instrumentor = OpenAIInstrumentor()
+
+        # Mock tracer
+        mock_tracer = Mock()
+
+        # Make all wrap attempts fail to trigger version check
+        mock_wrap_function_wrapper.side_effect = Exception("Failed to wrap")
+
+        # Mock openai module that raises exception when accessing __version__
+        with patch.dict("sys.modules", {"openai": Mock(side_effect=Exception("Import error"))}):
+            # Call _wrap_parse_methods directly
+            instrumentor._wrap_parse_methods(mock_tracer)
+
+            # Verify warning was logged
+            warning_calls = mock_logger.warning.call_args_list
+            assert len(warning_calls) == 1
+            # The warning message should not contain version info since the exception occurred
+            warning_msg = warning_calls[0][0][0]
+            # Should not have version info in parentheses
+            assert "(OpenAI SDK version:" not in warning_msg
+            assert warning_msg.endswith("This may be due to OpenAI SDK version incompatibility.")
