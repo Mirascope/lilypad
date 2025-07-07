@@ -6,65 +6,29 @@ on:
     types: [published]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  detect-components:
+  detect-language:
     runs-on: ubuntu-latest
     outputs:
-      release-python: ${{ steps.set-components.outputs.release-python }}
-      create-tags: ${{ steps.set-components.outputs.create-tags }}
+      language: ${{ steps.set-language.outputs.language }}
     steps:
-      - name: Determine components to release from tag
-        id: set-components
+      - name: Determine language from tag
+        id: set-language
         run: |
           TAG_NAME="${{ github.ref_name }}"
-          if [[ $TAG_NAME == py/* ]]; then
-            echo "release-python=true" >> $GITHUB_OUTPUT
-            echo "create-tags=false" >> $GITHUB_OUTPUT
-          elif [[ $TAG_NAME == app/* ]]; then
-            echo "release-python=false" >> $GITHUB_OUTPUT
-            echo "create-tags=false" >> $GITHUB_OUTPUT
-          elif [[ $TAG_NAME == v* ]]; then
-            # Release Python SDK and create both tags
-            echo "release-python=true" >> $GITHUB_OUTPUT
-            echo "create-tags=true" >> $GITHUB_OUTPUT
+          if [[ $TAG_NAME == v/* ]]; then
+            echo "language=python" >> $GITHUB_OUTPUT
+            exit 0
           else
-            echo "Unknown tag format: $TAG_NAME"
-            echo "Expected: py/*, app/*, or v*"
+            echo "Unknown language prefix in tag: $TAG_NAME"
             exit 1
           fi
 
-  create-component-tags:
-    needs: detect-components
-    if: needs.detect-components.outputs.create-tags == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Create component tags
-        run: |
-          TAG_NAME="${{ github.ref_name }}"
-          # Extract version from v* tag (e.g., v1.2.3 -> 1.2.3)
-          VERSION=${TAG_NAME#v}
-
-          # Configure git
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-
-          # Create and push app tag
-          git tag "app/v${VERSION}" -m "App release v${VERSION}"
-          git push origin "app/v${VERSION}"
-
-          # Create and push py tag
-          git tag "py/v${VERSION}" -m "Python SDK release v${VERSION}"
-          git push origin "py/v${VERSION}"
-
   release-python:
-    needs: [detect-components, create-component-tags]
-    if: needs.detect-components.outputs.release-python == 'true'
+    needs: detect-language
+    if: needs.detect-language.outputs.language == 'python'
     runs-on: ubuntu-latest
     environment: release
     permissions:
