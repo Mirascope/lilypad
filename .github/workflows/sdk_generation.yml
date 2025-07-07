@@ -5,9 +5,11 @@ on:
   push:
     branches:
       - main
+      - update-typescript-sdk # to ensure pushes to this branch also check SDK generation
   pull_request:
     branches:
       - main
+      - update-typescript-sdk # to ensure PRs against this branch also check SDK generation
 
 jobs:
   check-openapi-generation:
