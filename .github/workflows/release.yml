@@ -78,10 +78,13 @@ jobs:
       - name: Set up Python
         run: uv python install 3.10
 
-      - name: Build Python SDK Package
+      - name: Change to Python directory
+        run: cd sdks/python
+
+      - name: Build Package
         working-directory: ./sdks/python
         run: uv build
 
-      - name: Publish Python SDK Package
+      - name: Publish Python Package
         working-directory: ./sdks/python
         run: uv publish
