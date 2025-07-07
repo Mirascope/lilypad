@@ -1,0 +1,81 @@
+{
+  "name": "@lilypad/typescript-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Lilypad - LLM observability and monitoring",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "echo \"Tests will be implemented in next phase - tracking OpenAI instrumentation and span creation\" && exit 0",
+    "test:coverage": "echo \"Coverage reporting will be implemented in next phase\" && exit 0",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "fix": "eslint . --ext .ts,.tsx --fix && prettier --write .",
+    "clean": "rm -rf dist coverage .turbo",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "lilypad",
+    "llm",
+    "observability",
+    "monitoring",
+    "opentelemetry",
+    "tracing",
+    "openai"
+  ],
+  "author": "Mirascope",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mirascope/lilypad.git",
+    "directory": "sdks/typescript"
+  },
+  "bugs": {
+    "url": "https://github.com/Mirascope/lilypad/issues"
+  },
+  "homepage": "https://github.com/Mirascope/lilypad#readme",
+  "dependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/sdk-node": "^0.46.0",
+    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "@opentelemetry/sdk-trace-node": "^1.19.0",
+    "@opentelemetry/resources": "^1.19.0",
+    "@opentelemetry/semantic-conventions": "^1.34.0"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "openai": "^4.0.0",
+    "prettier": "^3.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

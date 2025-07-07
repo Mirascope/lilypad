@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Generated files
+lilypad/generated/
+*.d.ts
+
+# Config files
+*.config.js
+*.config.ts
+
+# Examples
+examples/
+
+# Test files (temporary)
+test.ts
+
+# Backup files
+*.backup
