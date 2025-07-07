@@ -9,29 +9,17 @@ permissions:
   contents: read
 
 jobs:
-  detect-language:
+  release-app:
+    name: App Release (currently no-op) - ${{ github.ref_name }}
     runs-on: ubuntu-latest
-    outputs:
-      language: ${{ steps.set-language.outputs.language }}
     steps:
-      - name: Determine language from tag
-        id: set-language
+      - name: App release placeholder
         run: |
-          TAG_NAME="${{ github.ref_name }}"
-          if [[ $TAG_NAME == py/* ]]; then
-            echo "language=python" >> $GITHUB_OUTPUT
-          elif [[ $TAG_NAME == ts/* ]]; then
-            echo "language=typescript" >> $GITHUB_OUTPUT
-          elif [[ $TAG_NAME == app/* ]]; then
-            exit 0
-          else
-            echo "Unknown language prefix in tag: $TAG_NAME"
-            exit 1
-          fi
+          echo "App release for tag: ${{ github.ref_name }}"
+          echo "No action required for app release"
 
   release-python:
-    needs: detect-language
-    if: needs.detect-language.outputs.language == 'python'
+    name: Python SDK Release - ${{ github.ref_name }}
     runs-on: ubuntu-latest
     environment: release
     permissions:
