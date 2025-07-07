@@ -81,3 +81,56 @@ jobs:
 
       - name: Minimize uv cache
         run: uv cache prune --ci
+
+  tests-typescript:
+    name: Tests (TypeScript SDK, ${{ matrix.os }}, Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: ['18', '20', '22']
+
+    defaults:
+      run:
+        working-directory: sdks/typescript
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-typescript-sdk-${{ hashFiles('sdks/typescript/bun.lockb') }}
+          restore-keys: |
+            bun-${{ runner.os }}-typescript-sdk-
+            bun-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run tests with coverage
+        run: bun run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          working-directory: sdks/typescript
+          flags: TypeScript-SDK-${{ matrix.os }}-node${{ matrix.node-version }}
+          env_vars: OS,NODE
+          fail_ci_if_error: true
+          files: ./coverage/lcov.info
+          name: codecov-umbrella
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
