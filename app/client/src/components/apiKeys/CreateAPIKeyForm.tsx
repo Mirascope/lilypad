@@ -1,5 +1,5 @@
 import { useAuth } from "@/src/auth";
-import { APIKeyCreate } from "@/src/types/types";
+import { APIKeyCreate, EnvironmentPublic } from "@/src/types/types";
 import { useCreateApiKeyMutation } from "@/src/utils/api-keys";
 import { environmentsQueryOptions } from "@/src/utils/environments";
 import { projectsQueryOptions } from "@/src/utils/projects";
@@ -29,6 +29,7 @@ import {
 interface APIKeyFormProps {
   setApiKey: Dispatch<SetStateAction<string | null>>;
   setProjectUuid: Dispatch<SetStateAction<string | null>>;
+  defaultEnvironment: EnvironmentPublic;
   onSuccess?: () => void;
   className?: string;
 }
@@ -36,6 +37,7 @@ interface APIKeyFormProps {
 export const CreateAPIKeyForm = ({
   setApiKey,
   setProjectUuid,
+  defaultEnvironment,
   onSuccess,
   className,
 }: APIKeyFormProps) => {
@@ -43,12 +45,11 @@ export const CreateAPIKeyForm = ({
   const { data: environments } = useSuspenseQuery(environmentsQueryOptions());
   const { activeProject } = useAuth();
   const createApiKey = useCreateApiKeyMutation();
-
   const methods = useForm<APIKeyCreate>({
     defaultValues: {
       name: "",
       project_uuid: activeProject?.uuid,
-      environment_uuid: environments[0]?.uuid || null,
+      environment_uuid: defaultEnvironment.uuid,
     },
   });
 

@@ -1,13 +1,18 @@
 """The `AnnotationService` class for annotations."""
 
+import logging
 from collections.abc import Sequence
+from typing import Any
 from uuid import UUID
 
 from sqlmodel import and_, case, delete, func, or_, select
 
+from ....server.models.spans import SpanTable
 from ....server.services.base_organization import BaseOrganizationService
 from ...server.models.annotations import AnnotationTable, Label
 from ...server.schemas.annotations import AnnotationCreate
+
+logger = logging.getLogger(__name__)
 
 
 class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreate]):
@@ -17,19 +22,46 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
     create_model: type[AnnotationCreate] = AnnotationCreate
 
     def find_records_by_project_uuid(
-        self, project_uuid: UUID
+        self, project_uuid: UUID, **filters: Any
     ) -> Sequence[AnnotationTable]:
-        """Find records."""
-        return self.session.exec(
-            select(self.table).where(
+        """Find records by project UUID."""
+        # Separate environment_uuid from other filters
+        environment_uuid = filters.pop("environment_uuid", None)
+
+        # Build filter conditions for annotation table
+        filter_conditions = [
+            getattr(self.table, key) == value for key, value in filters.items()
+        ]
+
+        # Build the base query
+        query = select(self.table)
+        # If environment_uuid is provided, join with spans table
+        if environment_uuid is not None:
+            # Assuming SpanTable is your span model
+            query = (
+                select(self.table)
+                .join(SpanTable)
+                .where(
+                    self.table.project_uuid == project_uuid,
+                    SpanTable.environment_uuid == environment_uuid,
+                    or_(
+                        self.table.assigned_to == self.user.uuid,
+                        self.table.assigned_to.is_(None),  # type: ignore
+                    ),
+                    *filter_conditions,
+                )
+            )
+        else:
+            query = query.where(
                 self.table.project_uuid == project_uuid,
-                self.table.label.is_(None),  # type: ignore
                 or_(
                     self.table.assigned_to == self.user.uuid,
                     self.table.assigned_to.is_(None),  # type: ignore
                 ),
+                *filter_conditions,
             )
-        ).all()
+
+        return self.session.exec(query).all()
 
     def find_metrics_by_function_uuid(self, function_uuid: UUID) -> tuple[int, int]:
         """Find metrics by function.
@@ -68,17 +100,47 @@ class AnnotationService(BaseOrganizationService[AnnotationTable, AnnotationCreat
             )
         ).all()
 
-    def find_records_by_span_uuid(self, span_uuid: UUID) -> Sequence[AnnotationTable]:
+    def find_records_by_span_uuid(
+        self, span_uuid: UUID, **filters: Any
+    ) -> Sequence[AnnotationTable]:
         """Find records by span UUID."""
-        return self.session.exec(
-            select(self.table).where(
+        # Separate environment_uuid from other filters
+        environment_uuid = filters.pop("environment_uuid", None)
+
+        # Build filter conditions for annotation table
+        filter_conditions = [
+            getattr(self.table, key) == value for key, value in filters.items()
+        ]
+
+        # Build the base query
+        query = select(self.table)
+        # If environment_uuid is provided, join with spans table
+        if environment_uuid is not None:
+            # Assuming SpanTable is your span model
+            query = (
+                select(self.table)
+                .join(SpanTable)
+                .where(
+                    self.table.span_uuid == span_uuid,
+                    SpanTable.environment_uuid == environment_uuid,
+                    or_(
+                        self.table.assigned_to == self.user.uuid,
+                        self.table.assigned_to.is_(None),  # type: ignore
+                    ),
+                    *filter_conditions,
+                )
+            )
+        else:
+            query = query.where(
                 self.table.span_uuid == span_uuid,
                 or_(
                     self.table.assigned_to == self.user.uuid,
                     self.table.assigned_to.is_(None),  # type: ignore
                 ),
+                *filter_conditions,
             )
-        ).all()
+
+        return self.session.exec(query).all()
 
     def find_record_by_span_uuid(self, span_uuid: UUID) -> AnnotationTable | None:
         """Find records by function UUID."""

@@ -1051,9 +1051,9 @@ def test_encode_gemini_part_with_real_webp():
         webp_image = PIL.Image.open(webp_bytes)
 
         # Verify it's the right type
-        assert isinstance(webp_image, PIL.WebPImagePlugin.WebPImageFile), (
-            f"Expected WebPImageFile, got {type(webp_image)}"
-        )
+        assert isinstance(
+            webp_image, PIL.WebPImagePlugin.WebPImageFile
+        ), f"Expected WebPImageFile, got {type(webp_image)}"
 
         # Encode it
         result = encode_gemini_part(webp_image)

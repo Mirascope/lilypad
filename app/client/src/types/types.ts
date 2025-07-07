@@ -145,8 +145,11 @@ export interface APIKeyCreate {
    * @format uuid
    */
   project_uuid: string;
-  /** Environment Uuid */
-  environment_uuid?: string | null;
+  /**
+   * Environment Uuid
+   * @format uuid
+   */
+  environment_uuid: string;
   /** Key Hash */
   key_hash?: string | null;
 }
@@ -531,10 +534,10 @@ export interface EnvironmentCreate {
   /** Description */
   description?: string | null;
   /**
-   * Is Default
+   * Is Development
    * @default false
    */
-  is_default?: boolean;
+  is_development?: boolean | null;
 }
 
 /**
@@ -547,10 +550,10 @@ export interface EnvironmentPublic {
   /** Description */
   description?: string | null;
   /**
-   * Is Default
+   * Is Development
    * @default false
    */
-  is_default?: boolean;
+  is_development?: boolean | null;
   /**
    * Uuid
    * @format uuid
@@ -1161,6 +1164,8 @@ export interface SpanPublic {
   parent_span_id?: string | null;
   /** Session Id */
   session_id?: string | null;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /**
    * Uuid
    * @format uuid

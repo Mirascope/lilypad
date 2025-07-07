@@ -27,12 +27,11 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/src/components/ui/sidebar";
-import { fetchAnnotationsByProjectUuid } from "@/src/ee/utils/annotations";
+import { useEnvironmentQueries } from "@/src/hooks/use-environment-queries";
 import { Route as ProjectRoute } from "@/src/routes/_auth/projects/$projectUuid.index";
-import { ProjectPublic } from "@/src/types/types";
-import { fetchLatestVersionUniqueFunctionNames, functionKeys } from "@/src/utils/functions";
+import { EnvironmentPublic, ProjectPublic } from "@/src/types/types";
+import { environmentsQueryOptions } from "@/src/utils/environments";
 import { projectsQueryOptions } from "@/src/utils/projects";
-import { fetchSpans } from "@/src/utils/spans";
 import { useUpdateActiveOrganizationMutation } from "@/src/utils/users";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useRouter } from "@tanstack/react-router";
@@ -40,6 +39,7 @@ import {
   Blocks,
   ChevronDown,
   ChevronsUpDown,
+  Globe,
   Logs,
   NotebookPen,
   Plus,
@@ -111,13 +111,15 @@ const RecursiveMenuContent = ({
 };
 export const AppSidebar = () => {
   const router = useRouter();
-  const { activeProject, setProject, user } = useAuth();
+  const { activeProject, setProject, activeEnvironment, setEnvironment, user } = useAuth();
   const navigate = useNavigate();
   const [createOrganizationOpen, setCreateOrganizationOpen] = useState<boolean>(false);
   const params = useParams({ strict: false });
   const auth = useAuth();
   const queryClient = useQueryClient();
   const { data: projects } = useSuspenseQuery(projectsQueryOptions());
+  const { data: environments } = useSuspenseQuery(environmentsQueryOptions());
+  const environmentQueries = useEnvironmentQueries();
   useEffect(() => {
     if (!params?.projectUuid) return;
     const project = projects?.find((p) => p.uuid === params?.projectUuid);
@@ -132,10 +134,11 @@ export const AppSidebar = () => {
           url: `/projects/${activeProject.uuid}/traces`,
           icon: Logs,
           onHover: () => {
+            const queryOptions = environmentQueries.spansQueryOptions(activeProject.uuid);
             queryClient
               .prefetchQuery({
-                queryKey: ["projects", activeProject.uuid, "traces"],
-                queryFn: () => fetchSpans(activeProject.uuid),
+                queryKey: queryOptions.queryKey,
+                queryFn: queryOptions.queryFn,
               })
               .catch(() => toast.error("Failed to prefetch traces"));
           },
@@ -145,10 +148,13 @@ export const AppSidebar = () => {
           url: `/projects/${activeProject.uuid}/functions`,
           icon: SquareFunction,
           onHover: () => {
+            const queryOptions = environmentQueries.uniqueLatestVersionFunctionNamesQueryOptions(
+              activeProject.uuid
+            );
             queryClient
               .prefetchQuery({
-                queryKey: ["projects", activeProject.uuid, ...functionKeys.list("unique")],
-                queryFn: () => fetchLatestVersionUniqueFunctionNames(activeProject.uuid),
+                queryKey: queryOptions.queryKey,
+                queryFn: queryOptions.queryFn,
               })
               .catch(() => toast.error("Failed to prefetch functions"));
           },
@@ -158,10 +164,13 @@ export const AppSidebar = () => {
           url: `/projects/${activeProject.uuid}/annotations`,
           icon: NotebookPen,
           onHover: () => {
+            const queryOptions = environmentQueries.annotationsByProjectQueryOptions(
+              activeProject.uuid
+            );
             queryClient
               .prefetchQuery({
-                queryKey: ["projects", activeProject.uuid, "annotations"],
-                queryFn: () => fetchAnnotationsByProjectUuid(activeProject.uuid),
+                queryKey: queryOptions.queryKey,
+                queryFn: queryOptions.queryFn,
               })
               .catch(() => toast.error("Failed to prefetch annotations"));
           },
@@ -216,6 +225,17 @@ export const AppSidebar = () => {
       navigate({ to: currentPath, replace: true }).catch(() => toast.error("Failed to navigate"));
     }
   };
+
+  const handleEnvironmentChange = (environment: EnvironmentPublic) => {
+    setEnvironment(environment);
+    queryClient.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey.some(
+          (key) => typeof key === "string" && key.toLowerCase().includes("project")
+        ),
+    });
+  };
+
   const renderProjectSelector = () => {
     return (
       <SidebarMenu>
@@ -224,9 +244,66 @@ export const AppSidebar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
-                  size="lg"
-                  tooltip="Projects" // Add tooltip for collapsed state
+                  size="sm"
+                  className={`border border-dashed ${
+                    activeEnvironment?.is_development
+                      ? "border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900"
+                      : "border-blue-400 bg-blue-50 text-blue-900 hover:bg-blue-100 dark:border-blue-600 dark:bg-blue-950 dark:text-blue-100 dark:hover:bg-blue-900"
+                  }`}
+                  tooltip="Environment"
                 >
+                  <Globe className="h-4 w-4" />
+                  <span className="truncate">
+                    {activeEnvironment ? activeEnvironment.name : "Select Environment"}
+                  </span>
+                  <ChevronDown className="ml-auto h-3 w-3" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                align="start"
+                side="right"
+                sideOffset={4}
+              >
+                {environments?.map((environment) => {
+                  const isActive = activeEnvironment?.uuid === environment.uuid;
+                  return (
+                    <DropdownMenuItem
+                      key={environment.uuid}
+                      onClick={() => handleEnvironmentChange(environment)}
+                      className={`${
+                        isActive
+                          ? environment.is_development
+                            ? "border-l-4 border-amber-500 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100"
+                            : "border-l-4 border-blue-500 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                          : environment.is_development
+                            ? "text-amber-700 dark:text-amber-300"
+                            : "text-blue-700 dark:text-blue-300"
+                      }`}
+                    >
+                      <div className="flex w-full items-center gap-2">
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            environment.is_development ? "bg-amber-500" : "bg-blue-500"
+                          }`}
+                        />
+                        <span className={isActive ? "font-semibold" : ""}>{environment.name}</span>
+                        <div className="ml-auto flex items-center gap-1">
+                          {environment.is_development && (
+                            <span className="text-xs text-muted-foreground">DEV</span>
+                          )}
+                        </div>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg" tooltip="Projects">
                   <ScrollText />
                   <span>{activeProject ? activeProject.name : "Select Project"}</span>
                   <ChevronDown className="ml-auto" />
@@ -246,17 +323,19 @@ export const AppSidebar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {projectItems.map((item, index) => (
-                <RecursiveMenuContent
-                  key={`${item.title}-${index}`}
-                  item={item}
-                  onHover={item.onHover}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          {activeProject && (
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {projectItems.map((item, index) => (
+                  <RecursiveMenuContent
+                    key={`${item.title}-${index}`}
+                    item={item}
+                    onHover={item.onHover}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          )}
         </SidebarGroup>
       </SidebarMenu>
     );

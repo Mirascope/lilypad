@@ -143,7 +143,7 @@ class TestOpenSearchServiceErrors:
             service = OpenSearchService()
             service._client = mock_client
 
-            result = service.bulk_index_traces(uuid4(), [{"test": "data"}])
+            result = service.bulk_index_traces(uuid4(), uuid4(), [{"test": "data"}])
 
             # Should return False on error
             assert result is False
@@ -159,11 +159,13 @@ class TestOpenSearchServiceErrors:
 
             service = OpenSearchService()
             service._client = mock_client
-
-            query = SearchQuery(query_string="malformed[query")
+            environment_uuid = uuid4()
+            query = SearchQuery(
+                query_string="malformed[query", environment_uuid=environment_uuid
+            )
 
             # OpenSearch service gracefully handles errors and returns empty result
-            result = service.search_traces(uuid4(), query)
+            result = service.search_traces(uuid4(), environment_uuid, query)
             assert result == []
 
     def test_opensearch_delete_trace_not_found(self):
@@ -179,7 +181,7 @@ class TestOpenSearchServiceErrors:
             service._client = mock_client
 
             # OpenSearch service gracefully handles errors and returns False
-            result = service.delete_trace_by_uuid(uuid4(), uuid4())
+            result = service.delete_trace_by_uuid(uuid4(), uuid4(), uuid4())
             assert result is False
 
 

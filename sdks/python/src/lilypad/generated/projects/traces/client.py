@@ -27,7 +27,12 @@ class TracesClient:
         return self._raw_client
 
     def get_root(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_id: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> SpanPublic:
         """
         Get traces by project UUID.
@@ -37,6 +42,8 @@ class TracesClient:
         project_uuid : str
 
         span_id : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -58,15 +65,19 @@ class TracesClient:
         client.projects.traces.get_root(
             project_uuid="project_uuid",
             span_id="span_id",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.get_root(project_uuid, span_id, request_options=request_options)
+        _response = self._raw_client.get_root(
+            project_uuid, span_id, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     def list(
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -78,6 +89,8 @@ class TracesClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -104,10 +117,16 @@ class TracesClient:
         )
         client.projects.traces.list(
             project_uuid="project_uuid",
+            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.list(
-            project_uuid, limit=limit, offset=offset, order=order, request_options=request_options
+            project_uuid,
+            environment_uuid=environment_uuid,
+            limit=limit,
+            offset=offset,
+            order=order,
+            request_options=request_options,
         )
         return _response.data
 
@@ -162,7 +181,12 @@ class AsyncTracesClient:
         return self._raw_client
 
     async def get_root(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_id: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> SpanPublic:
         """
         Get traces by project UUID.
@@ -172,6 +196,8 @@ class AsyncTracesClient:
         project_uuid : str
 
         span_id : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -198,18 +224,22 @@ class AsyncTracesClient:
             await client.projects.traces.get_root(
                 project_uuid="project_uuid",
                 span_id="span_id",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.get_root(project_uuid, span_id, request_options=request_options)
+        _response = await self._raw_client.get_root(
+            project_uuid, span_id, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     async def list(
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -221,6 +251,8 @@ class AsyncTracesClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -252,13 +284,19 @@ class AsyncTracesClient:
         async def main() -> None:
             await client.projects.traces.list(
                 project_uuid="project_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.list(
-            project_uuid, limit=limit, offset=offset, order=order, request_options=request_options
+            project_uuid,
+            environment_uuid=environment_uuid,
+            limit=limit,
+            offset=offset,
+            order=order,
+            request_options=request_options,
         )
         return _response.data
 

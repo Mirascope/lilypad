@@ -20,7 +20,7 @@ interface CreateEnvironmentFormProps {
 }
 export const CreateEnvironmentForm = ({ customButtons }: CreateEnvironmentFormProps) => {
   const methods = useForm<EnvironmentCreate>({
-    defaultValues: { name: "", description: "", is_default: false },
+    defaultValues: { name: "", description: "", is_development: false },
   });
   const createEnvironment = useCreateEnvironmentMutation();
 
@@ -62,17 +62,17 @@ export const CreateEnvironmentForm = ({ customButtons }: CreateEnvironmentFormPr
           )}
         />
         <FormField
-          key="is_default"
+          key="is_development"
           control={methods.control}
-          name="is_default"
+          name="is_development"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
-                <FormLabel>Default Environment</FormLabel>
-                <FormDescription>Set as default environment for new API keys</FormDescription>
+                <FormLabel>Toggle Environment</FormLabel>
+                <FormDescription>Set this API key as development</FormDescription>
               </div>
               <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
               </FormControl>
             </FormItem>
           )}

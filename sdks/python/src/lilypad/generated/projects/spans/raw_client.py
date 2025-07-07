@@ -16,7 +16,6 @@ from ...types.aggregate_metrics import AggregateMetrics
 from ...types.http_validation_error import HttpValidationError
 from ...types.recent_spans_response import RecentSpansResponse
 from ...types.scope import Scope
-from ...types.span_more_details import SpanMoreDetails
 from ...types.span_public import SpanPublic
 from ...types.time_frame import TimeFrame
 
@@ -26,7 +25,12 @@ class RawSpansClient:
         self._client_wrapper = client_wrapper
 
     def get_aggregates(
-        self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        *,
+        time_frame: TimeFrame,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[typing.List[AggregateMetrics]]:
         """
         Get aggregated span by project uuid.
@@ -36,6 +40,8 @@ class RawSpansClient:
         project_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -50,6 +56,7 @@ class RawSpansClient:
             method="GET",
             params={
                 "time_frame": time_frame,
+                "environment_uuid": environment_uuid,
             },
             request_options=request_options,
         )
@@ -83,6 +90,7 @@ class RawSpansClient:
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         since: typing.Optional[dt.datetime] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[RecentSpansResponse]:
@@ -94,6 +102,8 @@ class RawSpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         since : typing.Optional[dt.datetime]
             Get spans created since this timestamp
@@ -110,6 +120,7 @@ class RawSpansClient:
             f"projects/{jsonable_encoder(project_uuid)}/spans/recent",
             method="GET",
             params={
+                "environment_uuid": environment_uuid,
                 "since": serialize_datetime(since) if since is not None else None,
             },
             request_options=request_options,
@@ -140,61 +151,11 @@ class RawSpansClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    def get_by_id(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> HttpResponse[SpanMoreDetails]:
-        """
-        Get span by project_uuid and span_id.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        span_id : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        HttpResponse[SpanMoreDetails]
-            Successful Response
-        """
-        _response = self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_id)}",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    SpanMoreDetails,
-                    construct_type(
-                        type_=SpanMoreDetails,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return HttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
     def search(
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         query_string: typing.Optional[str] = None,
         time_range_start: typing.Optional[int] = None,
         time_range_end: typing.Optional[int] = None,
@@ -209,6 +170,8 @@ class RawSpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         query_string : typing.Optional[str]
 
@@ -240,6 +203,7 @@ class RawSpansClient:
                 "limit": limit,
                 "scope": scope,
                 "type": type,
+                "environment_uuid": environment_uuid,
             },
             request_options=request_options,
         )
@@ -270,7 +234,12 @@ class RawSpansClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     def delete(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[bool]:
         """
         Delete spans by UUID.
@@ -280,6 +249,8 @@ class RawSpansClient:
         project_uuid : str
 
         span_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -292,6 +263,9 @@ class RawSpansClient:
         _response = self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_uuid)}",
             method="DELETE",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -320,13 +294,48 @@ class RawSpansClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
+    def get_by_id(
+        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> HttpResponse[None]:
+        """
+        Parameters
+        ----------
+        project_uuid : str
+
+        span_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        HttpResponse[None]
+        """
+        _response = self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_id)}",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                return HttpResponse(response=_response, data=None)
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
 
 class AsyncRawSpansClient:
     def __init__(self, *, client_wrapper: AsyncClientWrapper):
         self._client_wrapper = client_wrapper
 
     async def get_aggregates(
-        self, project_uuid: str, *, time_frame: TimeFrame, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        *,
+        time_frame: TimeFrame,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[typing.List[AggregateMetrics]]:
         """
         Get aggregated span by project uuid.
@@ -336,6 +345,8 @@ class AsyncRawSpansClient:
         project_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -350,6 +361,7 @@ class AsyncRawSpansClient:
             method="GET",
             params={
                 "time_frame": time_frame,
+                "environment_uuid": environment_uuid,
             },
             request_options=request_options,
         )
@@ -383,6 +395,7 @@ class AsyncRawSpansClient:
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         since: typing.Optional[dt.datetime] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[RecentSpansResponse]:
@@ -394,6 +407,8 @@ class AsyncRawSpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         since : typing.Optional[dt.datetime]
             Get spans created since this timestamp
@@ -410,6 +425,7 @@ class AsyncRawSpansClient:
             f"projects/{jsonable_encoder(project_uuid)}/spans/recent",
             method="GET",
             params={
+                "environment_uuid": environment_uuid,
                 "since": serialize_datetime(since) if since is not None else None,
             },
             request_options=request_options,
@@ -440,61 +456,11 @@ class AsyncRawSpansClient:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
-    async def get_by_id(
-        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
-    ) -> AsyncHttpResponse[SpanMoreDetails]:
-        """
-        Get span by project_uuid and span_id.
-
-        Parameters
-        ----------
-        project_uuid : str
-
-        span_id : str
-
-        request_options : typing.Optional[RequestOptions]
-            Request-specific configuration.
-
-        Returns
-        -------
-        AsyncHttpResponse[SpanMoreDetails]
-            Successful Response
-        """
-        _response = await self._client_wrapper.httpx_client.request(
-            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_id)}",
-            method="GET",
-            request_options=request_options,
-        )
-        try:
-            if 200 <= _response.status_code < 300:
-                _data = typing.cast(
-                    SpanMoreDetails,
-                    construct_type(
-                        type_=SpanMoreDetails,  # type: ignore
-                        object_=_response.json(),
-                    ),
-                )
-                return AsyncHttpResponse(response=_response, data=_data)
-            if _response.status_code == 422:
-                raise UnprocessableEntityError(
-                    headers=dict(_response.headers),
-                    body=typing.cast(
-                        HttpValidationError,
-                        construct_type(
-                            type_=HttpValidationError,  # type: ignore
-                            object_=_response.json(),
-                        ),
-                    ),
-                )
-            _response_json = _response.json()
-        except JSONDecodeError:
-            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
-        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
-
     async def search(
         self,
         project_uuid: str,
         *,
+        environment_uuid: str,
         query_string: typing.Optional[str] = None,
         time_range_start: typing.Optional[int] = None,
         time_range_end: typing.Optional[int] = None,
@@ -509,6 +475,8 @@ class AsyncRawSpansClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         query_string : typing.Optional[str]
 
@@ -540,6 +508,7 @@ class AsyncRawSpansClient:
                 "limit": limit,
                 "scope": scope,
                 "type": type,
+                "environment_uuid": environment_uuid,
             },
             request_options=request_options,
         )
@@ -570,7 +539,12 @@ class AsyncRawSpansClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     async def delete(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[bool]:
         """
         Delete spans by UUID.
@@ -580,6 +554,8 @@ class AsyncRawSpansClient:
         project_uuid : str
 
         span_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -592,6 +568,9 @@ class AsyncRawSpansClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_uuid)}",
             method="DELETE",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -615,6 +594,36 @@ class AsyncRawSpansClient:
                         ),
                     ),
                 )
+            _response_json = _response.json()
+        except JSONDecodeError:
+            raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)
+        raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
+
+    async def get_by_id(
+        self, project_uuid: str, span_id: str, *, request_options: typing.Optional[RequestOptions] = None
+    ) -> AsyncHttpResponse[None]:
+        """
+        Parameters
+        ----------
+        project_uuid : str
+
+        span_id : str
+
+        request_options : typing.Optional[RequestOptions]
+            Request-specific configuration.
+
+        Returns
+        -------
+        AsyncHttpResponse[None]
+        """
+        _response = await self._client_wrapper.httpx_client.request(
+            f"projects/{jsonable_encoder(project_uuid)}/spans/{jsonable_encoder(span_id)}",
+            method="GET",
+            request_options=request_options,
+        )
+        try:
+            if 200 <= _response.status_code < 300:
+                return AsyncHttpResponse(response=_response, data=None)
             _response_json = _response.json()
         except JSONDecodeError:
             raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response.text)

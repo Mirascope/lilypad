@@ -24,7 +24,12 @@ class AnnotationsClient:
         return self._raw_client
 
     def list(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> typing.List[AnnotationPublic]:
         """
         Get annotations by functions.
@@ -34,6 +39,8 @@ class AnnotationsClient:
         project_uuid : str
 
         span_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -55,9 +62,12 @@ class AnnotationsClient:
         client.ee.projects.spans.annotations.list(
             project_uuid="project_uuid",
             span_uuid="span_uuid",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.list(project_uuid, span_uuid, request_options=request_options)
+        _response = self._raw_client.list(
+            project_uuid, span_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
 
@@ -77,7 +87,12 @@ class AsyncAnnotationsClient:
         return self._raw_client
 
     async def list(
-        self, project_uuid: str, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        span_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> typing.List[AnnotationPublic]:
         """
         Get annotations by functions.
@@ -87,6 +102,8 @@ class AsyncAnnotationsClient:
         project_uuid : str
 
         span_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -113,10 +130,13 @@ class AsyncAnnotationsClient:
             await client.ee.projects.spans.annotations.list(
                 project_uuid="project_uuid",
                 span_uuid="span_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.list(project_uuid, span_uuid, request_options=request_options)
+        _response = await self._raw_client.list(
+            project_uuid, span_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data

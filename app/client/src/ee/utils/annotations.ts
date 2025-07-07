@@ -88,7 +88,10 @@ export const useUpdateAnnotationMutation = () => {
     onSuccess: async (_, { projectUuid }) => {
       posthog.capture("annotationUpdated");
       await queryClient.invalidateQueries({
-        queryKey: ["projects", projectUuid, "annotations"],
+        predicate: (query) => 
+          query.queryKey[0] === "projects" && 
+          query.queryKey[1] === projectUuid && 
+          query.queryKey[2] === "annotations",
       });
       await queryClient.invalidateQueries({
         queryKey: ["projects", projectUuid, "functions"],
@@ -110,7 +113,10 @@ export const useDeleteAnnotationMutation = () => {
     }) => await deleteAnnotation(projectUuid, annotationUuid),
     onSuccess: async (_, { projectUuid }) => {
       await queryClient.invalidateQueries({
-        queryKey: ["projects", projectUuid, "annotations"],
+        predicate: (query) => 
+          query.queryKey[0] === "projects" && 
+          query.queryKey[1] === projectUuid && 
+          query.queryKey[2] === "annotations",
       });
       await queryClient.invalidateQueries({
         queryKey: ["projects", projectUuid, "functions"],

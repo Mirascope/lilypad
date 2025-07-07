@@ -22,12 +22,16 @@ class TestOpenSearchIndexing:
 
         mock_service = Mock()
         mock_service.bulk_index_traces.return_value = True
-
+        environment_uuid = uuid4()
         # Should complete without error
-        await index_traces_in_opensearch(project_uuid, traces, mock_service)
+        await index_traces_in_opensearch(
+            project_uuid, environment_uuid, traces, mock_service
+        )
 
         # Verify service was called
-        mock_service.bulk_index_traces.assert_called_once_with(project_uuid, traces)
+        mock_service.bulk_index_traces.assert_called_once_with(
+            project_uuid, environment_uuid, traces
+        )
 
     @pytest.mark.asyncio
     async def test_index_traces_failure(self):
@@ -39,7 +43,9 @@ class TestOpenSearchIndexing:
         mock_service.bulk_index_traces.return_value = False
 
         with patch("lilypad.server._utils.opensearch.logger") as mock_logger:
-            await index_traces_in_opensearch(project_uuid, traces, mock_service)
+            await index_traces_in_opensearch(
+                project_uuid, uuid4(), traces, mock_service
+            )
 
             # Verify error was logged
             mock_logger.error.assert_called_once()
@@ -50,12 +56,13 @@ class TestOpenSearchIndexing:
         """Test trace indexing exception handling."""
         project_uuid = uuid4()
         traces = [{"span_id": "test", "data": "test_data"}]
-
         mock_service = Mock()
         mock_service.bulk_index_traces.side_effect = Exception("OpenSearch error")
 
         with patch("lilypad.server._utils.opensearch.logger") as mock_logger:
-            await index_traces_in_opensearch(project_uuid, traces, mock_service)
+            await index_traces_in_opensearch(
+                project_uuid, uuid4(), traces, mock_service
+            )
 
             # Verify exception was logged
             mock_logger.error.assert_called_once()
@@ -70,15 +77,17 @@ class TestOpenSearchDeletion:
         """Test span deletion when OpenSearch is enabled."""
         project_uuid = uuid4()
         span_uuid = uuid4()
-
+        environment_uuid = uuid4()
         mock_service = Mock()
         mock_service.is_enabled = True
 
-        await delete_span_in_opensearch(project_uuid, span_uuid, mock_service)
+        await delete_span_in_opensearch(
+            project_uuid, span_uuid, environment_uuid, mock_service
+        )
 
         # Verify deletion was called
         mock_service.delete_trace_by_uuid.assert_called_once_with(
-            project_uuid, span_uuid
+            project_uuid, environment_uuid, span_uuid
         )
 
     @pytest.mark.asyncio
@@ -90,7 +99,7 @@ class TestOpenSearchDeletion:
         mock_service = Mock()
         mock_service.is_enabled = False
 
-        await delete_span_in_opensearch(project_uuid, span_uuid, mock_service)
+        await delete_span_in_opensearch(project_uuid, uuid4(), span_uuid, mock_service)
 
         # Verify deletion was NOT called
         mock_service.delete_trace_by_uuid.assert_not_called()
@@ -118,7 +127,10 @@ class TestBackgroundTaskIntegration:
             mock_get_service.return_value = mock_service
             mock_delete.return_value = True
 
-            response = client.delete(f"/projects/{test_project.uuid}/spans/{fake_uuid}")
+            environment_uuid = uuid4()  # Simulate an environment UUID
+            response = client.delete(
+                f"/projects/{test_project.uuid}/spans/{fake_uuid}?environment_uuid={environment_uuid}"
+            )
 
             assert response.status_code == 200
             assert response.json() is True
@@ -142,7 +154,10 @@ class TestBackgroundTaskIntegration:
             mock_get_service.return_value = mock_service
             mock_delete.return_value = True
 
-            response = client.delete(f"/projects/{test_project.uuid}/spans/{fake_uuid}")
+            environment_uuid = uuid4()
+            response = client.delete(
+                f"/projects/{test_project.uuid}/spans/{fake_uuid}?environment_uuid={environment_uuid}"
+            )
 
             assert response.status_code == 200
             assert response.json() is True
@@ -157,8 +172,10 @@ class TestBackgroundTaskIntegration:
             "lilypad.server.services.spans.SpanService.delete_record_by_uuid"
         ) as mock_delete:
             mock_delete.side_effect = Exception("Database error")
-
-            response = client.delete(f"/projects/{test_project.uuid}/spans/{fake_uuid}")
+            environment_uuid = uuid4()
+            response = client.delete(
+                f"/projects/{test_project.uuid}/spans/{fake_uuid}?environment_uuid={environment_uuid}"
+            )
 
             assert response.status_code == 200
             assert response.json() is False  # Returns False on exception

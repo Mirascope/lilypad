@@ -1,6 +1,8 @@
 """Comprehensive tests for the API keys endpoints."""
 
+import hashlib
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
@@ -126,6 +128,7 @@ def test_create_api_key(
 
     # The API returns the raw key as a string
     raw_key = response.text.strip('"')  # Remove quotes from JSON string
+    api_key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
     assert raw_key  # Should have received a key
 
     # Verify in database
@@ -143,8 +146,40 @@ def test_create_api_key(
     assert db_key.name == "New API Key"
     assert db_key.project_uuid == test_project.uuid
     assert db_key.environment_uuid == test_environment.uuid
-    # The key_hash in DB should be the same as what was returned
-    assert db_key.key_hash == raw_key
+    assert db_key.key_hash == api_key_hash
+
+
+def test_create_api_key_service_unavailable(
+    client: TestClient,
+    session: Session,
+    test_project: ProjectTable,
+    test_environment: EnvironmentTable,
+):
+    """Test that a 503 is returned when API key creation fails."""
+    with patch.object(APIKeyService, "create_record", return_value=None):
+        api_key_data = {
+            "name": "Failed API Key",
+            "project_uuid": str(test_project.uuid),
+            "environment_uuid": str(test_environment.uuid),
+            "description": "This should fail",
+        }
+
+        response = client.post("/api-keys", json=api_key_data)
+
+        # Verify the response
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Failed to create API key"
+
+        # Verify no API key was created in the database
+        from sqlmodel import select
+
+        created_keys = session.exec(
+            select(APIKeyTable).where(
+                APIKeyTable.name == "Failed API Key",
+                APIKeyTable.project_uuid == test_project.uuid,
+            )
+        ).all()
+        assert len(created_keys) == 0
 
 
 def test_create_api_key_invalid_project(
@@ -186,10 +221,9 @@ def test_create_api_key_invalid_environment(
     }
 
     response = client.post("/api-keys", json=api_key_data)
-    # The current implementation doesn't validate environment existence, so it succeeds
-    assert response.status_code == 200
+    assert response.status_code == 404
 
-    # Verify the key was created with the invalid environment UUID
+    # Verify the key was not created with the invalid environment UUID
     from sqlmodel import select
 
     created_keys = session.exec(
@@ -198,7 +232,7 @@ def test_create_api_key_invalid_environment(
             APIKeyTable.environment_uuid == UUID(invalid_env_uuid),
         )
     ).all()
-    assert len(created_keys) == 1
+    assert len(created_keys) == 0
 
 
 def test_create_api_key_with_expiration(
