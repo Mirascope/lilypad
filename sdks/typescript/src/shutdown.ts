@@ -27,12 +27,12 @@ export async function shutdown(): Promise<void> {
 async function performShutdown(): Promise<void> {
   logger.info('Shutting down Lilypad SDK...');
 
-  if (!isConfigured()) {
-    logger.debug('Shutdown called but SDK not configured.');
-    return;
-  }
-
   try {
+    if (!isConfigured()) {
+      logger.debug('Shutdown called but SDK not configured.');
+      return;
+    }
+
     // Get the tracer provider and shut it down
     const tracerProvider = trace.getTracerProvider();
 

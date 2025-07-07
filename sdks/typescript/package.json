@@ -13,8 +13,9 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "echo \"Tests will be implemented in next phase - tracking OpenAI instrumentation and span creation\" && exit 0",
-    "test:coverage": "echo \"Coverage reporting will be implemented in next phase\" && exit 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",

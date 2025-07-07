@@ -2,10 +2,7 @@ import type { LilypadConfig } from '../types';
 
 let currentSettings: LilypadConfig | null = null;
 
-export function getSettings(): LilypadConfig {
-  if (!currentSettings) {
-    throw new Error('Lilypad SDK not configured. Call configure() first.');
-  }
+export function getSettings(): LilypadConfig | null {
   return currentSettings;
 }
 
@@ -19,6 +16,9 @@ export function isConfigured(): boolean {
 
 export function mergeSettings(overrides: Partial<LilypadConfig>): LilypadConfig {
   const current = getSettings();
+  if (!current) {
+    throw new Error('Cannot merge settings when not configured');
+  }
   return {
     ...current,
     ...overrides,

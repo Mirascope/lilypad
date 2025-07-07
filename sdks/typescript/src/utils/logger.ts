@@ -1,21 +1,23 @@
 import type { LogLevel } from '../types';
 
-const LOG_LEVELS: Record<LogLevel, number> = {
+const LOG_LEVELS: Record<LogLevel | 'none', number> = {
   debug: 0,
   info: 1,
   warn: 2,
   error: 3,
+  none: 999,
 };
 
-class Logger {
-  private logLevel: LogLevel = 'info';
+export class Logger {
+  private logLevel: LogLevel | 'none' = 'info';
   private prefix = '[Lilypad]';
 
-  setLevel(level: LogLevel): void {
+  setLevel(level: LogLevel | 'none'): void {
     this.logLevel = level;
   }
 
-  private shouldLog(level: LogLevel): boolean {
+  private shouldLog(level: LogLevel | 'none'): boolean {
+    if (this.logLevel === 'none') return false;
     return LOG_LEVELS[level] >= LOG_LEVELS[this.logLevel];
   }
 
@@ -40,6 +42,12 @@ class Logger {
   error(...args: unknown[]): void {
     if (this.shouldLog('error')) {
       console.error(this.prefix, ...args);
+    }
+  }
+
+  log(...args: unknown[]): void {
+    if (this.shouldLog('info')) {
+      console.log('[Lilypad] [LOG]', ...args);
     }
   }
 }
