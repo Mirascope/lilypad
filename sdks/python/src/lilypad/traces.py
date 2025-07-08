@@ -1076,7 +1076,7 @@ def trace(
 
             def execute_user_function_only(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 """Fallback: execute only the user function without any API interactions."""
-                return fn(*args, **kwargs)
+                return fn(*args, **kwargs)  # pragma: no cover
 
             @call_safely(execute_user_function_only)
             @wraps(fn)

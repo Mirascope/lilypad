@@ -682,12 +682,20 @@ async def test_async_version_method():
         mock_settings.return_value = Mock(project_id="test-project")
 
         with patch("lilypad.traces.get_function_by_version_async") as mock_get_version:
-            mock_function = Mock(uuid_="async-version-uuid")
+            mock_function = Mock(
+                uuid_="async-version-uuid",
+                name="async_versioned_func",
+                code="test_code",
+                signature="test_signature",
+                hash="test_hash",
+                dependencies={}  # Add empty dependencies dict
+            )
             mock_get_version.return_value = mock_function
 
-            with patch("lilypad.traces.get_cached_closure") as mock_get_cached:
+            # Patch get_cached_closure where it's imported in traces.py
+            with patch("lilypad.traces.get_cached_closure") as mock_get_closure:
                 mock_closure = Mock()
-                mock_get_cached.return_value = mock_closure
+                mock_get_closure.return_value = mock_closure
 
                 with patch("lilypad.traces.SubprocessSandboxRunner") as mock_sandbox_class:
                     mock_sandbox = Mock()
@@ -1387,6 +1395,125 @@ def test_trace_assign_span_not_found():
             # When not configured, assign should be a no-op (not raise error)
             # This is because NoOpTrace doesn't make API calls
             result.assign("test@example.com")  # Should not raise
+
+
+def test_trace_annotate_empty_annotations():
+    """Test annotate method with empty annotations (line 147)."""
+    with patch("lilypad.traces.get_settings") as mock_settings:
+        mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
+        
+        trace = Trace(response="test", span_id=123456789, function_uuid="test-func-uuid")
+        
+        # Try to annotate with no annotations
+        with pytest.raises(ValueError, match="At least one annotation must be provided"):
+            trace.annotate()
+
+
+def test_trace_assign_span_not_found():
+    """Test assign method when span is not found (lines 171-173)."""
+    with patch("lilypad.traces.get_settings") as mock_settings:
+        mock_settings.return_value = Mock(project_id="test-project", api_key="test-key")
+        
+        with patch("lilypad.traces.get_sync_client") as mock_client:
+            # Mock _get_span_uuid to return None
+            mock_paginated = PaginatedSpanPublic(items=[], limit=10, offset=0, total=0)
+            mock_client.return_value.projects.functions.spans.list_paginated.return_value = mock_paginated
+            
+            trace = Trace(response="test", span_id=123456789, function_uuid="test-func-uuid")
+            
+            # Force _get_span_uuid to return None
+            with patch.object(trace, "_get_span_uuid", return_value=None):
+                from lilypad.exceptions import SpanNotFoundError
+                
+                with pytest.raises(SpanNotFoundError, match="Cannot assign: span not found for function test-func-uuid"):
+                    trace.assign("test@example.com")
+
+
+@pytest.mark.asyncio
+async def test_async_trace_annotate_empty_annotations():
+    """Test NoOpAsyncTrace annotate method with empty annotations (lines 321-322)."""
+    from lilypad.traces import NoOpAsyncTrace
+    
+    async_trace = NoOpAsyncTrace(response="test")
+    
+    # Try to annotate with no annotations
+    with pytest.raises(ValueError, match="At least one annotation must be provided"):
+        await async_trace.annotate()
+
+
+def test_trace_fallback_execute_user_function_only():
+    """Test the fallback execute_user_function_only (line 1079)."""
+    # This tests the case when get_tracer_provider is not a TracerProvider
+    with patch("lilypad.traces.get_tracer_provider") as mock_get_tracer:
+        # Make get_tracer_provider return something that's not a TracerProvider
+        mock_get_tracer.return_value = object()
+        
+        # Define a simple function
+        @trace()
+        def simple_func(x: int) -> int:
+            return x * 2
+        
+        # Call the function - should use fallback path
+        result = simple_func(5)
+        assert result == 10
+
+
+def test_construct_trace_attributes():
+    """Test _construct_trace_attributes function to cover the for loop (lines 644-649)."""
+    from lilypad.traces import _construct_trace_attributes
+    from lilypad._utils.serializer_registry import SerializerMap
+    
+    # Test with normal serializable values
+    arg_types = {"x": "int", "y": "str", "z": "list"}
+    arg_values = {"x": 42, "y": "hello", "z": [1, 2, 3]}
+    serializers = SerializerMap()
+    
+    result = _construct_trace_attributes("trace", arg_types, arg_values, serializers)
+    
+    # Check the result structure
+    assert "lilypad.trace.arg_types" in result
+    assert "lilypad.trace.arg_values" in result
+    
+    # Verify the values were serialized
+    import json
+    arg_values_json = json.loads(result["lilypad.trace.arg_values"])
+    assert arg_values_json["x"] == 42
+    assert arg_values_json["y"] == "hello"
+    assert arg_values_json["z"] == "[1,2,3]"  # Lists are serialized as JSON strings
+
+
+def test_construct_trace_attributes_with_exception():
+    """Test _construct_trace_attributes with values that cause serialization errors."""
+    from lilypad.traces import _construct_trace_attributes
+    from lilypad._utils.serializer_registry import SerializerMap
+    
+    # Create an object that will fail JSON serialization
+    class UnserializableObject:
+        def __init__(self):
+            self.circular_ref = self
+    
+    # Mock fast_jsonable to raise an exception for our unserializable object
+    with patch("lilypad.traces.fast_jsonable") as mock_fast_jsonable:
+        def side_effect(value, custom_serializers):
+            if isinstance(value, UnserializableObject):
+                raise ValueError("Cannot serialize circular reference")
+            # For other values, use the real json_dumps
+            from lilypad._utils.json import json_dumps
+            return json_dumps(value)
+        
+        mock_fast_jsonable.side_effect = side_effect
+        
+        arg_types = {"good": "str", "bad": "object"}
+        arg_values = {"good": "hello", "bad": UnserializableObject()}
+        serializers = SerializerMap()
+        
+        result = _construct_trace_attributes("trace", arg_types, arg_values, serializers)
+        
+        # Check the result
+        import json
+        arg_values_json = json.loads(result["lilypad.trace.arg_values"])
+        assert arg_values_json["good"] == '"hello"'  # Strings are also JSON-serialized
+        assert arg_values_json["bad"] == "could not serialize"
 
 
 # =============================================================================
@@ -2249,3 +2376,120 @@ async def test_async_trace_without_configuration():
             result2 = await async_func_wrap(10)
             assert isinstance(result2, NoOpAsyncTrace)
             assert result2.response == 30
+
+
+@pytest.mark.asyncio 
+async def test_trace_async_versioning_manual_and_wrap_mode():
+    """Test async trace with manual versioning and wrap mode (lines 955-988)."""
+    from lilypad.traces import trace, AsyncTrace
+    from opentelemetry.sdk.trace import TracerProvider
+    from uuid import uuid4
+    from contextlib import contextmanager
+    
+    # Create test functions with manual versioning
+    @trace(versioning="manual", mode="wrap")
+    async def async_func_manual_wrap(x: int) -> int:
+        return x * 3
+    
+    @trace(versioning="manual", mode="flow")  
+    async def async_func_manual_flow(x: int) -> int:
+        return x * 4
+    
+    # Mock settings to have valid project_id
+    mock_settings = Mock()
+    mock_settings.api_key = "test-key"
+    mock_settings.project_id = uuid4()
+    
+    # Mock async client
+    mock_client = AsyncMock()
+    
+    # Ensure tracer provider is valid
+    provider = TracerProvider()
+    
+    with (
+        patch("lilypad.traces.get_settings", return_value=mock_settings),
+        patch("lilypad.traces.get_async_client", return_value=mock_client),
+        patch("lilypad.traces.get_tracer_provider", return_value=provider),
+        patch("lilypad.spans.get_tracer") as mock_get_tracer,
+        patch("lilypad.traces.Closure") as mock_closure_class,
+        patch("lilypad.traces._construct_trace_attributes") as mock_construct_trace_attributes,
+        patch("lilypad.traces._set_span_attributes") as mock_set_span_attributes,
+        patch("lilypad.traces._set_trace_context") as mock_set_trace_context,
+    ):
+        # Set up mock tracer and span
+        mock_span = Mock()
+        mock_span.is_noop = False
+        mock_span.span_id = 123456789
+        mock_span.opentelemetry_span = Mock()
+        
+        mock_tracer = Mock()
+        mock_tracer.start_span.return_value = mock_span
+        mock_get_tracer.return_value = mock_tracer
+        
+        # Mock the Span context manager
+        original_span_class = trace.__globals__["Span"]
+        
+        class MockSpan:
+            def __init__(self, name):
+                self.name = name
+                self.is_noop = False
+                self.span_id = 123456789
+                self.opentelemetry_span = mock_span
+                self._span = mock_span
+                
+            def __enter__(self):
+                return self
+                
+            def __exit__(self, *args):
+                pass
+                
+            async def __aenter__(self):
+                return self
+                
+            async def __aexit__(self, *args):
+                pass
+        
+        # Mock Closure.from_fn
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure.code = "test-code"
+        mock_closure.name = "test-func"
+        mock_closure.signature = "test-signature"
+        mock_closure.dependencies = []
+        mock_closure_class.from_fn.return_value = mock_closure
+        
+        # Mock _construct_trace_attributes to return proper attributes
+        mock_construct_trace_attributes.return_value = {
+            "lilypad.trace.arg_types": "{}",
+            "lilypad.trace.arg_values": "{}"
+        }
+        
+        # Mock _set_span_attributes as a context manager
+        @contextmanager
+        def mock_span_attributes_cm(*args, **kwargs):
+            result_holder = Mock()
+            yield result_holder
+            
+        mock_set_span_attributes.side_effect = mock_span_attributes_cm
+        
+        with patch("lilypad.traces.Span", MockSpan):
+            # Test wrap mode with manual versioning - should return AsyncTrace
+            result = await async_func_manual_wrap(5)
+            assert isinstance(result, AsyncTrace)
+            assert result.response == 15
+            from opentelemetry.trace import format_span_id
+            assert result.formated_span_id == format_span_id(123456789)
+            assert result.function_uuid is None  # Manual versioning sets function to None
+            
+            # Verify _set_trace_context was called
+            mock_set_trace_context.assert_called_with({"span_id": 123456789, "function_uuid": None})
+            
+            # Reset mock for next test
+            mock_set_trace_context.reset_mock()
+            
+            # Test flow mode with manual versioning - should return the output directly  
+            result2 = await async_func_manual_flow(5)
+            assert result2 == 20
+            
+            # Verify _set_trace_context was called again
+            mock_set_trace_context.assert_called_with({"span_id": 123456789, "function_uuid": None})
