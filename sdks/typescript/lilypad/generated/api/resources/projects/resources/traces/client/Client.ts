@@ -45,26 +45,34 @@ export class Traces {
      *
      * @param {string} projectUuid
      * @param {string} spanId
+     * @param {Lilypad.projects.TracesGetRootRequest} request
      * @param {Traces.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.traces.getRoot("project_uuid", "span_id")
+     *     await client.projects.traces.getRoot("project_uuid", "span_id", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public getRoot(
         projectUuid: string,
         spanId: string,
+        request: Lilypad.projects.TracesGetRootRequest,
         requestOptions?: Traces.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.SpanPublic> {
-        return core.HttpResponsePromise.fromPromise(this.__getRoot(projectUuid, spanId, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__getRoot(projectUuid, spanId, request, requestOptions));
     }
 
     private async __getRoot(
         projectUuid: string,
         spanId: string,
+        request: Lilypad.projects.TracesGetRootRequest,
         requestOptions?: Traces.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.SpanPublic>> {
+        const { environment_uuid: environmentUuid } = request;
+        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -80,6 +88,7 @@ export class Traces {
                 }),
                 requestOptions?.headers,
             ),
+            queryParameters: _queryParams,
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
@@ -133,11 +142,13 @@ export class Traces {
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.traces.list("project_uuid")
+     *     await client.projects.traces.list("project_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public list(
         projectUuid: string,
-        request: Lilypad.projects.TracesListRequest = {},
+        request: Lilypad.projects.TracesListRequest,
         requestOptions?: Traces.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.PaginatedSpanPublic> {
         return core.HttpResponsePromise.fromPromise(this.__list(projectUuid, request, requestOptions));
@@ -145,11 +156,12 @@ export class Traces {
 
     private async __list(
         projectUuid: string,
-        request: Lilypad.projects.TracesListRequest = {},
+        request: Lilypad.projects.TracesListRequest,
         requestOptions?: Traces.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.PaginatedSpanPublic>> {
-        const { limit, offset, order } = request;
+        const { environment_uuid: environmentUuid, limit, offset, order } = request;
         const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         if (limit != null) {
             _queryParams["limit"] = limit.toString();
         }

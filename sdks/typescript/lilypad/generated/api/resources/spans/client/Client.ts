@@ -3,9 +3,9 @@
  */
 
 import * as core from "../../../../core/index.js";
-import * as Lilypad from "../../../index.js";
 import { mergeHeaders, mergeOnlyDefinedHeaders } from "../../../../core/headers.js";
 import * as errors from "../../../../errors/index.js";
+import * as Lilypad from "../../../index.js";
 import { Comments } from "../resources/comments/client/Client.js";
 
 export declare namespace Spans {
@@ -47,27 +47,17 @@ export class Spans {
     }
 
     /**
-     * Get span by uuid.
-     *
      * @param {string} spanUuid
      * @param {Spans.RequestOptions} requestOptions - Request-specific configuration.
-     *
-     * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
      *     await client.spans.get("span_uuid")
      */
-    public get(
-        spanUuid: string,
-        requestOptions?: Spans.RequestOptions,
-    ): core.HttpResponsePromise<Lilypad.SpanMoreDetails> {
+    public get(spanUuid: string, requestOptions?: Spans.RequestOptions): core.HttpResponsePromise<void> {
         return core.HttpResponsePromise.fromPromise(this.__get(spanUuid, requestOptions));
     }
 
-    private async __get(
-        spanUuid: string,
-        requestOptions?: Spans.RequestOptions,
-    ): Promise<core.WithRawResponse<Lilypad.SpanMoreDetails>> {
+    private async __get(spanUuid: string, requestOptions?: Spans.RequestOptions): Promise<core.WithRawResponse<void>> {
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -88,23 +78,15 @@ export class Spans {
             abortSignal: requestOptions?.abortSignal,
         });
         if (_response.ok) {
-            return { data: _response.body as Lilypad.SpanMoreDetails, rawResponse: _response.rawResponse };
+            return { data: undefined, rawResponse: _response.rawResponse };
         }
 
         if (_response.error.reason === "status-code") {
-            switch (_response.error.statusCode) {
-                case 422:
-                    throw new Lilypad.UnprocessableEntityError(
-                        _response.error.body as Lilypad.HttpValidationError,
-                        _response.rawResponse,
-                    );
-                default:
-                    throw new errors.LilypadError({
-                        statusCode: _response.error.statusCode,
-                        body: _response.error.body,
-                        rawResponse: _response.rawResponse,
-                    });
-            }
+            throw new errors.LilypadError({
+                statusCode: _response.error.statusCode,
+                body: _response.error.body,
+                rawResponse: _response.rawResponse,
+            });
         }
 
         switch (_response.error.reason) {

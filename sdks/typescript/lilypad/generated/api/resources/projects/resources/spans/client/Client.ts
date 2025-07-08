@@ -51,7 +51,8 @@ export class Spans {
      *
      * @example
      *     await client.projects.spans.getAggregates("project_uuid", {
-     *         time_frame: "day"
+     *         time_frame: "day",
+     *         environment_uuid: "environment_uuid"
      *     })
      */
     public getAggregates(
@@ -67,9 +68,10 @@ export class Spans {
         request: Lilypad.projects.SpansGetAggregatesRequest,
         requestOptions?: Spans.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.AggregateMetrics[]>> {
-        const { time_frame: timeFrame } = request;
+        const { time_frame: timeFrame, environment_uuid: environmentUuid } = request;
         const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
         _queryParams["time_frame"] = timeFrame;
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -141,11 +143,13 @@ export class Spans {
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.spans.getRecent("project_uuid")
+     *     await client.projects.spans.getRecent("project_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public getRecent(
         projectUuid: string,
-        request: Lilypad.projects.SpansGetRecentRequest = {},
+        request: Lilypad.projects.SpansGetRecentRequest,
         requestOptions?: Spans.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.RecentSpansResponse> {
         return core.HttpResponsePromise.fromPromise(this.__getRecent(projectUuid, request, requestOptions));
@@ -153,11 +157,12 @@ export class Spans {
 
     private async __getRecent(
         projectUuid: string,
-        request: Lilypad.projects.SpansGetRecentRequest = {},
+        request: Lilypad.projects.SpansGetRecentRequest,
         requestOptions?: Spans.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.RecentSpansResponse>> {
-        const { since } = request;
+        const { environment_uuid: environmentUuid, since } = request;
         const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         if (since != null) {
             _queryParams["since"] = since;
         }
@@ -222,89 +227,6 @@ export class Spans {
     }
 
     /**
-     * Get span by project_uuid and span_id.
-     *
-     * @param {string} projectUuid
-     * @param {string} spanId
-     * @param {Spans.RequestOptions} requestOptions - Request-specific configuration.
-     *
-     * @throws {@link Lilypad.UnprocessableEntityError}
-     *
-     * @example
-     *     await client.projects.spans.getById("project_uuid", "span_id")
-     */
-    public getById(
-        projectUuid: string,
-        spanId: string,
-        requestOptions?: Spans.RequestOptions,
-    ): core.HttpResponsePromise<Lilypad.SpanMoreDetails> {
-        return core.HttpResponsePromise.fromPromise(this.__getById(projectUuid, spanId, requestOptions));
-    }
-
-    private async __getById(
-        projectUuid: string,
-        spanId: string,
-        requestOptions?: Spans.RequestOptions,
-    ): Promise<core.WithRawResponse<Lilypad.SpanMoreDetails>> {
-        const _response = await core.fetcher({
-            url: core.joinUrl(
-                (await core.Supplier.get(this._options.baseUrl)) ??
-                    (await core.Supplier.get(this._options.environment)),
-                `projects/${encodeURIComponent(projectUuid)}/spans/${encodeURIComponent(spanId)}`,
-            ),
-            method: "GET",
-            headers: mergeHeaders(
-                this._options?.headers,
-                mergeOnlyDefinedHeaders({
-                    Authorization: await this._getAuthorizationHeader(),
-                    "X-API-Key": requestOptions?.apiKey,
-                }),
-                requestOptions?.headers,
-            ),
-            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
-            maxRetries: requestOptions?.maxRetries,
-            abortSignal: requestOptions?.abortSignal,
-        });
-        if (_response.ok) {
-            return { data: _response.body as Lilypad.SpanMoreDetails, rawResponse: _response.rawResponse };
-        }
-
-        if (_response.error.reason === "status-code") {
-            switch (_response.error.statusCode) {
-                case 422:
-                    throw new Lilypad.UnprocessableEntityError(
-                        _response.error.body as Lilypad.HttpValidationError,
-                        _response.rawResponse,
-                    );
-                default:
-                    throw new errors.LilypadError({
-                        statusCode: _response.error.statusCode,
-                        body: _response.error.body,
-                        rawResponse: _response.rawResponse,
-                    });
-            }
-        }
-
-        switch (_response.error.reason) {
-            case "non-json":
-                throw new errors.LilypadError({
-                    statusCode: _response.error.statusCode,
-                    body: _response.error.rawBody,
-                    rawResponse: _response.rawResponse,
-                });
-            case "timeout":
-                throw new errors.LilypadTimeoutError(
-                    "Timeout exceeded when calling GET /projects/{project_uuid}/spans/{span_id}.",
-                );
-            case "unknown":
-                throw new errors.LilypadError({
-                    message: _response.error.errorMessage,
-                    rawResponse: _response.rawResponse,
-                });
-        }
-    }
-
-    /**
      * Search for traces in OpenSearch.
      *
      * @param {string} projectUuid
@@ -314,11 +236,13 @@ export class Spans {
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.spans.search("project_uuid")
+     *     await client.projects.spans.search("project_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public search(
         projectUuid: string,
-        request: Lilypad.projects.SpansSearchRequest = {},
+        request: Lilypad.projects.SpansSearchRequest,
         requestOptions?: Spans.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.SpanPublic[]> {
         return core.HttpResponsePromise.fromPromise(this.__search(projectUuid, request, requestOptions));
@@ -326,7 +250,7 @@ export class Spans {
 
     private async __search(
         projectUuid: string,
-        request: Lilypad.projects.SpansSearchRequest = {},
+        request: Lilypad.projects.SpansSearchRequest,
         requestOptions?: Spans.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.SpanPublic[]>> {
         const {
@@ -336,6 +260,7 @@ export class Spans {
             limit,
             scope,
             type: type_,
+            environment_uuid: environmentUuid,
         } = request;
         const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
         if (queryString != null) {
@@ -362,6 +287,7 @@ export class Spans {
             _queryParams["type"] = type_;
         }
 
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -426,26 +352,34 @@ export class Spans {
      *
      * @param {string} projectUuid
      * @param {string} spanUuid
+     * @param {Lilypad.projects.SpansDeleteRequest} request
      * @param {Spans.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.spans.delete("project_uuid", "span_uuid")
+     *     await client.projects.spans.delete("project_uuid", "span_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public delete(
         projectUuid: string,
         spanUuid: string,
+        request: Lilypad.projects.SpansDeleteRequest,
         requestOptions?: Spans.RequestOptions,
     ): core.HttpResponsePromise<boolean> {
-        return core.HttpResponsePromise.fromPromise(this.__delete(projectUuid, spanUuid, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__delete(projectUuid, spanUuid, request, requestOptions));
     }
 
     private async __delete(
         projectUuid: string,
         spanUuid: string,
+        request: Lilypad.projects.SpansDeleteRequest,
         requestOptions?: Spans.RequestOptions,
     ): Promise<core.WithRawResponse<boolean>> {
+        const { environment_uuid: environmentUuid } = request;
+        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -461,6 +395,7 @@ export class Spans {
                 }),
                 requestOptions?.headers,
             ),
+            queryParameters: _queryParams,
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
@@ -495,6 +430,77 @@ export class Spans {
             case "timeout":
                 throw new errors.LilypadTimeoutError(
                     "Timeout exceeded when calling DELETE /projects/{project_uuid}/spans/{span_uuid}.",
+                );
+            case "unknown":
+                throw new errors.LilypadError({
+                    message: _response.error.errorMessage,
+                    rawResponse: _response.rawResponse,
+                });
+        }
+    }
+
+    /**
+     * @param {string} projectUuid
+     * @param {string} spanId
+     * @param {Spans.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @example
+     *     await client.projects.spans.getById("project_uuid", "span_id")
+     */
+    public getById(
+        projectUuid: string,
+        spanId: string,
+        requestOptions?: Spans.RequestOptions,
+    ): core.HttpResponsePromise<void> {
+        return core.HttpResponsePromise.fromPromise(this.__getById(projectUuid, spanId, requestOptions));
+    }
+
+    private async __getById(
+        projectUuid: string,
+        spanId: string,
+        requestOptions?: Spans.RequestOptions,
+    ): Promise<core.WithRawResponse<void>> {
+        const _response = await core.fetcher({
+            url: core.joinUrl(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)),
+                `projects/${encodeURIComponent(projectUuid)}/spans/${encodeURIComponent(spanId)}`,
+            ),
+            method: "GET",
+            headers: mergeHeaders(
+                this._options?.headers,
+                mergeOnlyDefinedHeaders({
+                    Authorization: await this._getAuthorizationHeader(),
+                    "X-API-Key": requestOptions?.apiKey,
+                }),
+                requestOptions?.headers,
+            ),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return { data: undefined, rawResponse: _response.rawResponse };
+        }
+
+        if (_response.error.reason === "status-code") {
+            throw new errors.LilypadError({
+                statusCode: _response.error.statusCode,
+                body: _response.error.body,
+                rawResponse: _response.rawResponse,
+            });
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.LilypadError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                    rawResponse: _response.rawResponse,
+                });
+            case "timeout":
+                throw new errors.LilypadTimeoutError(
+                    "Timeout exceeded when calling GET /projects/{project_uuid}/spans/{span_id}.",
                 );
             case "unknown":
                 throw new errors.LilypadError({

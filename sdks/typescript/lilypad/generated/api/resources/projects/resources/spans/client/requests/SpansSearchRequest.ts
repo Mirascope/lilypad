@@ -6,7 +6,9 @@ import * as Lilypad from "../../../../../../index.js";
 
 /**
  * @example
- *     {}
+ *     {
+ *         environment_uuid: "environment_uuid"
+ *     }
  */
 export interface SpansSearchRequest {
     query_string?: string;
@@ -15,4 +17,5 @@ export interface SpansSearchRequest {
     limit?: number;
     scope?: Lilypad.Scope;
     type?: string;
+    environment_uuid: string;
 }

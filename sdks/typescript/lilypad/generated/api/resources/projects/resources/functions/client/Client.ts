@@ -477,24 +477,32 @@ export class Functions {
      * Get all unique function names.
      *
      * @param {string} projectUuid
+     * @param {Lilypad.projects.FunctionsGetLatestVersionsRequest} request
      * @param {Functions.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.functions.getLatestVersions("project_uuid")
+     *     await client.projects.functions.getLatestVersions("project_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public getLatestVersions(
         projectUuid: string,
+        request: Lilypad.projects.FunctionsGetLatestVersionsRequest,
         requestOptions?: Functions.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.FunctionPublic[]> {
-        return core.HttpResponsePromise.fromPromise(this.__getLatestVersions(projectUuid, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__getLatestVersions(projectUuid, request, requestOptions));
     }
 
     private async __getLatestVersions(
         projectUuid: string,
+        request: Lilypad.projects.FunctionsGetLatestVersionsRequest,
         requestOptions?: Functions.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.FunctionPublic[]>> {
+        const { environment_uuid: environmentUuid } = request;
+        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -510,6 +518,7 @@ export class Functions {
                 }),
                 requestOptions?.headers,
             ),
+            queryParameters: _queryParams,
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
@@ -895,26 +904,34 @@ export class Functions {
      *
      * @param {string} projectUuid
      * @param {string} functionUuid
+     * @param {Lilypad.projects.FunctionsArchiveRequest} request
      * @param {Functions.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.functions.archive("project_uuid", "function_uuid")
+     *     await client.projects.functions.archive("project_uuid", "function_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public archive(
         projectUuid: string,
         functionUuid: string,
+        request: Lilypad.projects.FunctionsArchiveRequest,
         requestOptions?: Functions.RequestOptions,
     ): core.HttpResponsePromise<boolean> {
-        return core.HttpResponsePromise.fromPromise(this.__archive(projectUuid, functionUuid, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__archive(projectUuid, functionUuid, request, requestOptions));
     }
 
     private async __archive(
         projectUuid: string,
         functionUuid: string,
+        request: Lilypad.projects.FunctionsArchiveRequest,
         requestOptions?: Functions.RequestOptions,
     ): Promise<core.WithRawResponse<boolean>> {
+        const { environment_uuid: environmentUuid } = request;
+        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -930,6 +947,7 @@ export class Functions {
                 }),
                 requestOptions?.headers,
             ),
+            queryParameters: _queryParams,
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
@@ -1067,26 +1085,36 @@ export class Functions {
      *
      * @param {string} projectUuid
      * @param {string} functionName
+     * @param {Lilypad.projects.FunctionsArchiveByNameRequest} request
      * @param {Functions.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.functions.archiveByName("project_uuid", "function_name")
+     *     await client.projects.functions.archiveByName("project_uuid", "function_name", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public archiveByName(
         projectUuid: string,
         functionName: string,
+        request: Lilypad.projects.FunctionsArchiveByNameRequest,
         requestOptions?: Functions.RequestOptions,
     ): core.HttpResponsePromise<boolean> {
-        return core.HttpResponsePromise.fromPromise(this.__archiveByName(projectUuid, functionName, requestOptions));
+        return core.HttpResponsePromise.fromPromise(
+            this.__archiveByName(projectUuid, functionName, request, requestOptions),
+        );
     }
 
     private async __archiveByName(
         projectUuid: string,
         functionName: string,
+        request: Lilypad.projects.FunctionsArchiveByNameRequest,
         requestOptions?: Functions.RequestOptions,
     ): Promise<core.WithRawResponse<boolean>> {
+        const { environment_uuid: environmentUuid } = request;
+        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -1102,6 +1130,7 @@ export class Functions {
                 }),
                 requestOptions?.headers,
             ),
+            queryParameters: _queryParams,
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
