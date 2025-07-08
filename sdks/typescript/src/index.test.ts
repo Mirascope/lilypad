@@ -63,7 +63,7 @@ describe('index', () => {
 
     it('should have correct shape', () => {
       expect(Object.keys(lilypad).sort()).toEqual(
-        ['configure', 'getTracer', 'logger', 'shutdown'].sort()
+        ['configure', 'getTracer', 'logger', 'shutdown'].sort(),
       );
     });
   });

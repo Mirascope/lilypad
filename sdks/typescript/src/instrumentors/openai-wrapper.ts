@@ -3,6 +3,7 @@ import { trace, SpanStatusCode, SpanKind, Span as OtelSpan } from '@opentelemetr
 
 import { logger } from '../utils/logger';
 import { StreamWrapper, isAsyncIterable } from '../utils/stream-wrapper';
+export { isAsyncIterable };
 import { safeStringify } from '../utils/json';
 import { isSDKShuttingDown } from '../shutdown';
 import type {
@@ -90,11 +91,17 @@ export function patchOpenAIRequire(): void {
   }
 }
 
-function wrapOpenAIModule(openaiModule: any): any {
+export function wrapOpenAIModule(openaiModule: any): any {
   logger.debug('Wrapping OpenAI module');
 
   // Get the OpenAI class
-  const OpenAIClass = openaiModule.default || openaiModule.OpenAI || openaiModule;
+  const OpenAIClass = openaiModule.default || openaiModule.OpenAI;
+
+  // If no OpenAI class found, return the module as-is
+  if (!OpenAIClass || typeof OpenAIClass !== 'function') {
+    logger.error('Could not find OpenAI class in module');
+    return openaiModule;
+  }
 
   // Create wrapped class
   class WrappedOpenAI extends OpenAIClass {
@@ -135,7 +142,7 @@ function wrapOpenAIModule(openaiModule: any): any {
   return wrappedModule;
 }
 
-function wrapChatCompletionsCreate(original: Function): Function {
+export function wrapChatCompletionsCreate(original: Function): Function {
   return async function (
     this: unknown,
     params: ChatCompletionParams,
@@ -257,55 +264,44 @@ async function handleStreamingResponse(
   stream: AsyncIterable<ChatCompletionChunk>,
   span: OtelSpan,
 ): Promise<AsyncIterable<ChatCompletionChunk>> {
-  const wrappedStream = new StreamWrapper(stream);
   const chunks: ChatCompletionChunk[] = [];
 
-  wrappedStream.on('data', (chunk: ChatCompletionChunk) => {
-    chunks.push(chunk);
-  });
+  return new StreamWrapper(stream, span, {
+    onChunk: (chunk) => {
+      chunks.push(chunk);
+    },
+    onFinalize: () => {
+      // Reconstruct the full response from chunks
+      let content = '';
+      let finishReason: string | null = null;
 
-  wrappedStream.on('end', () => {
-    // Reconstruct the full response from chunks
-    let content = '';
-    let finishReason: string | null = null;
-
-    for (const chunk of chunks) {
-      if (chunk.choices && chunk.choices.length > 0) {
-        const delta = chunk.choices[0].delta;
-        if (delta?.content) {
-          content += delta.content;
-        }
-        if (chunk.choices[0].finish_reason) {
-          finishReason = chunk.choices[0].finish_reason;
+      for (const chunk of chunks) {
+        if (chunk.choices && chunk.choices.length > 0) {
+          const delta = chunk.choices[0].delta;
+          if (delta?.content) {
+            content += delta.content;
+          }
+          if (chunk.choices[0].finish_reason) {
+            finishReason = chunk.choices[0].finish_reason;
+          }
         }
       }
-    }
 
-    // Record the completed stream
-    if (content) {
-      span.addEvent('gen_ai.content.completion', {
-        'gen_ai.completion.role': 'assistant',
-        'gen_ai.completion.content': content,
-        'gen_ai.completion.index': '0',
-      });
-    }
+      // Record the completed stream
+      if (content) {
+        span.addEvent('gen_ai.content.completion', {
+          'gen_ai.completion.role': 'assistant',
+          'gen_ai.completion.content': content,
+          'gen_ai.completion.index': '0',
+        });
+      }
 
-    if (finishReason) {
-      span.setAttribute(SEMATTRS_GEN_AI_RESPONSE_FINISH_REASONS, [finishReason]);
-    }
+      if (finishReason) {
+        span.setAttribute(SEMATTRS_GEN_AI_RESPONSE_FINISH_REASONS, [finishReason]);
+      }
 
-    span.setStatus({ code: SpanStatusCode.OK });
-    span.end();
+      span.setStatus({ code: SpanStatusCode.OK });
+      span.end();
+    },
   });
-
-  wrappedStream.on('error', (error: Error) => {
-    span.recordException(error);
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error.message,
-    });
-    span.end();
-  });
-
-  return wrappedStream;
 }
