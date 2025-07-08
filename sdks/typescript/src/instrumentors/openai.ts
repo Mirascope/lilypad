@@ -1,4 +1,4 @@
-import { trace, SpanStatusCode, SpanKind, Span as OtelSpan } from '@opentelemetry/api';
+import { trace, SpanStatusCode, SpanKind, Span as OtelSpan, Attributes, AttributeValue } from '@opentelemetry/api';
 
 import { BaseInstrumentor } from './base';
 import { logger } from '../utils/logger';
@@ -29,6 +29,17 @@ import {
 const TRACER_NAME = 'lilypad-openai';
 const TRACER_VERSION = '0.1.0';
 
+// Helper function to filter out null/undefined attributes
+function filterAttributes(attrs: Record<string, unknown>): Attributes {
+  const result: Attributes = {};
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value !== null && value !== undefined) {
+      result[key] = value as AttributeValue;
+    }
+  }
+  return result;
+}
+
 interface CompletionsAPI {
   create: Function;
 }
@@ -47,11 +58,9 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
     }
 
     try {
-      // Try to require OpenAI module
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       this.openaiModule = require('openai') as OpenAIModule;
 
-      // Patch the chat completions methods
       this.patchChatCompletions();
 
       this.isInstrumentedFlag = true;
@@ -72,7 +81,6 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
     }
 
     try {
-      // Restore original methods
       this.restoreChatCompletions();
 
       this.isInstrumentedFlag = false;
@@ -89,23 +97,38 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
     let OpenAI: OpenAIClass;
     if ('default' in this.openaiModule && this.openaiModule.default) {
       OpenAI = this.openaiModule.default;
+      logger.debug('Using OpenAI from default export');
     } else if ('OpenAI' in this.openaiModule && this.openaiModule.OpenAI) {
       OpenAI = this.openaiModule.OpenAI;
+      logger.debug('Using OpenAI from named export');
     } else {
       OpenAI = this.openaiModule as OpenAIClass;
+      logger.debug('Using OpenAI module directly');
     }
 
-    // Store original methods
+    if (!OpenAI.prototype) {
+      logger.error('OpenAI.prototype is undefined');
+      return;
+    }
+
+    if (!OpenAI.prototype.chat) {
+      logger.error('OpenAI.prototype.chat is undefined');
+      return;
+    }
+
     const originalCreate = OpenAI.prototype.chat?.completions?.create;
     if (originalCreate) {
+      logger.debug('Found original chat.completions.create method');
       this.storeOriginal('chat.completions.create', originalCreate);
 
-      // Patch the create method
       if (OpenAI.prototype.chat && this.isCompletionsAPI(OpenAI.prototype.chat.completions)) {
         OpenAI.prototype.chat.completions.create = this.wrapChatCompletionsCreate(
           originalCreate,
         ) as typeof OpenAI.prototype.chat.completions.create;
+        logger.debug('Successfully patched chat.completions.create');
       }
+    } else {
+      logger.error('Could not find chat.completions.create method');
     }
   }
 
@@ -149,41 +172,50 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
       const model = params?.model || 'unknown';
       const spanName = `openai.chat.completions ${model}`;
 
+      logger.debug(`OpenAI instrumentor: Creating span "${spanName}"`);
+      logger.debug(`Parameters: ${JSON.stringify({ model, temperature: params?.temperature, max_tokens: params?.max_tokens })}`);
+
       return tracer.startActiveSpan(
         spanName,
         {
           kind: SpanKind.CLIENT,
-          attributes: {
+          attributes: filterAttributes({
             [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
             [SEMATTRS_GEN_AI_REQUEST_MODEL]: model,
             [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
             [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
-            [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
+            [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p || (params as any)?.p,
             'gen_ai.request.presence_penalty': params?.presence_penalty,
             'gen_ai.request.frequency_penalty': params?.frequency_penalty,
             'gen_ai.openai.request.response_format': params?.response_format?.type,
             'gen_ai.openai.request.seed': params?.seed,
+            'gen_ai.openai.request.service_tier': params?.service_tier !== 'auto' ? params?.service_tier : undefined,
             [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
             'lilypad.type': 'llm',
-          },
+          }),
         },
         async (span) => {
           try {
-            // Record messages
+            // Record messages - match Python SDK format
             if (params?.messages) {
-              params.messages.forEach((message, index) => {
-                span.addEvent(`gen_ai.content.prompt`, {
-                  'gen_ai.prompt.role': String(message.role),
-                  'gen_ai.prompt.content': safeStringify(message.content),
-                  'gen_ai.prompt.index': String(index),
-                });
+              params.messages.forEach((message) => {
+                const eventName = `gen_ai.${message.role}.message`;
+                const attributes: Attributes = {
+                  [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+                };
+                
+                if (message.content) {
+                  attributes['content'] = typeof message.content === 'string' 
+                    ? message.content 
+                    : safeStringify(message.content);
+                }
+                
+                span.addEvent(eventName, attributes);
               });
             }
 
-            // Call original method
             const result = await original.apply(this, [params, options]);
 
-            // Handle streaming response
             if (params?.stream && isAsyncIterable(result)) {
               return self.handleStreamingResponse(
                 result as AsyncIterable<ChatCompletionChunk>,
@@ -191,10 +223,10 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
               );
             }
 
-            // Handle regular response
             self.recordCompletionResponse(span, result);
 
             span.setStatus({ code: SpanStatusCode.OK });
+            logger.debug(`OpenAI instrumentor: Span completed successfully for ${spanName}`);
             return result;
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -233,10 +265,17 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
         const lastChunk = chunks[chunks.length - 1];
         const finishReason = lastChunk?.choices?.[0]?.finish_reason;
 
-        // Record the completed response
-        span.addEvent('gen_ai.content.completion', {
-          'gen_ai.completion.content': fullContent,
-          'gen_ai.completion.finish_reason': finishReason || '',
+        // Record the completed response - match Python SDK format
+        const message: Record<string, unknown> = {
+          role: 'assistant',
+          content: fullContent,
+        };
+        
+        span.addEvent('gen_ai.choice', {
+          [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+          'index': 0,
+          'finish_reason': finishReason || 'error',
+          'message': safeStringify(message),
         });
 
         // Try to get usage from the last chunk
@@ -258,14 +297,22 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
   private recordCompletionResponse(span: OtelSpan, response: ChatCompletionResponse): void {
     if (!response) return;
 
-    // Record choices
+    // Record choices - match Python SDK format
     if (response.choices) {
       response.choices.forEach((choice, index) => {
-        span.addEvent('gen_ai.content.completion', {
-          'gen_ai.completion.index': String(index),
-          'gen_ai.completion.role': choice.message?.role || '',
-          'gen_ai.completion.content': choice.message?.content || '',
-          'gen_ai.completion.finish_reason': choice.finish_reason || '',
+        const message: Record<string, unknown> = {
+          role: choice.message?.role || 'assistant',
+        };
+        
+        if (choice.message?.content) {
+          message['content'] = choice.message.content;
+        }
+        
+        span.addEvent('gen_ai.choice', {
+          [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+          'index': index,
+          'finish_reason': choice.finish_reason || 'error',
+          'message': safeStringify(message),
         });
       });
 
@@ -295,6 +342,11 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
     // Record ID
     if (response.id) {
       span.setAttribute('gen_ai.response.id', response.id);
+    }
+
+    // Record service tier if different from 'auto'
+    if (response.service_tier && response.service_tier !== 'auto') {
+      span.setAttribute('gen_ai.openai.response.service_tier', response.service_tier);
     }
   }
 

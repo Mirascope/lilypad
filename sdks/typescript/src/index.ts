@@ -4,17 +4,27 @@
  * LLM observability and monitoring for TypeScript/JavaScript applications
  */
 
-import { configure } from './configure';
+import { configure, getTracerProvider, getTracer } from './configure';
 import { shutdown } from './shutdown';
+import { traceOpenAICompletion, createSpan, getActiveSpan, withSpan } from './trace';
+import { logger } from './utils/logger';
 
-export { configure } from './configure';
+export { configure, getTracerProvider, getTracer } from './configure';
 export { shutdown } from './shutdown';
+export { traceOpenAICompletion, createSpan, getActiveSpan, withSpan } from './trace';
+export { logger } from './utils/logger';
 export type { LilypadConfig, LogLevel } from './types';
 
-// Default export for convenience
 const lilypad = {
   configure,
   shutdown,
+  traceOpenAICompletion,
+  createSpan,
+  getActiveSpan,
+  withSpan,
+  getTracerProvider,
+  getTracer,
+  logger,
 };
 
 export default lilypad;

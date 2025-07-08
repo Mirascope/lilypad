@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "lib": ["ES2020"],
+    "lib": ["ES2020", "DOM"],
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
@@ -19,9 +19,8 @@
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "coverage", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "coverage", "**/*.test.ts", "**/*.spec.ts", "lilypad/**", "lilypad/generated/**/*"]
 }

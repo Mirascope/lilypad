@@ -1,6 +1,6 @@
 import { isConfigured, setSettings } from './utils/settings';
 import { logger } from './utils/logger';
-import { trace } from '@opentelemetry/api';
+import { getProvider } from './configure';
 
 let shutdownPromise: Promise<void> | null = null;
 let isShuttingDown = false;
@@ -33,20 +33,21 @@ async function performShutdown(): Promise<void> {
       return;
     }
 
-    // Get the tracer provider and shut it down
-    const tracerProvider = trace.getTracerProvider();
+    // Get our configured provider and shut it down
+    const provider = getProvider();
 
-    // Check if it has a shutdown method (it should if it's our configured provider)
-    if ('shutdown' in tracerProvider && typeof tracerProvider.shutdown === 'function') {
-      await tracerProvider.shutdown();
+    if (provider) {
+      logger.debug('Forcing flush of spans before shutdown...');
+      await provider.forceFlush();
+      logger.debug('Force flush completed, now shutting down provider...');
+      await provider.shutdown();
       logger.info('Lilypad SDK shut down successfully.');
     } else {
-      logger.warn('Tracer provider does not support shutdown.');
+      logger.warn('No tracer provider found to shutdown.');
     }
   } catch (error) {
     logger.error('Error during Lilypad SDK shutdown:', error);
   } finally {
-    // Clear the settings to mark as unconfigured
     setSettings(null);
     shutdownPromise = null;
     isShuttingDown = false;

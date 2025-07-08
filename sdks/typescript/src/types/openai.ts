@@ -19,6 +19,7 @@ export interface ChatCompletionParams {
   };
   seed?: number;
   stream?: boolean;
+  service_tier?: string;
 }
 
 export interface ChatCompletionResponse {
@@ -37,6 +38,7 @@ export interface ChatCompletionResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+  service_tier?: string;
 }
 
 export interface ChatCompletionChunk {

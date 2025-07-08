@@ -19,6 +19,8 @@ examples/
 
 # Test files (temporary)
 test.ts
+test-*.ts
+debug-*.ts
 
 # Backup files
 *.backup

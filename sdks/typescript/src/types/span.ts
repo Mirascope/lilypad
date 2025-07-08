@@ -8,16 +8,15 @@ export interface SerializedSpan {
   parent_span_id: string | null;
   name: string;
   kind: string;
-  start_time: string;
-  end_time: string;
-  status: {
-    status_code: string;
-    description?: string;
-  };
+  start_time: number;
+  end_time: number;
+  type?: string;
+  status: string; // Just the status code string, not an object
+  session_id?: string | null; // Optional session ID from attributes
   attributes: Record<string, unknown>;
   events: Array<{
     name: string;
-    timestamp: string;
+    timestamp: number;
     attributes: Record<string, unknown>;
   }>;
   links: Array<{
@@ -29,10 +28,7 @@ export interface SerializedSpan {
     };
     attributes: Record<string, unknown>;
   }>;
-  resource: {
-    attributes: Record<string, unknown>;
-    schema_url?: string | null;
-  };
+  resource: string; // JSON string representation of resource object
   instrumentation_scope: {
     name: string | null;
     version: string | null;

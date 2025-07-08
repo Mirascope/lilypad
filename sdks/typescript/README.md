@@ -14,30 +14,72 @@ bun add @lilypad/typescript-sdk
 
 ## Quick Start
 
+### Option 1: Manual Tracing
+
 ```typescript
 import lilypad from '@lilypad/typescript-sdk';
-// or
-const lilypad = require('@lilypad/typescript-sdk').default;
+import OpenAI from 'openai';
 
 // Configure the SDK
 await lilypad.configure({
   apiKey: 'your-api-key',
   projectId: 'your-project-id',
-  auto_llm: true, // Enable automatic OpenAI instrumentation
 });
-
-// Now OpenAI calls are automatically traced
-import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Manually trace OpenAI calls
+const response = await lilypad.traceOpenAICompletion(
+  {
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: 'Hello, how are you?' }],
+  },
+  () => openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: 'Hello, how are you?' }],
+  })
+);
+```
+
+### Option 2: Automatic Instrumentation with auto_llm
+
+Enable automatic instrumentation in your code without requiring a command-line flag:
+
+```typescript
+import lilypad from '@lilypad/typescript-sdk';
+import OpenAI from 'openai';
+
+// Configure with auto_llm enabled
+await lilypad.configure({
+  apiKey: 'your-api-key',
+  projectId: 'your-project-id',
+  auto_llm: true, // Enable automatic LLM instrumentation
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// OpenAI calls are automatically traced!
 const response = await openai.chat.completions.create({
   model: 'gpt-4o-mini',
   messages: [{ role: 'user', content: 'Hello, how are you?' }],
 });
 ```
+
+### Option 3: Automatic Instrumentation with --require flag
+
+```bash
+# Run with tsx
+npx tsx --require @lilypad/typescript-sdk/dist/register.cjs your-script.ts
+
+# Or with node
+node --require @lilypad/typescript-sdk/dist/register.cjs your-script.js
+```
+
+This method automatically instruments all OpenAI calls when the module is loaded, without requiring `auto_llm: true` in your configuration.
 
 ## Configuration Options
 
@@ -49,8 +91,7 @@ interface LilypadConfig {
   remoteClientUrl?: string; // Optional: URL for viewing traces
   logLevel?: 'debug' | 'info' | 'warn' | 'error'; // Optional: Logging level (default: 'info')
   serviceName?: string; // Optional: Service name for telemetry (default: 'lilypad-node-app')
-  auto_llm?: boolean; // Optional: Auto-instrument LLM libraries (default: false)
-  auto_http?: boolean; // Optional: Auto-instrument HTTP clients (default: false)
+  auto_llm?: boolean; // Optional: Automatically instrument LLM libraries (default: false)
   propagator?: 'tracecontext' | 'b3' | 'b3multi' | 'jaeger' | 'composite'; // Optional: Trace propagation format
   preserveExistingPropagator?: boolean; // Optional: Preserve existing propagator (default: false)
   batchProcessorOptions?: {
@@ -65,7 +106,15 @@ interface LilypadConfig {
 
 ## OpenAI Integration
 
-When `auto_llm: true` is configured, OpenAI calls are automatically instrumented:
+### Automatic Instrumentation
+
+To enable automatic instrumentation, run your application with the register module:
+
+```bash
+npx tsx --require @lilypad/typescript-sdk/dist/register.cjs your-app.ts
+```
+
+This automatically traces all OpenAI calls without code changes:
 
 ### Standard Completion
 
@@ -163,14 +212,14 @@ bun run typecheck
 ### Running Examples
 
 ```bash
-# Basic example
-bun run examples/basic.ts
+# Manual tracing example
+bun run example:basic
 
-# OpenAI example
-OPENAI_API_KEY=your-key bun run examples/openai.ts
+# Automatic instrumentation example
+bun run example:auto
 
-# Streaming example
-OPENAI_API_KEY=your-key bun run examples/streaming.ts
+# Or run directly with environment variables
+OPENAI_API_KEY=your-key LILYPAD_API_KEY=your-key LILYPAD_PROJECT_ID=your-project-id bun run example:auto
 ```
 
 ## Requirements

@@ -9,6 +9,7 @@ import { setSettings, isConfigured } from './utils/settings';
 import { logger } from './utils/logger';
 import { CryptoIdGenerator } from './utils/id-generator';
 import { JSONSpanExporter } from './exporters/json-exporter';
+import { LilypadClient } from '../lilypad/generated';
 
 // Tracer provider instance for proper shutdown
 let _provider: NodeTracerProvider | null = null;
@@ -19,16 +20,26 @@ export async function configure(config: LilypadConfig): Promise<void> {
     return;
   }
 
+  // Set up auto instrumentation early if enabled
+  logger.debug(`auto_llm config value: ${config.auto_llm}`);
+  if (config.auto_llm) {
+    logger.debug('Attempting to load OpenAI instrumentation...');
+    try {
+      const { setupOpenAIHooks } = await import('./instrumentors/openai-hook');
+      logger.debug('OpenAI instrumentation module loaded');
+      setupOpenAIHooks();
+      logger.debug('OpenAI auto-instrumentation hooks installed');
+    } catch (error) {
+      logger.error('Failed to enable OpenAI auto-instrumentation:', error);
+      logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    }
+  } else {
+    logger.debug('auto_llm is disabled, skipping OpenAI instrumentation');
+  }
+
   // Validate required config
   if (!config.apiKey || !config.projectId) {
     throw new Error('Lilypad SDK configuration requires apiKey and projectId.');
-  }
-
-  // Validate API key format
-  if (!config.apiKey.match(/^[a-zA-Z0-9-_]+$/)) {
-    throw new Error(
-      'Invalid API key format. API key should only contain alphanumeric characters, hyphens, and underscores.',
-    );
   }
 
   // Validate project ID format (UUIDs)
@@ -37,10 +48,13 @@ export async function configure(config: LilypadConfig): Promise<void> {
     throw new Error('Invalid project ID format. Project ID should be a valid UUID.');
   }
 
-  // Set default values
+  // Set default values with environment variable overrides
   const finalConfig: LilypadConfig = {
-    baseUrl: 'https://app.lilypad.so/api/v0',
-    remoteClientUrl: 'https://app.lilypad.so',
+    baseUrl: process.env.LILYPAD_BASE_URL 
+      || (process.env.LILYPAD_REMOTE_API_URL 
+        ? `${process.env.LILYPAD_REMOTE_API_URL}/v0`
+        : (config.baseUrl || 'https://api.app.lilypad.so/v0')),
+    remoteClientUrl: process.env.LILYPAD_REMOTE_CLIENT_URL || config.remoteClientUrl || 'https://app.lilypad.so',
     logLevel: 'info',
     serviceName: 'lilypad-node-app',
     auto_llm: false,
@@ -55,63 +69,62 @@ export async function configure(config: LilypadConfig): Promise<void> {
       ...config.batchProcessorOptions,
     },
   };
+  
+  // Ensure config values override environment variables
+  if (config.baseUrl) {
+    finalConfig.baseUrl = config.baseUrl;
+  }
+  if (config.remoteClientUrl) {
+    finalConfig.remoteClientUrl = config.remoteClientUrl;
+  }
 
-  // Store settings
   setSettings(finalConfig);
 
   // Configure logger
   logger.setLevel(finalConfig.logLevel || 'info');
+  
+  // Log configuration for debugging
+  logger.debug(`Using baseUrl: ${finalConfig.baseUrl}`);
+  logger.debug(`Using remoteClientUrl: ${finalConfig.remoteClientUrl}`);
 
-  // Create resource
   const resource = Resource.default().merge(
     new Resource({
       [SEMRESATTRS_SERVICE_NAME]: finalConfig.serviceName,
     }),
   );
 
-  // Create and configure exporter
-  const exporter = new JSONSpanExporter(finalConfig);
-  const spanProcessor = new BatchSpanProcessor(exporter, finalConfig.batchProcessorOptions);
+  // We've already validated these values exist
+  const { baseUrl, apiKey } = finalConfig;
+  if (!baseUrl || !apiKey) {
+    throw new Error('Configuration error: missing required values');
+  }
+  
+  const client = new LilypadClient({
+    environment: baseUrl,
+    baseUrl: baseUrl,
+    apiKey: apiKey,
+  });
+  logger.debug(`Created LilypadClient with baseUrl: ${finalConfig.baseUrl}`);
 
-  // Create tracer provider with span processor
+  const exporter = new JSONSpanExporter(finalConfig, client);
+  logger.debug('Created JSONSpanExporter');
+  
+  const spanProcessor = new BatchSpanProcessor(exporter, finalConfig.batchProcessorOptions);
+  logger.debug(`Created BatchSpanProcessor with options: ${JSON.stringify(finalConfig.batchProcessorOptions)}`);
+
   const provider = new NodeTracerProvider({
     resource,
     idGenerator: new CryptoIdGenerator(),
     spanProcessors: [spanProcessor],
   });
+  logger.debug('Created NodeTracerProvider');
 
-  // Register as global tracer provider
   provider.register();
+  logger.debug('Registered tracer provider globally');
 
-  // Store provider for shutdown
   _provider = provider;
-
-  // Auto-instrument if configured
-  if (finalConfig.auto_llm) {
-    await instrumentLLMs();
-  }
-
+  
   logger.info(`Lilypad SDK configured successfully for project ${finalConfig.projectId}`);
-}
-
-async function instrumentLLMs(): Promise<void> {
-  try {
-    // Dynamically check for OpenAI and instrument if available
-    const openai = await import('openai').catch(() => null);
-    if (openai) {
-      const { OpenAIInstrumentor } = await import('./instrumentors/openai');
-      const instrumentor = new OpenAIInstrumentor();
-      instrumentor.instrument();
-      logger.debug('OpenAI instrumentation enabled');
-    }
-  } catch (error) {
-    // Log warning but don't fail the entire configuration
-    logger.warn(
-      'OpenAI auto-instrumentation skipped:',
-      error instanceof Error ? error.message : String(error),
-    );
-    logger.info('You can still use Lilypad without automatic OpenAI tracing.');
-  }
 }
 
 export function getTracerProvider() {

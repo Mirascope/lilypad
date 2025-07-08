@@ -30,5 +30,18 @@
     ],
     "@typescript-eslint/no-this-alias": "off"
   },
-  "ignorePatterns": ["dist", "coverage", "node_modules", "*.js", "*.mjs", "*.cjs"]
+  "ignorePatterns": ["dist", "coverage", "node_modules", "*.js", "*.mjs", "*.cjs"],
+  "overrides": [
+    {
+      "files": [
+        "src/instrumentors/openai-auto.ts",
+        "src/instrumentors/openai-simple.ts",
+        "src/instrumentors/openai-v2.ts",
+        "src/instrumentors/openai-wrapper.ts"
+      ],
+      "rules": {
+        "@typescript-eslint/ban-ts-comment": "off"
+      }
+    }
+  ]
 }
