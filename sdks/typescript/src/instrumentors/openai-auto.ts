@@ -61,7 +61,7 @@ export class OpenAIAutoInstrumentation extends InstrumentationBase {
     // Get the OpenAI class
     const OpenAIClass = moduleExports.default || moduleExports.OpenAI || moduleExports;
 
-    if (!OpenAIClass) {
+    if (!OpenAIClass || typeof OpenAIClass !== 'function') {
       logger.error('Could not find OpenAI class in module exports');
       return moduleExports;
     }
