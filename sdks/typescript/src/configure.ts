@@ -103,7 +103,6 @@ export async function configure(config: LilypadConfig): Promise<void> {
 
   const client = new LilypadClient({
     environment: baseUrl,
-    baseUrl: baseUrl,
     apiKey: apiKey,
   });
   logger.debug(`Created LilypadClient with baseUrl: ${finalConfig.baseUrl}`);
