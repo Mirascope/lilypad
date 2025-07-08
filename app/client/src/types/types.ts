@@ -145,11 +145,8 @@ export interface APIKeyCreate {
    * @format uuid
    */
   project_uuid: string;
-  /**
-   * Environment Uuid
-   * @format uuid
-   */
-  environment_uuid: string;
+  /** Environment Uuid */
+  environment_uuid?: string | null;
   /** Key Hash */
   key_hash?: string | null;
 }
@@ -534,10 +531,10 @@ export interface EnvironmentCreate {
   /** Description */
   description?: string | null;
   /**
-   * Is Development
+   * Is Default
    * @default false
    */
-  is_development?: boolean | null;
+  is_default?: boolean;
 }
 
 /**
@@ -550,10 +547,10 @@ export interface EnvironmentPublic {
   /** Description */
   description?: string | null;
   /**
-   * Is Development
+   * Is Default
    * @default false
    */
-  is_development?: boolean | null;
+  is_default?: boolean;
   /**
    * Uuid
    * @format uuid
@@ -587,17 +584,6 @@ export interface Event {
    * @format date-time
    */
   timestamp: string;
-}
-
-/**
- * EventSummaryResponse
- * Response model for event summaries.
- */
-export interface EventSummaryResponse {
-  /** Current Meter */
-  current_meter: number;
-  /** Monthly Total */
-  monthly_total: number;
 }
 
 /**
@@ -1143,8 +1129,6 @@ export interface SpanMoreDetails {
 export interface SpanPublic {
   /** Span Id */
   span_id: string;
-  /** Trace Id */
-  trace_id: string | null;
   /** Function Uuid */
   function_uuid?: string | null;
   type?: SpanType | null;
@@ -1164,8 +1148,6 @@ export interface SpanPublic {
   parent_span_id?: string | null;
   /** Session Id */
   session_id?: string | null;
-  /** Environment Uuid */
-  environment_uuid?: string | null;
   /**
    * Uuid
    * @format uuid

@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint . --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "fix": "eslint . --ext .ts,.tsx --fix && prettier --write .",
