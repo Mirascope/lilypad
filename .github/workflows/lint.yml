@@ -5,9 +5,11 @@ on:
   push:
     branches:
       - main
+      - update-typescript-sdk
   pull_request:
     branches:
       - main
+      - update-typescript-sdk
 
 jobs:
   codespell:
@@ -121,3 +123,6 @@ jobs:
 
       - name: Check code formatting
         run: bun run format:check
+
+      - name: Run all checks (make check)
+        run: make check

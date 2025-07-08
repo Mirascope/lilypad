@@ -5,9 +5,11 @@ on:
   push:
     branches:
       - main
+      - update-typescript-sdk
   pull_request:
     branches:
       - main
+      - update-typescript-sdk
 
 jobs:
   tests:
@@ -134,3 +136,6 @@ jobs:
           name: codecov-umbrella
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
+
+      - name: Build TypeScript SDK
+        run: bun run build
