@@ -357,7 +357,7 @@ class RawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     def get_latest_versions(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> HttpResponse[typing.List[FunctionPublic]]:
         """
         Get all unique function names.
@@ -365,6 +365,8 @@ class RawFunctionsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -377,6 +379,9 @@ class RawFunctionsClient:
         _response = self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/metadata/names/versions",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -679,7 +684,12 @@ class RawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     def archive(
-        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[bool]:
         """
         Archive a function and delete spans by function UUID.
@@ -689,6 +699,8 @@ class RawFunctionsClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -701,6 +713,9 @@ class RawFunctionsClient:
         _response = self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/{jsonable_encoder(function_uuid)}",
             method="DELETE",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -786,7 +801,12 @@ class RawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     def archive_by_name(
-        self, project_uuid: str, function_name: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_name: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[bool]:
         """
         Archive a function by name and delete spans by function name.
@@ -796,6 +816,8 @@ class RawFunctionsClient:
         project_uuid : str
 
         function_name : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -808,6 +830,9 @@ class RawFunctionsClient:
         _response = self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/names/{jsonable_encoder(function_name)}",
             method="DELETE",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -1173,7 +1198,7 @@ class AsyncRawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     async def get_latest_versions(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> AsyncHttpResponse[typing.List[FunctionPublic]]:
         """
         Get all unique function names.
@@ -1181,6 +1206,8 @@ class AsyncRawFunctionsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1193,6 +1220,9 @@ class AsyncRawFunctionsClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/metadata/names/versions",
             method="GET",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -1495,7 +1525,12 @@ class AsyncRawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     async def archive(
-        self, project_uuid: str, function_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_uuid: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[bool]:
         """
         Archive a function and delete spans by function UUID.
@@ -1505,6 +1540,8 @@ class AsyncRawFunctionsClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1517,6 +1554,9 @@ class AsyncRawFunctionsClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/{jsonable_encoder(function_uuid)}",
             method="DELETE",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:
@@ -1602,7 +1642,12 @@ class AsyncRawFunctionsClient:
         raise ApiError(status_code=_response.status_code, headers=dict(_response.headers), body=_response_json)
 
     async def archive_by_name(
-        self, project_uuid: str, function_name: str, *, request_options: typing.Optional[RequestOptions] = None
+        self,
+        project_uuid: str,
+        function_name: str,
+        *,
+        environment_uuid: str,
+        request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[bool]:
         """
         Archive a function by name and delete spans by function name.
@@ -1612,6 +1657,8 @@ class AsyncRawFunctionsClient:
         project_uuid : str
 
         function_name : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -1624,6 +1671,9 @@ class AsyncRawFunctionsClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"projects/{jsonable_encoder(project_uuid)}/functions/names/{jsonable_encoder(function_name)}",
             method="DELETE",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             request_options=request_options,
         )
         try:

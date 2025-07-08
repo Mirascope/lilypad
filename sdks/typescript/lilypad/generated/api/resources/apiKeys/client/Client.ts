@@ -114,7 +114,8 @@ export class ApiKeys {
      * @example
      *     await client.apiKeys.create({
      *         name: "name",
-     *         project_uuid: "project_uuid"
+     *         project_uuid: "project_uuid",
+     *         environment_uuid: "environment_uuid"
      *     })
      */
     public create(

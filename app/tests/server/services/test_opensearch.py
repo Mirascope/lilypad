@@ -18,7 +18,8 @@ class TestSearchQuery:
 
     def test_search_query_defaults(self):
         """Test SearchQuery with default values."""
-        query = SearchQuery()
+        environment_uuid = uuid4()
+        query = SearchQuery(environment_uuid=environment_uuid)
 
         assert query.query_string is None
         assert query.time_range_start is None
@@ -36,6 +37,7 @@ class TestSearchQuery:
             limit=50,
             scope=Scope.LLM,
             type="generation",
+            environment_uuid=uuid4(),
         )
 
         assert query.query_string == "test query"
@@ -228,10 +230,14 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
 
-        index_name = service.get_index_name(project_uuid)
+        index_name = service.get_index_name(project_uuid, environment_uuid)
 
-        assert index_name == f"{OPENSEARCH_INDEX_PREFIX}{str(project_uuid)}"
+        assert (
+            index_name
+            == f"{OPENSEARCH_INDEX_PREFIX}{str(project_uuid)}_{str(environment_uuid)}"
+        )
 
     @patch("lilypad.server.services.opensearch.get_settings")
     def test_ensure_index_exists_service_disabled(self, mock_get_settings):
@@ -246,8 +252,9 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
 
-        result = service.ensure_index_exists(project_uuid)
+        result = service.ensure_index_exists(project_uuid, environment_uuid)
 
         assert result is False
 
@@ -274,8 +281,9 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
 
-        result = service.ensure_index_exists(project_uuid)
+        result = service.ensure_index_exists(project_uuid, environment_uuid)
 
         assert result is True
         mock_client.indices.exists.assert_called_once()
@@ -305,9 +313,10 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.ensure_index_exists(project_uuid)
+            result = service.ensure_index_exists(project_uuid, environment_uuid)
 
         assert result is True
         mock_client.indices.exists.assert_called_once()
@@ -338,9 +347,9 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-
+        environment_uuid = uuid4()
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.ensure_index_exists(project_uuid)
+            result = service.ensure_index_exists(project_uuid, environment_uuid)
 
         assert result is False
         mock_logger.error.assert_called()
@@ -366,10 +375,11 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
         trace_data = {"uuid": "test-uuid", "span_id": "test-span"}
 
         with patch.object(service, "ensure_index_exists", return_value=True):
-            result = service.index_traces(project_uuid, trace_data)
+            result = service.index_traces(project_uuid, environment_uuid, trace_data)
 
         assert result is True
         mock_client.index.assert_called_once()
@@ -387,8 +397,9 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
 
-        result = service.index_traces(project_uuid, {})
+        result = service.index_traces(project_uuid, environment_uuid, {})
         assert result is False
 
     @patch("lilypad.server.services.opensearch.get_settings")
@@ -404,10 +415,11 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
         trace_data = {"uuid": "test-uuid", "span_id": "test-span"}
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.index_traces(project_uuid, trace_data)
+            result = service.index_traces(project_uuid, environment_uuid, trace_data)
 
         assert result is False
         mock_logger.warning.assert_called_with("OpenSearch client not available")
@@ -433,6 +445,7 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
         traces = [
             {"uuid": "test-uuid-1", "span_id": "test-span-1"},
             {"uuid": "test-uuid-2", "span_id": "test-span-2"},
@@ -442,7 +455,7 @@ class TestOpenSearchService:
             patch.object(service, "ensure_index_exists", return_value=True),
             patch("lilypad.server.services.opensearch.logger") as mock_logger,
         ):
-            result = service.bulk_index_traces(project_uuid, traces)
+            result = service.bulk_index_traces(project_uuid, environment_uuid, traces)
 
         assert result is True
         mock_client.bulk.assert_called_once()
@@ -461,9 +474,10 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.bulk_index_traces(project_uuid, [])
+            result = service.bulk_index_traces(project_uuid, environment_uuid, [])
 
         assert result is False
         mock_logger.warning.assert_called_with("Empty traces list")
@@ -494,13 +508,14 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
         traces = [{"uuid": "test-uuid-1", "span_id": "test-span-1"}]
 
         with (
             patch.object(service, "ensure_index_exists", return_value=True),
             patch("lilypad.server.services.opensearch.logger") as mock_logger,
         ):
-            result = service.bulk_index_traces(project_uuid, traces)
+            result = service.bulk_index_traces(project_uuid, environment_uuid, traces)
 
         assert result is False
         mock_logger.error.assert_called()
@@ -527,10 +542,11 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
         traces = []  # Empty traces list
 
         with patch.object(service, "ensure_index_exists", return_value=True):
-            result = service.bulk_index_traces(project_uuid, traces)
+            result = service.bulk_index_traces(project_uuid, environment_uuid, traces)
 
         assert result is False
 
@@ -555,9 +571,10 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-        query = SearchQuery(query_string="test")
+        environment_uuid = uuid4()
+        query = SearchQuery(query_string="test", environment_uuid=environment_uuid)
 
-        result = service.search_traces(project_uuid, query)
+        result = service.search_traces(project_uuid, environment_uuid, query)
 
         assert result == []
 
@@ -574,10 +591,11 @@ class TestOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-        query = SearchQuery(query_string="test")
+        environment_uuid = uuid4()
+        query = SearchQuery(query_string="test", environment_uuid=environment_uuid)
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.search_traces(project_uuid, query)
+            result = service.search_traces(project_uuid, environment_uuid, query)
 
         assert result == []
         mock_logger.warning.assert_called_with("OpenSearch client not available")
@@ -607,9 +625,12 @@ class TestOpenSearchService:
         service = OpenSearchService()
         project_uuid = uuid4()
         span_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.delete_trace_by_uuid(project_uuid, span_uuid)
+            result = service.delete_trace_by_uuid(
+                project_uuid, environment_uuid, span_uuid
+            )
 
         assert result is True
         mock_client.delete.assert_called_once()
@@ -640,9 +661,12 @@ class TestOpenSearchService:
         service = OpenSearchService()
         project_uuid = uuid4()
         span_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.delete_trace_by_uuid(project_uuid, span_uuid)
+            result = service.delete_trace_by_uuid(
+                project_uuid, environment_uuid, span_uuid
+            )
 
         assert result is True
         mock_logger.info.assert_called()
@@ -671,9 +695,12 @@ class TestOpenSearchService:
         service = OpenSearchService()
         project_uuid = uuid4()
         span_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.delete_trace_by_uuid(project_uuid, span_uuid)
+            result = service.delete_trace_by_uuid(
+                project_uuid, environment_uuid, span_uuid
+            )
 
         assert result is True
         mock_logger.info.assert_called()
@@ -711,9 +738,12 @@ class TestOpenSearchService:
         service = OpenSearchService()
         project_uuid = uuid4()
         function_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.delete_traces_by_function_uuid(project_uuid, function_uuid)
+            result = service.delete_traces_by_function_uuid(
+                project_uuid, environment_uuid, function_uuid
+            )
 
         assert result is True
         mock_client.search.assert_called_once()
@@ -745,9 +775,12 @@ class TestOpenSearchService:
         service = OpenSearchService()
         project_uuid = uuid4()
         function_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.delete_traces_by_function_uuid(project_uuid, function_uuid)
+            result = service.delete_traces_by_function_uuid(
+                project_uuid, environment_uuid, function_uuid
+            )
 
         assert result is True
         mock_logger.info.assert_called_with(
@@ -768,9 +801,12 @@ class TestOpenSearchService:
         service = OpenSearchService()
         project_uuid = uuid4()
         function_uuid = uuid4()
+        environment_uuid = uuid4()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.delete_traces_by_function_uuid(project_uuid, function_uuid)
+            result = service.delete_traces_by_function_uuid(
+                project_uuid, environment_uuid, function_uuid
+            )
 
         assert result is False
         mock_logger.warning.assert_called_with("OpenSearch client not available")
@@ -808,7 +844,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
 
-        result = service.bulk_index_traces(uuid4(), [{"uuid": "test"}])
+        result = service.bulk_index_traces(uuid4(), uuid4(), [{"uuid": "test"}])
 
         assert result is False
         mock_logger.warning.assert_called_with("OpenSearch client not available")
@@ -832,7 +868,7 @@ class TestGetOpenSearchService:
         service = OpenSearchService()
 
         with patch.object(service, "ensure_index_exists", return_value=True):
-            result = service.bulk_index_traces(uuid4(), [{"uuid": "test"}])
+            result = service.bulk_index_traces(uuid4(), uuid4(), [{"uuid": "test"}])
 
         assert result is False
         mock_logger.error.assert_called()
@@ -855,8 +891,11 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
 
-        search_query = SearchQuery(query_string="test")
-        result = service.search_traces(uuid4(), search_query)
+        environment_uuid = uuid4()
+        search_query = SearchQuery(
+            query_string="test", environment_uuid=environment_uuid
+        )
+        result = service.search_traces(uuid4(), environment_uuid, search_query)
 
         assert result == []
         mock_logger.error.assert_called()
@@ -878,7 +917,7 @@ class TestGetOpenSearchService:
         service = OpenSearchService()
 
         with patch.object(service, "ensure_index_exists", return_value=False):
-            result = service.index_traces(uuid4(), {"uuid": "test"})
+            result = service.index_traces(uuid4(), uuid4(), {"uuid": "test"})
 
         assert result is False
 
@@ -901,7 +940,7 @@ class TestGetOpenSearchService:
         service = OpenSearchService()
 
         with patch.object(service, "ensure_index_exists", return_value=True):
-            result = service.index_traces(uuid4(), {"uuid": "test"})
+            result = service.index_traces(uuid4(), uuid4(), {"uuid": "test"})
 
         assert result is False
         mock_logger.error.assert_called()
@@ -924,7 +963,7 @@ class TestGetOpenSearchService:
         service = OpenSearchService()
 
         with patch.object(service, "ensure_index_exists", return_value=False):
-            result = service.bulk_index_traces(uuid4(), [{"uuid": "test"}])
+            result = service.bulk_index_traces(uuid4(), uuid4(), [{"uuid": "test"}])
 
         assert result is False
         mock_logger.error.assert_called()
@@ -950,7 +989,7 @@ class TestGetOpenSearchService:
         service = OpenSearchService()
 
         with patch.object(service, "ensure_index_exists", return_value=True):
-            result = service.bulk_index_traces(uuid4(), [{"uuid": ""}])
+            result = service.bulk_index_traces(uuid4(), uuid4(), [{"uuid": ""}])
 
         assert result is False
         mock_logger.warning.assert_called_with("Skipping trace without UUID")
@@ -974,8 +1013,9 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         span_uuid = uuid4()
+        environment_uuid = uuid4()
 
-        result = service.delete_trace_by_uuid(uuid4(), span_uuid)
+        result = service.delete_trace_by_uuid(uuid4(), environment_uuid, span_uuid)
 
         assert result is False
         mock_logger.warning.assert_called()
@@ -999,8 +1039,9 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         span_uuid = uuid4()
+        environment_uuid = uuid4()
 
-        result = service.delete_trace_by_uuid(uuid4(), span_uuid)
+        result = service.delete_trace_by_uuid(uuid4(), environment_uuid, span_uuid)
 
         assert result is False
         mock_logger.error.assert_called()
@@ -1023,7 +1064,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
 
-        result = service.delete_traces_by_function_uuid(uuid4(), uuid4())
+        result = service.delete_traces_by_function_uuid(uuid4(), uuid4(), uuid4())
 
         assert result is True
         mock_logger.info.assert_called()
@@ -1046,7 +1087,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
 
-        result = service.delete_traces_by_function_uuid(uuid4(), uuid4())
+        result = service.delete_traces_by_function_uuid(uuid4(), uuid4(), uuid4())
 
         assert result is False
         mock_logger.error.assert_called()
@@ -1077,7 +1118,7 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-
+        environment_uuid = uuid4()
         # Test with all query parameters
         search_query = SearchQuery(
             query_string="test query",
@@ -1086,9 +1127,10 @@ class TestGetOpenSearchService:
             scope=Scope.LLM,
             type="generation",
             limit=50,
+            environment_uuid=environment_uuid,
         )
 
-        result = service.search_traces(project_uuid, search_query)
+        result = service.search_traces(project_uuid, environment_uuid, search_query)
 
         assert len(result) == 2
         mock_client.search.assert_called_once()
@@ -1122,9 +1164,11 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-
-        search_query = SearchQuery(time_range_start=1234567890)
-        result = service.search_traces(project_uuid, search_query)
+        environment_uuid = uuid4()
+        search_query = SearchQuery(
+            time_range_start=1234567890, environment_uuid=environment_uuid
+        )
+        result = service.search_traces(project_uuid, environment_uuid, search_query)
 
         assert result == []
         mock_client.search.assert_called_once()
@@ -1148,9 +1192,12 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
+        environment_uuid = uuid4()
 
-        search_query = SearchQuery(time_range_end=1234567999)
-        result = service.search_traces(project_uuid, search_query)
+        search_query = SearchQuery(
+            time_range_end=1234567999, environment_uuid=environment_uuid
+        )
+        result = service.search_traces(project_uuid, environment_uuid, search_query)
 
         assert result == []
         mock_client.search.assert_called_once()
@@ -1174,10 +1221,10 @@ class TestGetOpenSearchService:
 
         service = OpenSearchService()
         project_uuid = uuid4()
-
+        environment_uuid = uuid4()
         # Empty query should result in match_all
-        search_query = SearchQuery()
-        result = service.search_traces(project_uuid, search_query)
+        search_query = SearchQuery(environment_uuid=environment_uuid)
+        result = service.search_traces(project_uuid, environment_uuid, search_query)
 
         assert result == []
         mock_client.search.assert_called_once()
@@ -1198,7 +1245,7 @@ class TestGetOpenSearchService:
         service = OpenSearchService()
 
         with patch("lilypad.server.services.opensearch.logger") as mock_logger:
-            result = service.delete_trace_by_uuid(uuid4(), uuid4())
+            result = service.delete_trace_by_uuid(uuid4(), uuid4(), uuid4())
 
         assert result is False
         mock_logger.warning.assert_called_with("OpenSearch client not available")

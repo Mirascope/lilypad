@@ -11,6 +11,7 @@ from .base_organization_sql_model import BaseOrganizationSQLModel
 from .base_sql_model import get_json_column
 from .span_tag_link import SpanTagLink
 from .table_names import (
+    ENVIRONMENT_TABLE_NAME,
     FUNCTION_TABLE_NAME,
     PROJECT_TABLE_NAME,
     SPAN_TABLE_NAME,
@@ -62,6 +63,12 @@ class SpanBase(SQLModel):
     session_id: str | None = Field(
         default=None,
         index=True,
+    )
+    environment_uuid: UUID | None = Field(
+        default=None,
+        foreign_key=f"{ENVIRONMENT_TABLE_NAME}.uuid",
+        index=True,
+        ondelete="CASCADE",
     )
 
 

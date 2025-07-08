@@ -30,7 +30,7 @@ class AnnotationsClient:
         return self._raw_client
 
     def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> typing.List[AnnotationPublic]:
         """
         Get annotations by project.
@@ -38,6 +38,8 @@ class AnnotationsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -58,9 +60,12 @@ class AnnotationsClient:
         )
         client.ee.projects.annotations.list(
             project_uuid="project_uuid",
+            environment_uuid="environment_uuid",
         )
         """
-        _response = self._raw_client.list(project_uuid, request_options=request_options)
+        _response = self._raw_client.list(
+            project_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     def create(
@@ -236,7 +241,7 @@ class AsyncAnnotationsClient:
         return self._raw_client
 
     async def list(
-        self, project_uuid: str, *, request_options: typing.Optional[RequestOptions] = None
+        self, project_uuid: str, *, environment_uuid: str, request_options: typing.Optional[RequestOptions] = None
     ) -> typing.List[AnnotationPublic]:
         """
         Get annotations by project.
@@ -244,6 +249,8 @@ class AsyncAnnotationsClient:
         Parameters
         ----------
         project_uuid : str
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -269,12 +276,15 @@ class AsyncAnnotationsClient:
         async def main() -> None:
             await client.ee.projects.annotations.list(
                 project_uuid="project_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
-        _response = await self._raw_client.list(project_uuid, request_options=request_options)
+        _response = await self._raw_client.list(
+            project_uuid, environment_uuid=environment_uuid, request_options=request_options
+        )
         return _response.data
 
     async def create(

@@ -69,7 +69,7 @@ export const CreateEnvironmentForm = ({ customButtons }: CreateEnvironmentFormPr
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
                 <FormLabel>Toggle Environment</FormLabel>
-                <FormDescription>Set as development environment for new API keys</FormDescription>
+                <FormDescription>Set this API key as development</FormDescription>
               </div>
               <FormControl>
                 <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />

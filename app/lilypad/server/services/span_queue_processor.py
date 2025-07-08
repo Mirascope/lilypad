@@ -462,7 +462,7 @@ class SpanQueueProcessor:
 
     def _process_trace_sync(
         self, trace_id: str, ordered_spans: list[dict[str, Any]]
-    ) -> tuple[list[SpanTable], UUID, UUID, UUID] | None:
+    ) -> tuple[list[SpanTable], UUID, UUID, UUID, UUID] | None:
         """Synchronous database operations for processing a trace.
 
         This method runs in a separate thread to avoid blocking the event loop.
@@ -479,6 +479,7 @@ class SpanQueueProcessor:
         first_span = ordered_spans[0]
         attributes = first_span.get("attributes", {})
         project_uuid_str = attributes.get("lilypad.project.uuid")
+        environment_uuid_str = attributes.get("lilypad.environment.uuid")
 
         if not project_uuid_str:
             logger.warning(
@@ -487,6 +488,7 @@ class SpanQueueProcessor:
             return None
 
         project_uuid = UUID(project_uuid_str)
+        environment_uuid = UUID(environment_uuid_str)
 
         # Extract user_id from first span
         user_id = first_span.get("user_id")
@@ -536,9 +538,9 @@ class SpanQueueProcessor:
         # Don't commit here - will be committed in _process_trace after all operations
         logger.info(
             f"Successfully saved trace to database - Trace ID: {trace_id}, "
-            f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}"
+            f"Spans: {len(ordered_spans)}, Project: {project_uuid}, User: {user_id}, Environment: {environment_uuid}"
         )
-        return spans, project.organization_uuid, user_id, project_uuid
+        return spans, project.organization_uuid, user_id, project_uuid, environment_uuid
 
     async def _process_trace(self, trace_id: str, buffer: TraceBuffer) -> None:
         """Process a complete trace.
@@ -573,12 +575,12 @@ class SpanQueueProcessor:
             logger.debug(f"Trace {trace_id} processing completed in thread pool")
 
             if result:
-                spans, org_uuid, user_uuid, project_uuid = result
+                spans, org_uuid, user_uuid, project_uuid, environment_uuid = result
                 opensearch_service = OpenSearchService()
                 if opensearch_service.is_enabled:
                     trace_dicts = [span.model_dump() for span in spans]
                     await index_traces_in_opensearch(
-                        project_uuid, trace_dicts, opensearch_service
+                        project_uuid, environment_uuid, trace_dicts, opensearch_service
                     )
                 try:
                     user = self._get_cached_user(user_uuid)

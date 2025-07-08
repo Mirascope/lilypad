@@ -10,6 +10,7 @@ from sqlmodel import Session
 from lilypad.server.models import FunctionTable, ProjectTable
 from lilypad.server.models.deployments import DeploymentTable
 from lilypad.server.models.environments import EnvironmentTable
+from lilypad.server.models.function_environment_link import FunctionEnvironmentLink
 from lilypad.server.services import get_opensearch_service
 from lilypad.server.services.opensearch import OpenSearchService
 
@@ -171,11 +172,14 @@ def test_get_unique_function_names(
 
 
 def test_get_latest_version_unique_function_names(
-    client: TestClient, test_project: ProjectTable, test_function: FunctionTable
+    client: TestClient,
+    test_project: ProjectTable,
+    test_function: FunctionTable,
+    test_function_environment,
 ):
     """Test getting latest version of unique function names."""
     response = client.get(
-        f"/projects/{test_project.uuid}/functions/metadata/names/versions"
+        f"/projects/{test_project.uuid}/functions/metadata/names/versions?environment_uuid={test_function_environment.environment_uuid}"
     )
 
     assert response.status_code == 200
@@ -295,8 +299,10 @@ def test_archive_functions_by_name(
     session: Session,
 ):
     """Test archiving functions by name."""
+    environment_uuid = uuid.uuid4()
     response = client.delete(
-        f"/projects/{test_project.uuid}/functions/names/{test_function.name}"
+        f"/projects/{test_project.uuid}/functions/names/{test_function.name}",
+        params={"environment_uuid": str(environment_uuid)},
     )
 
     assert response.status_code == 200
@@ -314,8 +320,10 @@ def test_archive_function(
     session: Session,
 ):
     """Test archiving function by UUID."""
+    environment_uuid = uuid.uuid4()
     response = client.delete(
-        f"/projects/{test_project.uuid}/functions/{test_function.uuid}"
+        f"/projects/{test_project.uuid}/functions/{test_function.uuid}",
+        params={"environment_uuid": str(environment_uuid)},
     )
 
     assert response.status_code == 200
@@ -415,9 +423,11 @@ def test_archive_functions_by_name_with_exception(
     monkeypatch.setattr(
         FunctionService, "archive_record_by_name", mock_archive_record_by_name
     )
+    environment_uuid = uuid.uuid4()
 
     response = client.delete(
-        f"/projects/{test_project.uuid}/functions/names/{test_function.name}"
+        f"/projects/{test_project.uuid}/functions/names/{test_function.name}",
+        params={"environment_uuid": str(environment_uuid)},
     )
 
     assert response.status_code == 200
@@ -441,8 +451,10 @@ def test_archive_function_with_exception(
         FunctionService, "archive_record_by_uuid", mock_archive_record_by_uuid
     )
 
+    environment_uuid = uuid.uuid4()
     response = client.delete(
-        f"/projects/{test_project.uuid}/functions/{test_function.uuid}"
+        f"/projects/{test_project.uuid}/functions/{test_function.uuid}",
+        params={"environment_uuid": str(environment_uuid)},
     )
 
     assert response.status_code == 200
@@ -515,8 +527,10 @@ def test_archive_functions_by_name_with_opensearch_enabled(
         mock_get_opensearch_service,
     )
 
+    environment_uuid = uuid.uuid4()
     response = client.delete(
-        f"/projects/{test_project.uuid}/functions/names/{test_function.name}"
+        f"/projects/{test_project.uuid}/functions/names/{test_function.name}",
+        params={"environment_uuid": str(environment_uuid)},
     )
 
     assert response.status_code == 200
@@ -549,8 +563,10 @@ def test_archive_function_with_opensearch_enabled(
         mock_get_opensearch_service,
     )
 
+    environment_uuid = uuid.uuid4()
     response = client.delete(
-        f"/projects/{test_project.uuid}/functions/{test_function.uuid}"
+        f"/projects/{test_project.uuid}/functions/{test_function.uuid}",
+        params={"environment_uuid": str(environment_uuid)},
     )
 
     assert response.status_code == 200
@@ -561,6 +577,7 @@ def test_archive_functions_by_name_with_opensearch_multiple_functions(
     client: TestClient,
     test_project: ProjectTable,
     test_function: FunctionTable,
+    test_function_environment: FunctionEnvironmentLink,
     session: Session,
 ):
     """Test archiving functions by name with OpenSearch when multiple functions exist."""
@@ -587,10 +604,11 @@ def test_archive_functions_by_name_with_opensearch_multiple_functions(
 
     # Override dependency
     api.dependency_overrides[get_opensearch_service] = lambda: mock_opensearch
-
+    environment_uuid = test_function_environment.environment_uuid
     try:
         response = client.delete(
-            f"/projects/{test_project.uuid}/functions/names/{test_function.name}"
+            f"/projects/{test_project.uuid}/functions/names/{test_function.name}",
+            params={"environment_uuid": str(environment_uuid)},
         )
 
         assert response.status_code == 200
@@ -599,10 +617,10 @@ def test_archive_functions_by_name_with_opensearch_multiple_functions(
         # Verify OpenSearch delete was called for both functions
         assert mock_opensearch.delete_traces_by_function_uuid.call_count == 2
         mock_opensearch.delete_traces_by_function_uuid.assert_any_call(
-            test_project.uuid, test_function.uuid
+            test_project.uuid, environment_uuid, test_function.uuid
         )
         mock_opensearch.delete_traces_by_function_uuid.assert_any_call(
-            test_project.uuid, another_function.uuid
+            test_project.uuid, environment_uuid, another_function.uuid
         )
     finally:
         api.dependency_overrides.pop(get_opensearch_service, None)
@@ -612,6 +630,7 @@ def test_archive_function_by_uuid_with_opensearch_dependency_injection(
     client: TestClient,
     test_project: ProjectTable,
     test_function: FunctionTable,
+    test_function_environment: FunctionEnvironmentLink,
 ):
     """Test archiving function by UUID with OpenSearch using dependency injection."""
     from lilypad.server.api.v0.main import api
@@ -624,9 +643,12 @@ def test_archive_function_by_uuid_with_opensearch_dependency_injection(
     # Override dependency
     api.dependency_overrides[get_opensearch_service] = lambda: mock_opensearch
 
+    environment_uuid = test_function_environment.environment_uuid
+
     try:
         response = client.delete(
-            f"/projects/{test_project.uuid}/functions/{test_function.uuid}"
+            f"/projects/{test_project.uuid}/functions/{test_function.uuid}",
+            params={"environment_uuid": str(environment_uuid)},
         )
 
         assert response.status_code == 200
@@ -634,7 +656,7 @@ def test_archive_function_by_uuid_with_opensearch_dependency_injection(
 
         # Verify OpenSearch delete was called
         mock_opensearch.delete_traces_by_function_uuid.assert_called_once_with(
-            test_project.uuid, test_function.uuid
+            test_project.uuid, environment_uuid, test_function.uuid
         )
     finally:
         api.dependency_overrides.pop(get_opensearch_service, None)

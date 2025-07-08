@@ -44,24 +44,32 @@ export class Annotations {
      * Get annotations by project.
      *
      * @param {string} projectUuid
+     * @param {Lilypad.ee.projects.AnnotationsListRequest} request
      * @param {Annotations.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.ee.projects.annotations.list("project_uuid")
+     *     await client.ee.projects.annotations.list("project_uuid", {
+     *         environment_uuid: "environment_uuid"
+     *     })
      */
     public list(
         projectUuid: string,
+        request: Lilypad.ee.projects.AnnotationsListRequest,
         requestOptions?: Annotations.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.AnnotationPublic[]> {
-        return core.HttpResponsePromise.fromPromise(this.__list(projectUuid, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__list(projectUuid, request, requestOptions));
     }
 
     private async __list(
         projectUuid: string,
+        request: Lilypad.ee.projects.AnnotationsListRequest,
         requestOptions?: Annotations.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.AnnotationPublic[]>> {
+        const { environment_uuid: environmentUuid } = request;
+        const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
+        _queryParams["environment_uuid"] = environmentUuid;
         const _response = await core.fetcher({
             url: core.joinUrl(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -77,6 +85,7 @@ export class Annotations {
                 }),
                 requestOptions?.headers,
             ),
+            queryParameters: _queryParams,
             timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
             maxRetries: requestOptions?.maxRetries,
             abortSignal: requestOptions?.abortSignal,

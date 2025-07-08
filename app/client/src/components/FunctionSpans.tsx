@@ -47,6 +47,7 @@ export const FunctionSpansContainer = ({ functionUuid }: { functionUuid: string 
         functionName,
         functionUuid,
         tab: FunctionTab.TRACES,
+        _splat: "",
       },
     }).catch(() => {
       toast.error("Failed to navigate");

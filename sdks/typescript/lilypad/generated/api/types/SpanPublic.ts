@@ -20,6 +20,7 @@ export interface SpanPublic {
     data?: Record<string, unknown>;
     parent_span_id?: string;
     session_id?: string;
+    environment_uuid?: string;
     uuid: string;
     project_uuid: string;
     display_name?: string;

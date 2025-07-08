@@ -1,6 +1,6 @@
 [project]
 name = "lilypad-sdk"
-version = "0.9.0"
+version = "0.10.1"
 description = "The official Python library for the Lilypad API"
 dynamic = ["readme"]
 license = "Apache-2.0"
@@ -45,7 +45,7 @@ Repository = "https://github.com/Mirascope/lilypad"
 
 [dependency-groups]
 dev = [
-    "pyright==1.1.399",
+    "pyright==1.1.402",
     "pytest>=8.3.2",
     "mypy",
     "respx",
@@ -64,11 +64,7 @@ dev = [
     "urllib3>=2.4.0",
 ]
 
-examples = [
-  "fastapi>=0.115.13,<1",
-  "requests>=2.32.4,<3",
-    "uvicorn>=0.34.3,<1",
-]
+examples = ["fastapi>=0.115.13,<1", "requests>=2.32.4,<3", "uvicorn>=0.34.3,<1"]
 
 [tool.uv]
 default-groups = ["dev"]
@@ -192,7 +188,7 @@ known-first-party = ["lilypad", "tests"]
 [tool.pyright]
 pythonVersion = "3.10"
 
-exclude = [".venv", "tests", "src/lilypad"]
+exclude = [".venv", "tests", "src/lilypad", "examples"]
 
 [build-system]
 requires = ["hatchling"]

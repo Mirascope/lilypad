@@ -1,3 +1,4 @@
+import { useAuth } from "@/src/auth";
 import { CreateAPIKeyForm } from "@/src/components/apiKeys/CreateAPIKeyForm";
 import { CodeBlock } from "@/src/components/code-block";
 import { NotFound } from "@/src/components/NotFound";
@@ -23,6 +24,7 @@ interface CreateAPIKeyDialogProps {
 export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [projectUuid, setProjectUuid] = useState<string | null>(null);
+  const { activeEnvironment } = useAuth();
   const defaultTrigger = (
     <Button
       variant="ghost"
@@ -50,8 +52,14 @@ export const CreateAPIKeyDialog = ({ trigger }: CreateAPIKeyDialogProps) => {
             projectUuid={projectUuid}
             setProjectUuid={setProjectUuid}
           />
+        ) : activeEnvironment ? (
+          <CreateAPIKeyForm
+            setApiKey={setApiKey}
+            setProjectUuid={setProjectUuid}
+            defaultEnvironment={activeEnvironment}
+          />
         ) : (
-          <CreateAPIKeyForm setApiKey={setApiKey} setProjectUuid={setProjectUuid} />
+          <div>No environment found. Please create an environment first.</div>
         )}
       </DialogContent>
     </Dialog>

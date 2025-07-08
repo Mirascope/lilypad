@@ -28,10 +28,8 @@ class SpansClient:
         """
         return self._raw_client
 
-    def get(self, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None) -> SpanMoreDetails:
+    def get(self, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None) -> None:
         """
-        Get span by uuid.
-
         Parameters
         ----------
         span_uuid : str
@@ -41,8 +39,7 @@ class SpansClient:
 
         Returns
         -------
-        SpanMoreDetails
-            Successful Response
+        None
 
         Examples
         --------
@@ -122,10 +119,8 @@ class AsyncSpansClient:
         """
         return self._raw_client
 
-    async def get(self, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None) -> SpanMoreDetails:
+    async def get(self, span_uuid: str, *, request_options: typing.Optional[RequestOptions] = None) -> None:
         """
-        Get span by uuid.
-
         Parameters
         ----------
         span_uuid : str
@@ -135,8 +130,7 @@ class AsyncSpansClient:
 
         Returns
         -------
-        SpanMoreDetails
-            Successful Response
+        None
 
         Examples
         --------

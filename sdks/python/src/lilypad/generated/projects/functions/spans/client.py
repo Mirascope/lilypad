@@ -32,6 +32,7 @@ class SpansClient:
         function_uuid: str,
         *,
         time_frame: TimeFrame,
+        environment_uuid: str,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> typing.List[AggregateMetrics]:
         """
@@ -44,6 +45,8 @@ class SpansClient:
         function_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -66,10 +69,15 @@ class SpansClient:
             project_uuid="project_uuid",
             function_uuid="function_uuid",
             time_frame="day",
+            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.get_aggregates(
-            project_uuid, function_uuid, time_frame=time_frame, request_options=request_options
+            project_uuid,
+            function_uuid,
+            time_frame=time_frame,
+            environment_uuid=environment_uuid,
+            request_options=request_options,
         )
         return _response.data
 
@@ -78,6 +86,7 @@ class SpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -91,6 +100,8 @@ class SpansClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -118,10 +129,17 @@ class SpansClient:
         client.projects.functions.spans.list_paginated(
             project_uuid="project_uuid",
             function_uuid="function_uuid",
+            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.list_paginated(
-            project_uuid, function_uuid, limit=limit, offset=offset, order=order, request_options=request_options
+            project_uuid,
+            function_uuid,
+            environment_uuid=environment_uuid,
+            limit=limit,
+            offset=offset,
+            order=order,
+            request_options=request_options,
         )
         return _response.data
 
@@ -147,6 +165,7 @@ class AsyncSpansClient:
         function_uuid: str,
         *,
         time_frame: TimeFrame,
+        environment_uuid: str,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> typing.List[AggregateMetrics]:
         """
@@ -159,6 +178,8 @@ class AsyncSpansClient:
         function_uuid : str
 
         time_frame : TimeFrame
+
+        environment_uuid : str
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -186,13 +207,18 @@ class AsyncSpansClient:
                 project_uuid="project_uuid",
                 function_uuid="function_uuid",
                 time_frame="day",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.get_aggregates(
-            project_uuid, function_uuid, time_frame=time_frame, request_options=request_options
+            project_uuid,
+            function_uuid,
+            time_frame=time_frame,
+            environment_uuid=environment_uuid,
+            request_options=request_options,
         )
         return _response.data
 
@@ -201,6 +227,7 @@ class AsyncSpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
+        environment_uuid: str,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -214,6 +241,8 @@ class AsyncSpansClient:
         project_uuid : str
 
         function_uuid : str
+
+        environment_uuid : str
 
         limit : typing.Optional[int]
 
@@ -246,12 +275,19 @@ class AsyncSpansClient:
             await client.projects.functions.spans.list_paginated(
                 project_uuid="project_uuid",
                 function_uuid="function_uuid",
+                environment_uuid="environment_uuid",
             )
 
 
         asyncio.run(main())
         """
         _response = await self._raw_client.list_paginated(
-            project_uuid, function_uuid, limit=limit, offset=offset, order=order, request_options=request_options
+            project_uuid,
+            function_uuid,
+            environment_uuid=environment_uuid,
+            limit=limit,
+            offset=offset,
+            order=order,
+            request_options=request_options,
         )
         return _response.data

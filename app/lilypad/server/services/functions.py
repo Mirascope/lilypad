@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlmodel import and_, asc, desc, func, select
 
+from ..models.function_environment_link import FunctionEnvironmentLink
 from ..models.functions import FunctionTable
 from ..schemas.functions import FunctionCreate
 from .base_organization import BaseOrganizationService
@@ -114,21 +115,30 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
         ).all()
         return record_tables
 
-    def find_unique_function_names(self, project_uuid: UUID) -> Sequence[FunctionTable]:
-        """Find record by UUID, getting latest version for each name."""
+    def find_unique_function_names(
+        self, project_uuid: UUID, environment_uuid: UUID
+    ) -> Sequence[FunctionTable]:
+        """Find record by UUID, getting latest version for each name, filtered by environment."""
+        # First, get the latest version for each function name that's in the specified environment
         latest_versions = (
             select(
                 self.table.name, func.max(self.table.version_num).label("max_version")
+            )
+            .join(
+                FunctionEnvironmentLink,
+                FunctionEnvironmentLink.function_uuid == self.table.uuid,  # pyright: ignore[reportArgumentType]
             )
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.archived.is_(None),  # type: ignore
+                FunctionEnvironmentLink.environment_uuid == environment_uuid,
             )
             .group_by(self.table.name)
             .subquery()
         )
 
+        # Then get the full function records for those latest versions
         record_tables = self.session.exec(
             select(self.table)
             .join(
@@ -138,13 +148,19 @@ class FunctionService(BaseOrganizationService[FunctionTable, FunctionCreate]):
                     self.table.version_num == latest_versions.c.max_version,
                 ),
             )
+            .join(
+                FunctionEnvironmentLink,
+                FunctionEnvironmentLink.function_uuid == self.table.uuid,  # pyright: ignore[reportArgumentType]
+            )
             .where(
                 self.table.organization_uuid == self.user.active_organization_uuid,
                 self.table.project_uuid == project_uuid,
                 self.table.archived.is_(None),  # type: ignore
+                FunctionEnvironmentLink.environment_uuid == environment_uuid,
             )
             .order_by(latest_versions.c.max_version.desc())
         ).all()
+
         return record_tables
 
     def get_next_version(self, project_uuid: UUID, name: str) -> int:
