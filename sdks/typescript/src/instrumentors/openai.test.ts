@@ -1,5 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { OpenAIInstrumentor } from './openai';
+
+// Mock logger
+vi.mock('../utils/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+// Mock settings
+vi.mock('../utils/settings', () => ({
+  getSettings: vi.fn(() => ({
+    projectId: 'test-project-id',
+  })),
+}));
 
 describe('OpenAIInstrumentor', () => {
   let instrumentor: OpenAIInstrumentor;
@@ -7,6 +24,10 @@ describe('OpenAIInstrumentor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     instrumentor = new OpenAIInstrumentor();
+  });
+
+  afterEach(() => {
+    vi.resetModules();
   });
 
   describe('getName', () => {
@@ -18,20 +39,26 @@ describe('OpenAIInstrumentor', () => {
   describe('instrument/uninstrument', () => {
     it('should track instrumentation state', () => {
       expect(instrumentor.isInstrumented()).toBe(false);
-
-      // Since we can't easily mock require in the test environment,
-      // we'll just verify the basic state tracking
-      // Full integration testing would be done in e2e tests
     });
 
     it('should handle uninstrument when not instrumented', () => {
       expect(() => instrumentor.uninstrument()).not.toThrow();
       expect(instrumentor.isInstrumented()).toBe(false);
     });
-  });
 
-  // Note: Full integration testing with actual OpenAI module mocking
-  // is complex due to module loading. These tests cover the basic
-  // instrumentor functionality. Integration tests would be better
-  // suited for e2e testing with actual OpenAI SDK.
+    it('should start as not instrumented', () => {
+      // Just verify the initial state
+      expect(instrumentor.isInstrumented()).toBe(false);
+    });
+
+    it('should warn when already instrumented', async () => {
+      // Mock the instrumented flag to test the warning
+      (instrumentor as any).isInstrumentedFlag = true;
+      const { logger } = await import('../utils/logger');
+      
+      instrumentor.instrument();
+      
+      expect(logger.warn).toHaveBeenCalledWith('OpenAI already instrumented');
+    });
+  });
 });
