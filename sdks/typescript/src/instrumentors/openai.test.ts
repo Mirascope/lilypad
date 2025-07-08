@@ -55,9 +55,9 @@ describe('OpenAIInstrumentor', () => {
       // Mock the instrumented flag to test the warning
       (instrumentor as any).isInstrumentedFlag = true;
       const { logger } = await import('../utils/logger');
-      
+
       instrumentor.instrument();
-      
+
       expect(logger.warn).toHaveBeenCalledWith('OpenAI already instrumented');
     });
   });

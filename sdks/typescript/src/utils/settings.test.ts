@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getSettings, setSettings, isConfigured } from './settings';
+import { getSettings, setSettings, isConfigured, mergeSettings } from './settings';
 import type { LilypadConfig } from '../types';
 
 describe('settings', () => {
@@ -85,6 +85,82 @@ describe('settings', () => {
 
       // Settings will be changed because we store the reference
       expect(getSettings()?.apiKey).toBe('modified-key');
+    });
+  });
+
+  describe('mergeSettings', () => {
+    it('should throw error when not configured', () => {
+      expect(() => mergeSettings({ apiKey: 'new-key' })).toThrow(
+        'Cannot merge settings when not configured',
+      );
+    });
+
+    it('should merge simple properties', () => {
+      setSettings(validConfig);
+      const merged = mergeSettings({ apiKey: 'new-api-key', logLevel: 'debug' });
+
+      expect(merged).toEqual({
+        ...validConfig,
+        apiKey: 'new-api-key',
+        logLevel: 'debug',
+        batchProcessorOptions: {},
+      });
+    });
+
+    it('should merge batchProcessorOptions', () => {
+      const configWithBatch: LilypadConfig = {
+        ...validConfig,
+        batchProcessorOptions: {
+          maxBatchSize: 100,
+          scheduledDelayMillis: 1000,
+        },
+      };
+
+      setSettings(configWithBatch);
+      const merged = mergeSettings({
+        batchProcessorOptions: {
+          maxBatchSize: 200,
+        },
+      });
+
+      expect(merged.batchProcessorOptions).toEqual({
+        maxBatchSize: 200,
+        scheduledDelayMillis: 1000,
+      });
+    });
+
+    it('should handle merging with undefined batchProcessorOptions', () => {
+      setSettings(validConfig);
+      const merged = mergeSettings({
+        apiKey: 'new-key',
+        batchProcessorOptions: {
+          maxBatchSize: 50,
+        },
+      });
+
+      expect(merged.batchProcessorOptions).toEqual({
+        maxBatchSize: 50,
+      });
+    });
+
+    it('should not modify original settings', () => {
+      setSettings(validConfig);
+      const originalApiKey = validConfig.apiKey;
+
+      mergeSettings({ apiKey: 'new-key' });
+
+      expect(getSettings()?.apiKey).toBe(originalApiKey);
+    });
+
+    it('should return a new object', () => {
+      setSettings(validConfig);
+      const merged = mergeSettings({});
+
+      expect(merged).not.toBe(getSettings());
+      expect(merged).toEqual({
+        ...getSettings(),
+        batchProcessorOptions: {},
+      });
     });
   });
 });

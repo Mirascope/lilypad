@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { configure } from './configure';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { configure, getTracerProvider, getTracer, getProvider } from './configure';
 import * as settings from './utils/settings';
 import { logger } from './utils/logger';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { trace } from '@opentelemetry/api';
 
 vi.mock('./utils/settings');
 vi.mock('./utils/logger');
@@ -10,6 +11,9 @@ vi.mock('@opentelemetry/sdk-trace-node');
 vi.mock('./exporters/json-exporter');
 vi.mock('@opentelemetry/sdk-trace-base', () => ({
   BatchSpanProcessor: vi.fn().mockImplementation(() => ({})),
+}));
+vi.mock('./lilypad', () => ({
+  LilypadClient: vi.fn().mockImplementation(() => ({})),
 }));
 
 describe('configure', () => {
@@ -58,6 +62,25 @@ describe('configure', () => {
           projectId: 'not-a-uuid',
         }),
       ).rejects.toThrow('Invalid project ID format');
+    });
+
+    it('should handle missing baseUrl after configuration', async () => {
+      // Mock setSettings to remove baseUrl somehow
+      const originalImpl = mockSetSettings.getMockImplementation();
+      mockSetSettings.mockImplementation((config) => {
+        // Simulate a scenario where baseUrl is undefined
+        delete (config as any).baseUrl;
+      });
+
+      await expect(
+        configure({
+          apiKey: 'test-api-key',
+          projectId: '123e4567-e89b-12d3-a456-426614174000',
+        }),
+      ).rejects.toThrow('Configuration error: missing required values');
+
+      // Restore original implementation
+      mockSetSettings.mockImplementation(originalImpl || vi.fn());
     });
   });
 
@@ -154,9 +177,157 @@ describe('configure', () => {
       expect(mockLogger.debug).toHaveBeenCalledWith('OpenAI auto-instrumentation hooks installed');
     });
 
-    it('should handle missing OpenAI gracefully', async () => {
-      // Skip this test as dynamic imports are complex to mock in vitest
-      // This functionality is better tested in integration tests
+    // Note: Testing dynamic imports with vitest is complex
+    // These error cases are better tested with integration tests
+    // For now, we've achieved the main coverage goals
+  });
+
+  describe('environment variable handling', () => {
+    const validConfig = {
+      apiKey: 'test-api-key',
+      projectId: '123e4567-e89b-12d3-a456-426614174000',
+    };
+
+    beforeEach(() => {
+      delete process.env.LILYPAD_BASE_URL;
+      delete process.env.LILYPAD_REMOTE_API_URL;
+      delete process.env.LILYPAD_REMOTE_CLIENT_URL;
+    });
+
+    afterEach(() => {
+      delete process.env.LILYPAD_BASE_URL;
+      delete process.env.LILYPAD_REMOTE_API_URL;
+      delete process.env.LILYPAD_REMOTE_CLIENT_URL;
+    });
+
+    it('should use LILYPAD_BASE_URL env var when set', async () => {
+      process.env.LILYPAD_BASE_URL = 'https://env.api.com';
+
+      await configure(validConfig);
+
+      expect(mockSetSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://env.api.com',
+        }),
+      );
+    });
+
+    it('should use LILYPAD_REMOTE_API_URL env var to construct baseUrl', async () => {
+      process.env.LILYPAD_REMOTE_API_URL = 'https://remote.api.com';
+
+      await configure(validConfig);
+
+      expect(mockSetSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://remote.api.com/v0',
+        }),
+      );
+    });
+
+    it('should use LILYPAD_REMOTE_CLIENT_URL env var when set', async () => {
+      process.env.LILYPAD_REMOTE_CLIENT_URL = 'https://remote.client.com';
+
+      await configure(validConfig);
+
+      expect(mockSetSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          remoteClientUrl: 'https://remote.client.com',
+        }),
+      );
+    });
+
+    it('should prioritize config values over env vars', async () => {
+      process.env.LILYPAD_BASE_URL = 'https://env.api.com';
+      process.env.LILYPAD_REMOTE_CLIENT_URL = 'https://env.client.com';
+
+      await configure({
+        ...validConfig,
+        baseUrl: 'https://config.api.com',
+        remoteClientUrl: 'https://config.client.com',
+      });
+
+      expect(mockSetSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://config.api.com',
+          remoteClientUrl: 'https://config.client.com',
+        }),
+      );
+    });
+  });
+
+  describe('batchProcessorOptions', () => {
+    const validConfig = {
+      apiKey: 'test-api-key',
+      projectId: '123e4567-e89b-12d3-a456-426614174000',
+    };
+
+    it('should merge custom batchProcessorOptions with defaults', async () => {
+      await configure({
+        ...validConfig,
+        batchProcessorOptions: {
+          maxQueueSize: 1024,
+          scheduledDelayMillis: 10000,
+        },
+      });
+
+      expect(mockSetSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          batchProcessorOptions: {
+            scheduledDelayMillis: 10000,
+            maxQueueSize: 1024,
+            maxExportBatchSize: 512,
+            exportTimeoutMillis: 30000,
+          },
+        }),
+      );
+    });
+  });
+
+  describe('exported functions', () => {
+    it('should call trace.getTracerProvider()', () => {
+      const mockTracerProvider = { tracer: 'provider' };
+      vi.spyOn(trace, 'getTracerProvider').mockReturnValue(mockTracerProvider as any);
+
+      const result = getTracerProvider();
+
+      expect(trace.getTracerProvider).toHaveBeenCalled();
+      expect(result).toBe(mockTracerProvider);
+    });
+
+    it('should call trace.getTracer() with default name', () => {
+      const mockTracer = { tracer: 'instance' };
+      vi.spyOn(trace, 'getTracer').mockReturnValue(mockTracer as any);
+
+      const result = getTracer();
+
+      expect(trace.getTracer).toHaveBeenCalledWith('lilypad', undefined);
+      expect(result).toBe(mockTracer);
+    });
+
+    it('should call trace.getTracer() with custom name and version', () => {
+      const mockTracer = { tracer: 'instance' };
+      vi.spyOn(trace, 'getTracer').mockReturnValue(mockTracer as any);
+
+      const result = getTracer('custom-tracer', '1.0.0');
+
+      expect(trace.getTracer).toHaveBeenCalledWith('custom-tracer', '1.0.0');
+      expect(result).toBe(mockTracer);
+    });
+
+    it('should return provider state correctly', async () => {
+      // Since we can't easily reset the module state, let's test that getProvider
+      // returns something after configuration
+      const validConfig = {
+        apiKey: 'test-api-key',
+        projectId: '123e4567-e89b-12d3-a456-426614174000',
+      };
+
+      await configure(validConfig);
+
+      const result = getProvider();
+      // The result will be a mocked instance since NodeTracerProvider is mocked
+      expect(result).toBeDefined();
+      expect(result).not.toBeNull();
     });
   });
 });

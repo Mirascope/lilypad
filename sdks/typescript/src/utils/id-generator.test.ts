@@ -1,9 +1,27 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CryptoIdGenerator } from './id-generator';
 import { INVALID_SPANID, INVALID_TRACEID } from '@opentelemetry/api';
+import { randomBytes } from 'crypto';
+
+vi.mock('crypto', () => ({
+  randomBytes: vi.fn(),
+}));
 
 describe('CryptoIdGenerator', () => {
   const generator = new CryptoIdGenerator();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset mock to normal behavior
+    vi.mocked(randomBytes).mockImplementation((size: number) => {
+      // Generate actual random bytes for most tests
+      const bytes = Buffer.alloc(size);
+      for (let i = 0; i < size; i++) {
+        bytes[i] = Math.floor(Math.random() * 256);
+      }
+      return bytes;
+    });
+  });
 
   describe('generateSpanId', () => {
     it('should generate valid span IDs', () => {
@@ -26,6 +44,19 @@ describe('CryptoIdGenerator', () => {
         ids.add(generator.generateSpanId());
       }
       expect(ids.size).toBe(100);
+    });
+
+    it('should retry when generating INVALID_SPANID', () => {
+      // Mock to return invalid ID first, then valid ID
+      const invalidBuffer = Buffer.from(INVALID_SPANID, 'hex');
+      const validBuffer = Buffer.from('1234567890abcdef', 'hex');
+
+      vi.mocked(randomBytes).mockReturnValueOnce(invalidBuffer).mockReturnValueOnce(validBuffer);
+
+      const spanId = generator.generateSpanId();
+
+      expect(spanId).toBe('1234567890abcdef');
+      expect(randomBytes).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -50,6 +81,19 @@ describe('CryptoIdGenerator', () => {
         ids.add(generator.generateTraceId());
       }
       expect(ids.size).toBe(100);
+    });
+
+    it('should retry when generating INVALID_TRACEID', () => {
+      // Mock to return invalid ID first, then valid ID
+      const invalidBuffer = Buffer.from(INVALID_TRACEID, 'hex');
+      const validBuffer = Buffer.from('1234567890abcdef1234567890abcdef', 'hex');
+
+      vi.mocked(randomBytes).mockReturnValueOnce(invalidBuffer).mockReturnValueOnce(validBuffer);
+
+      const traceId = generator.generateTraceId();
+
+      expect(traceId).toBe('1234567890abcdef1234567890abcdef');
+      expect(randomBytes).toHaveBeenCalledTimes(2);
     });
   });
 
