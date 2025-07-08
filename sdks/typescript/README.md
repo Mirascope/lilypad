@@ -36,10 +36,11 @@ const response = await lilypad.traceOpenAICompletion(
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: 'Hello, how are you?' }],
   },
-  () => openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: 'Hello, how are you?' }],
-  })
+  () =>
+    openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: 'Hello, how are you?' }],
+    }),
 );
 ```
 

@@ -28,11 +28,12 @@ async function main() {
       messages: [{ role: 'user', content: 'Say hello in 3 different languages' }],
       temperature: 0.7,
     },
-    () => openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: 'Say hello in 3 different languages' }],
-      temperature: 0.7,
-    })
+    () =>
+      openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: 'Say hello in 3 different languages' }],
+        temperature: 0.7,
+      }),
   );
 
   console.log('Response:', completion.choices[0].message.content);
@@ -49,15 +50,16 @@ async function main() {
       temperature: 0.5,
       max_tokens: 150,
     },
-    () => openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are a helpful coding assistant.' },
-        { role: 'user', content: 'Write a simple hello world function in Python' },
-      ],
-      temperature: 0.5,
-      max_tokens: 150,
-    })
+    () =>
+      openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are a helpful coding assistant.' },
+          { role: 'user', content: 'Write a simple hello world function in Python' },
+        ],
+        temperature: 0.5,
+        max_tokens: 150,
+      }),
   );
 
   console.log('Code example:', systemCompletion.choices[0].message.content);

@@ -50,11 +50,13 @@ export async function configure(config: LilypadConfig): Promise<void> {
 
   // Set default values with environment variable overrides
   const finalConfig: LilypadConfig = {
-    baseUrl: process.env.LILYPAD_BASE_URL 
-      || (process.env.LILYPAD_REMOTE_API_URL 
+    baseUrl:
+      process.env.LILYPAD_BASE_URL ||
+      (process.env.LILYPAD_REMOTE_API_URL
         ? `${process.env.LILYPAD_REMOTE_API_URL}/v0`
-        : (config.baseUrl || 'https://api.app.lilypad.so/v0')),
-    remoteClientUrl: process.env.LILYPAD_REMOTE_CLIENT_URL || config.remoteClientUrl || 'https://app.lilypad.so',
+        : config.baseUrl || 'https://api.app.lilypad.so/v0'),
+    remoteClientUrl:
+      process.env.LILYPAD_REMOTE_CLIENT_URL || config.remoteClientUrl || 'https://app.lilypad.so',
     logLevel: 'info',
     serviceName: 'lilypad-node-app',
     auto_llm: false,
@@ -69,7 +71,7 @@ export async function configure(config: LilypadConfig): Promise<void> {
       ...config.batchProcessorOptions,
     },
   };
-  
+
   // Ensure config values override environment variables
   if (config.baseUrl) {
     finalConfig.baseUrl = config.baseUrl;
@@ -82,7 +84,7 @@ export async function configure(config: LilypadConfig): Promise<void> {
 
   // Configure logger
   logger.setLevel(finalConfig.logLevel || 'info');
-  
+
   // Log configuration for debugging
   logger.debug(`Using baseUrl: ${finalConfig.baseUrl}`);
   logger.debug(`Using remoteClientUrl: ${finalConfig.remoteClientUrl}`);
@@ -98,7 +100,7 @@ export async function configure(config: LilypadConfig): Promise<void> {
   if (!baseUrl || !apiKey) {
     throw new Error('Configuration error: missing required values');
   }
-  
+
   const client = new LilypadClient({
     environment: baseUrl,
     baseUrl: baseUrl,
@@ -108,9 +110,11 @@ export async function configure(config: LilypadConfig): Promise<void> {
 
   const exporter = new JSONSpanExporter(finalConfig, client);
   logger.debug('Created JSONSpanExporter');
-  
+
   const spanProcessor = new BatchSpanProcessor(exporter, finalConfig.batchProcessorOptions);
-  logger.debug(`Created BatchSpanProcessor with options: ${JSON.stringify(finalConfig.batchProcessorOptions)}`);
+  logger.debug(
+    `Created BatchSpanProcessor with options: ${JSON.stringify(finalConfig.batchProcessorOptions)}`,
+  );
 
   const provider = new NodeTracerProvider({
     resource,
@@ -123,7 +127,7 @@ export async function configure(config: LilypadConfig): Promise<void> {
   logger.debug('Registered tracer provider globally');
 
   _provider = provider;
-  
+
   logger.info(`Lilypad SDK configured successfully for project ${finalConfig.projectId}`);
 }
 

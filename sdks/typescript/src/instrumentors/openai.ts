@@ -1,4 +1,11 @@
-import { trace, SpanStatusCode, SpanKind, Span as OtelSpan, Attributes, AttributeValue } from '@opentelemetry/api';
+import {
+  trace,
+  SpanStatusCode,
+  SpanKind,
+  Span as OtelSpan,
+  Attributes,
+  AttributeValue,
+} from '@opentelemetry/api';
 
 import { BaseInstrumentor } from './base';
 import { logger } from '../utils/logger';
@@ -173,7 +180,9 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
       const spanName = `openai.chat.completions ${model}`;
 
       logger.debug(`OpenAI instrumentor: Creating span "${spanName}"`);
-      logger.debug(`Parameters: ${JSON.stringify({ model, temperature: params?.temperature, max_tokens: params?.max_tokens })}`);
+      logger.debug(
+        `Parameters: ${JSON.stringify({ model, temperature: params?.temperature, max_tokens: params?.max_tokens })}`,
+      );
 
       return tracer.startActiveSpan(
         spanName,
@@ -189,7 +198,8 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
             'gen_ai.request.frequency_penalty': params?.frequency_penalty,
             'gen_ai.openai.request.response_format': params?.response_format?.type,
             'gen_ai.openai.request.seed': params?.seed,
-            'gen_ai.openai.request.service_tier': params?.service_tier !== 'auto' ? params?.service_tier : undefined,
+            'gen_ai.openai.request.service_tier':
+              params?.service_tier !== 'auto' ? params?.service_tier : undefined,
             [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
             'lilypad.type': 'llm',
           }),
@@ -203,13 +213,14 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
                 const attributes: Attributes = {
                   [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
                 };
-                
+
                 if (message.content) {
-                  attributes['content'] = typeof message.content === 'string' 
-                    ? message.content 
-                    : safeStringify(message.content);
+                  attributes['content'] =
+                    typeof message.content === 'string'
+                      ? message.content
+                      : safeStringify(message.content);
                 }
-                
+
                 span.addEvent(eventName, attributes);
               });
             }
@@ -270,12 +281,12 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
           role: 'assistant',
           content: fullContent,
         };
-        
+
         span.addEvent('gen_ai.choice', {
           [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-          'index': 0,
-          'finish_reason': finishReason || 'error',
-          'message': safeStringify(message),
+          index: 0,
+          finish_reason: finishReason || 'error',
+          message: safeStringify(message),
         });
 
         // Try to get usage from the last chunk
@@ -303,16 +314,16 @@ export class OpenAIInstrumentor extends BaseInstrumentor {
         const message: Record<string, unknown> = {
           role: choice.message?.role || 'assistant',
         };
-        
+
         if (choice.message?.content) {
           message['content'] = choice.message.content;
         }
-        
+
         span.addEvent('gen_ai.choice', {
           [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-          'index': index,
-          'finish_reason': choice.finish_reason || 'error',
-          'message': safeStringify(message),
+          index: index,
+          finish_reason: choice.finish_reason || 'error',
+          message: safeStringify(message),
         });
       });
 

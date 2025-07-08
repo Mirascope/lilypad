@@ -22,5 +22,13 @@
     "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "coverage", "**/*.test.ts", "**/*.spec.ts", "lilypad/**", "lilypad/generated/**/*"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "lilypad/**",
+    "lilypad/generated/**/*"
+  ]
 }

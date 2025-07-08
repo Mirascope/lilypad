@@ -24,7 +24,7 @@ export class JSONSpanExporter implements SpanExporter {
     resultCallback: (result: ExportResult) => void,
   ): Promise<void> {
     logger.debug(`JSONSpanExporter.export called with ${spans?.length || 0} spans`);
-    
+
     if (!spans || spans.length === 0) {
       logger.debug('No spans to export, returning success');
       resultCallback({ code: ExportResultCode.SUCCESS });
@@ -37,15 +37,13 @@ export class JSONSpanExporter implements SpanExporter {
       logger.debug(`First span: ${JSON.stringify(spanData[0], null, 2)}`);
 
       // Use the custom traces create method with body
-      const response = await this.createTracesWithBody(
-        this.config.projectId,
-        spanData,
-        { timeoutInSeconds: 30 }
-      );
+      const response = await this.createTracesWithBody(this.config.projectId, spanData, {
+        timeoutInSeconds: 30,
+      });
 
       logger.debug(`Export successful, response data: ${JSON.stringify(response)}`);
-        this.logTraceUrls(response);
-        resultCallback({ code: ExportResultCode.SUCCESS });
+      this.logTraceUrls(response);
+      resultCallback({ code: ExportResultCode.SUCCESS });
     } catch (error) {
       logger.error('Error exporting spans:', error);
       logger.debug(`Error details: ${error instanceof Error ? error.stack : String(error)}`);
@@ -81,7 +79,7 @@ export class JSONSpanExporter implements SpanExporter {
         };
 
     const spanType = span.attributes?.['lilypad.type'] as string | undefined;
-    
+
     const result: SerializedSpan = {
       trace_id: spanContext.traceId,
       span_id: spanContext.spanId,
@@ -98,7 +96,7 @@ export class JSONSpanExporter implements SpanExporter {
       type: spanType,
       attributes: span.attributes || {},
       status: SpanStatusCode[span.status.code],
-      session_id: span.attributes?.['lilypad.session_id'] as string | null || null,
+      session_id: (span.attributes?.['lilypad.session_id'] as string | null) || null,
       events: span.events.map((event) => ({
         name: event.name,
         attributes: event.attributes || {},
@@ -126,20 +124,20 @@ export class JSONSpanExporter implements SpanExporter {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const clientOptions = (this.client as any)._options;
     const { fetcher } = await import('../../lilypad/generated/core/fetcher');
-    
+
     // Get base URL - prefer baseUrl over environment
-    const baseUrl = await clientOptions.baseUrl || await clientOptions.environment;
+    const baseUrl = (await clientOptions.baseUrl) || (await clientOptions.environment);
     const fullUrl = `${baseUrl}/projects/${encodeURIComponent(projectUuid)}/traces`;
-    
+
     logger.info(`[EXPORT] Exporting to URL: ${fullUrl}`);
-    logger.info(`[EXPORT] Using API Key: ${await clientOptions.apiKey ? '[REDACTED]' : 'None'}`);
+    logger.info(`[EXPORT] Using API Key: ${(await clientOptions.apiKey) ? '[REDACTED]' : 'None'}`);
     logger.info(`[EXPORT] Sending ${spanData.length} spans`);
     logger.debug(`[EXPORT] Request body: ${JSON.stringify(spanData, null, 2)}`);
-    
+
     // Log the exact timestamp for correlation with server logs
     const exportTimestamp = new Date().toISOString();
     logger.info(`[EXPORT] Export timestamp: ${exportTimestamp}`);
-    
+
     let response;
     try {
       response = await fetcher<TracesQueueResponse>({
@@ -157,7 +155,9 @@ export class JSONSpanExporter implements SpanExporter {
         abortSignal: requestOptions?.abortSignal,
       });
     } catch (fetchError) {
-      logger.error(`[EXPORT] ❌ Fetch error: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+      logger.error(
+        `[EXPORT] ❌ Fetch error: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
+      );
       if (fetchError instanceof Error && 'cause' in fetchError) {
         logger.error(`[EXPORT] ❌ Fetch error cause: ${JSON.stringify(fetchError.cause)}`);
       }
@@ -171,8 +171,12 @@ export class JSONSpanExporter implements SpanExporter {
 
     // Handle errors similar to the generated client
     if (response.error.reason === 'status-code') {
-      logger.error(`[EXPORT] ❌ HTTP Error ${response.error.statusCode}: ${JSON.stringify(response.error.body)}`);
-      throw new Error(`Failed to export spans: ${response.error.statusCode} ${JSON.stringify(response.error.body)}`);
+      logger.error(
+        `[EXPORT] ❌ HTTP Error ${response.error.statusCode}: ${JSON.stringify(response.error.body)}`,
+      );
+      throw new Error(
+        `Failed to export spans: ${response.error.statusCode} ${JSON.stringify(response.error.body)}`,
+      );
     }
 
     switch (response.error.reason) {
@@ -183,8 +187,12 @@ export class JSONSpanExporter implements SpanExporter {
         logger.error(`[EXPORT] ❌ Unknown error: ${response.error.errorMessage}`);
         throw new Error(response.error.errorMessage);
       case 'non-json':
-        logger.error(`[EXPORT] ❌ Non-JSON response ${response.error.statusCode}: ${response.error.rawBody}`);
-        throw new Error(`Failed to export spans: ${response.error.statusCode} ${response.error.rawBody}`);
+        logger.error(
+          `[EXPORT] ❌ Non-JSON response ${response.error.statusCode}: ${response.error.rawBody}`,
+        );
+        throw new Error(
+          `Failed to export spans: ${response.error.statusCode} ${response.error.rawBody}`,
+        );
     }
   }
 
