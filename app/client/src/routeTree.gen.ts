@@ -19,6 +19,7 @@ import { Route as JoinTokenImport } from './routes/join.$token'
 import { Route as AuthLoginImport } from './routes/auth.login'
 import { Route as AuthCallbackImport } from './routes/auth.callback'
 import { Route as AuthProjectsIndexImport } from './routes/_auth/projects/index'
+import { Route as AuthLoginTestImport } from './routes/auth.login.test'
 import { Route as AuthSettingsSplatImport } from './routes/_auth/settings.$'
 import { Route as AuthProjectsProjectUuidIndexImport } from './routes/_auth/projects/$projectUuid.index'
 import { Route as AuthProjectsProjectsProjectUuidImport } from './routes/_auth/projects/projects.$projectUuid'
@@ -75,6 +76,12 @@ const AuthProjectsIndexRoute = AuthProjectsIndexImport.update({
   id: '/projects/',
   path: '/projects/',
   getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthLoginTestRoute = AuthLoginTestImport.update({
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => AuthLoginRoute,
 } as any)
 
 const AuthSettingsSplatRoute = AuthSettingsSplatImport.update({
@@ -235,6 +242,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/$'
       preLoaderRoute: typeof AuthSettingsSplatImport
       parentRoute: typeof AuthImport
+    }
+    '/auth/login/test': {
+      id: '/auth/login/test'
+      path: '/test'
+      fullPath: '/auth/login/test'
+      preLoaderRoute: typeof AuthLoginTestImport
+      parentRoute: typeof AuthLoginImport
     }
     '/_auth/projects/': {
       id: '/_auth/projects/'
@@ -434,13 +448,26 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface AuthLoginRouteChildren {
+  AuthLoginTestRoute: typeof AuthLoginTestRoute
+}
+
+const AuthLoginRouteChildren: AuthLoginRouteChildren = {
+  AuthLoginTestRoute: AuthLoginTestRoute,
+}
+
+const AuthLoginRouteWithChildren = AuthLoginRoute._addFileChildren(
+  AuthLoginRouteChildren,
+)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
-  '/auth/login': typeof AuthLoginRoute
+  '/auth/login': typeof AuthLoginRouteWithChildren
   '/join/$token': typeof JoinTokenRoute
   '/settings/$': typeof AuthSettingsSplatRoute
+  '/auth/login/test': typeof AuthLoginTestRoute
   '/projects': typeof AuthProjectsIndexRoute
   '/projects/$projectUuid/playground': typeof AuthProjectsProjectUuidPlaygroundRouteRouteWithChildren
   '/projects/projects/$projectUuid': typeof AuthProjectsProjectsProjectUuidRoute
@@ -461,9 +488,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
-  '/auth/login': typeof AuthLoginRoute
+  '/auth/login': typeof AuthLoginRouteWithChildren
   '/join/$token': typeof JoinTokenRoute
   '/settings/$': typeof AuthSettingsSplatRoute
+  '/auth/login/test': typeof AuthLoginTestRoute
   '/projects': typeof AuthProjectsIndexRoute
   '/projects/$projectUuid/playground': typeof AuthProjectsProjectUuidPlaygroundRouteRouteWithChildren
   '/projects/projects/$projectUuid': typeof AuthProjectsProjectsProjectUuidRoute
@@ -484,9 +512,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
-  '/auth/login': typeof AuthLoginRoute
+  '/auth/login': typeof AuthLoginRouteWithChildren
   '/join/$token': typeof JoinTokenRoute
   '/_auth/settings/$': typeof AuthSettingsSplatRoute
+  '/auth/login/test': typeof AuthLoginTestRoute
   '/_auth/projects/': typeof AuthProjectsIndexRoute
   '/_auth/projects/$projectUuid/playground': typeof AuthProjectsProjectUuidPlaygroundRouteRouteWithChildren
   '/_auth/projects/projects/$projectUuid': typeof AuthProjectsProjectsProjectUuidRoute
@@ -513,6 +542,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/join/$token'
     | '/settings/$'
+    | '/auth/login/test'
     | '/projects'
     | '/projects/$projectUuid/playground'
     | '/projects/projects/$projectUuid'
@@ -535,6 +565,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/join/$token'
     | '/settings/$'
+    | '/auth/login/test'
     | '/projects'
     | '/projects/$projectUuid/playground'
     | '/projects/projects/$projectUuid'
@@ -556,6 +587,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/join/$token'
     | '/_auth/settings/$'
+    | '/auth/login/test'
     | '/_auth/projects/'
     | '/_auth/projects/$projectUuid/playground'
     | '/_auth/projects/projects/$projectUuid'
@@ -578,7 +610,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
-  AuthLoginRoute: typeof AuthLoginRoute
+  AuthLoginRoute: typeof AuthLoginRouteWithChildren
   JoinTokenRoute: typeof JoinTokenRoute
 }
 
@@ -586,7 +618,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,
-  AuthLoginRoute: AuthLoginRoute,
+  AuthLoginRoute: AuthLoginRouteWithChildren,
   JoinTokenRoute: JoinTokenRoute,
 }
 
@@ -630,7 +662,10 @@ export const routeTree = rootRoute
       "filePath": "auth.callback.tsx"
     },
     "/auth/login": {
-      "filePath": "auth.login.tsx"
+      "filePath": "auth.login.tsx",
+      "children": [
+        "/auth/login/test"
+      ]
     },
     "/join/$token": {
       "filePath": "join.$token.tsx"
@@ -638,6 +673,10 @@ export const routeTree = rootRoute
     "/_auth/settings/$": {
       "filePath": "_auth/settings.$.tsx",
       "parent": "/_auth"
+    },
+    "/auth/login/test": {
+      "filePath": "auth.login.test.tsx",
+      "parent": "/auth/login"
     },
     "/_auth/projects/": {
       "filePath": "_auth/projects/index.tsx",

@@ -33,4 +33,20 @@ jobs:
       - name: Run tests
         run: |
           cd app/client
-          bun test
+          bun test --reporter=junit --reporter-outfile=./test-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: app/client/test-results.xml
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            app/client/test-results.xml
+          check_name: Client Test Results
+          comment_mode: failures
