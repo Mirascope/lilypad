@@ -1,0 +1,7 @@
+[test]
+# Test configuration for bun test
+timeout = 10000
+root = "."
+
+# Coverage configuration
+coverage = true
