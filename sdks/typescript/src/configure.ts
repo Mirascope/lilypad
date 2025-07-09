@@ -21,8 +21,8 @@ export async function configure(config: LilypadConfig): Promise<void> {
   }
 
   // Set up auto instrumentation early if enabled
-  logger.debug(`auto_llm config value: ${config.auto_llm}`);
-  if (config.auto_llm) {
+  logger.debug(`autoLlm config value: ${config.autoLlm}`);
+  if (config.autoLlm) {
     logger.debug('Attempting to load OpenAI instrumentation...');
     try {
       const { setupOpenAIHooks } = await import('./instrumentors/openai-hook');
@@ -34,7 +34,7 @@ export async function configure(config: LilypadConfig): Promise<void> {
       logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
     }
   } else {
-    logger.debug('auto_llm is disabled, skipping OpenAI instrumentation');
+    logger.debug('autoLlm is disabled, skipping OpenAI instrumentation');
   }
 
   // Validate required config
@@ -59,8 +59,8 @@ export async function configure(config: LilypadConfig): Promise<void> {
       process.env.LILYPAD_REMOTE_CLIENT_URL || config.remoteClientUrl || 'https://app.lilypad.so',
     logLevel: 'info',
     serviceName: 'lilypad-node-app',
-    auto_llm: false,
-    auto_http: false,
+    autoLlm: false,
+    autoHttp: false,
     preserveExistingPropagator: false,
     ...config,
     batchProcessorOptions: {

@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 
-// With auto_llm: true, you don't need to call lilypad.configure() in this file
+// With autoLlm: true, you don't need to call lilypad.configure() in this file
 // register.ts will automatically instrument OpenAI
 
 async function main() {

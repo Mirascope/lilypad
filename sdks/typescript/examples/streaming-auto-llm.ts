@@ -1,5 +1,5 @@
 /**
- * Streaming example with auto_llm
+ * Streaming example with autoLlm
  *
  * Run with:
  *   export $(cat .env | xargs) && tsx --require ../dist/register-improved.js streaming-auto-llm.ts
@@ -12,7 +12,7 @@ const openai = new OpenAI({
 });
 
 async function main() {
-  console.log('🌊 Streaming auto_llm example\n');
+  console.log('🌊 Streaming autoLlm example\n');
 
   const stream = await openai.chat.completions.create({
     model: 'gpt-3.5-turbo',

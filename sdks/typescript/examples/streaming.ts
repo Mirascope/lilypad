@@ -12,7 +12,7 @@ async function main() {
     apiKey: process.env.LILYPAD_API_KEY || 'test-api-key',
     projectId: process.env.LILYPAD_PROJECT_ID || 'test-project-id',
     logLevel: 'info',
-    auto_llm: true, // Enable automatic OpenAI instrumentation
+    autoLlm: true, // Enable automatic OpenAI instrumentation
   });
 
   const openai = new OpenAI({

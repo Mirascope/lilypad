@@ -39,7 +39,7 @@ export interface LilypadConfig {
    * Automatically instrument LLM libraries (OpenAI, Anthropic, etc.)
    * @default false
    */
-  auto_llm?: boolean;
+  autoLlm?: boolean;
 
   /**
    * Trace propagation format
@@ -55,7 +55,7 @@ export interface LilypadConfig {
    * Automatically instrument all HTTP clients
    * @default false
    */
-  auto_http?: boolean;
+  autoHttp?: boolean;
 
   /**
    * If true, preserve existing OpenTelemetry propagator settings

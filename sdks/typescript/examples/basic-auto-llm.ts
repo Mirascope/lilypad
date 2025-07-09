@@ -1,5 +1,5 @@
 /**
- * Basic auto_llm example with TypeScript
+ * Basic autoLlm example with TypeScript
  *
  * Run with:
  *   export $(cat .env | xargs) && tsx --require ../dist/register-improved.js basic-auto-llm.ts
@@ -12,7 +12,7 @@ const openai = new OpenAI({
 });
 
 async function main() {
-  console.log('🚀 Basic auto_llm example\n');
+  console.log('🚀 Basic autoLlm example\n');
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-3.5-turbo',
