@@ -103,9 +103,13 @@ describe('Span', () => {
     it('should create OpenTelemetry span when configured', () => {
       new Span('test-span');
 
-      expect(mockTracer.startSpan).toHaveBeenCalledWith('test-span', {
-        kind: api.SpanKind.INTERNAL,
-      });
+      expect(mockTracer.startSpan).toHaveBeenCalledWith(
+        'test-span',
+        {
+          kind: api.SpanKind.INTERNAL,
+        },
+        expect.any(Object), // The active context
+      );
       expect(mockOTelSpan.setAttribute).toHaveBeenCalledWith('lilypad.type', 'trace');
       expect(mockOTelSpan.setAttribute).toHaveBeenCalledWith(
         'lilypad.timestamp',
