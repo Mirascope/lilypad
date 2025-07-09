@@ -39,7 +39,7 @@ if (!apiKey) {
 } else {
   // Use shared context manager singleton
   getOrCreateContextManager();
-  
+
   // Save settings for manual span() support
   setSettings({
     apiKey,

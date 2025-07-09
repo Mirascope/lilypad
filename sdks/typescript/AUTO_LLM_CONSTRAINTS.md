@@ -1,8 +1,8 @@
 # Auto-LLM Instrumentation Constraints in TypeScript
 
-## ⚠️ Important: autoLlm Option Does Not Work
+## ⚠️ Important: autoLlm Option Has Limited Reliability
 
-**The `autoLlm: true` configuration option does not work reliably in practice.** While the documentation below explains the theoretical constraints, in reality, even with correct import order, the instrumentation fails due to various technical issues.
+**The `autoLlm: true` configuration option has significant limitations and only works under specific conditions.** While it can work in some cases, the `--require` flag is much more reliable.
 
 ## Recommended Solution: Use --require Flag
 
@@ -14,25 +14,33 @@ npx tsx --require ./dist/register.js your-script.ts
 await configure({ autoLlm: true });
 ```
 
-## Why autoLlm Fails
+## When autoLlm Might Work
 
-### 1. Module Loading Order Issues
-Even with dynamic imports after `configure()`, the instrumentation is unreliable:
+The `autoLlm` option can work in simple cases if you strictly follow the import order:
 
 ```typescript
-// ❌ Theoretically correct but doesn't work in practice
+// ✅ This might work (but not guaranteed)
 await configure({ autoLlm: true });
-const { default: OpenAI } = await import('openai');
+const { default: OpenAI } = await import('openai'); // Dynamic import AFTER configure
 ```
 
-### 2. ImportInTheMiddle Errors
+However, it often fails due to:
+
+### 1. ImportInTheMiddle Errors
+
 The OpenTelemetry instrumentation library throws errors:
+
 ```
 TypeError: ImportInTheMiddle is not a constructor
 ```
 
-### 3. Context Manager Conflicts
+### 2. Context Manager Conflicts
+
 Multiple TracerProvider instances can be created, breaking parent-child span relationships.
+
+### 3. Module Cache Issues
+
+If OpenAI is already in the module cache (from another file), instrumentation won't apply.
 
 ## The Working Solution: register.js
 
@@ -76,22 +84,23 @@ const openai = new OpenAI();
 // Manual span will be parent of auto-instrumented OpenAI call
 await span('process-request', async (s) => {
   s.metadata({ userId: '123' });
-  
+
   // This call is automatically traced as a child span
   const response = await openai.chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: 'Hello!' }],
   });
-  
+
   s.metadata({ responseId: response.id });
 });
 ```
 
 ## Technical Background
 
-### Why Module._load Hooks Don't Work Well
+### Why Module.\_load Hooks Don't Work Well
 
 Node.js module loading is complex, especially with:
+
 - TypeScript transpilation
 - ESM vs CommonJS interop
 - Module caching
@@ -133,10 +142,27 @@ await configure({
 ```
 
 Then run with:
+
 ```bash
 npx tsx --require ./dist/register.js your-script.ts
 ```
 
+## Summary: When to Use Each Approach
+
+### Use `--require` (Recommended)
+
+- ✅ Always works reliably
+- ✅ No import order constraints
+- ✅ Works with existing code
+- ✅ Proper parent-child span relationships
+
+### Use `autoLlm: true` (Limited Use Cases)
+
+- ⚠️ Only works with strict dynamic import order
+- ⚠️ May fail with ImportInTheMiddle errors
+- ⚠️ Not recommended for production
+- ✅ Might be useful if you can't modify the startup command
+
 ## Conclusion
 
-The `autoLlm` option is effectively deprecated. Always use `--require ./dist/register.js` for reliable OpenAI auto-instrumentation.
+While `autoLlm` can work in specific scenarios with careful import ordering, the `--require ./dist/register.js` approach is strongly recommended for its reliability and ease of use.

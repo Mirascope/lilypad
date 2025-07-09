@@ -19,24 +19,24 @@ export async function configure(config: LilypadConfig): Promise<void> {
   // Check if already configured via register.js
   const existingProvider = trace.getTracerProvider();
   const existingSettings = getSettings();
-  
+
   if (existingSettings && existingProvider) {
     logger.info('Lilypad SDK already configured via register.js, updating settings only');
-    
+
     // Merge new config with existing settings
     const mergedConfig = {
       ...existingSettings,
       ...config,
     };
-    
+
     setSettings(mergedConfig);
     logger.debug('Settings updated with merged configuration');
-    
+
     // If user provides additional exporter config, we could add it to existing provider
     // For now, we just return since the provider is already set up
     return;
   }
-  
+
   if (isConfigured()) {
     logger.warn('Lilypad SDK already configured. Skipping reconfiguration.');
     return;

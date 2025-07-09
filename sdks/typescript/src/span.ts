@@ -80,11 +80,15 @@ export class Span {
     // Create OpenTelemetry span with proper parent context
     const tracer = trace.getTracer('lilypad');
     const activeContext = context.active();
-    
+
     // Start span with current context as parent
-    this._span = tracer.startSpan(validatedName, {
-      kind: SpanKind.INTERNAL,
-    }, activeContext);
+    this._span = tracer.startSpan(
+      validatedName,
+      {
+        kind: SpanKind.INTERNAL,
+      },
+      activeContext,
+    );
 
     // Set up context with the new span
     this._context = trace.setSpan(activeContext, this._span);

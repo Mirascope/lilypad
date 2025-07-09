@@ -18,16 +18,16 @@ export function getOrCreateContextManager(): ContextManager {
   if (!globalContextManager) {
     logger.debug('Creating new global AsyncLocalStorageContextManager');
     globalContextManager = new AsyncLocalStorageContextManager();
-    
+
     // Enable and set as global context manager
     const enabled = globalContextManager.enable();
     context.setGlobalContextManager(enabled);
-    
+
     logger.debug('Global context manager initialized and set');
   } else {
     logger.debug('Reusing existing global context manager');
   }
-  
+
   return globalContextManager;
 }
 

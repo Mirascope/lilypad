@@ -1,5 +1,5 @@
-import { span, configure } from "../src";
-import OpenAI from "openai";
+import { span, configure } from '../src';
+import OpenAI from 'openai';
 
 // Note: When running with --require flag, you may see ImportInTheMiddle errors.
 // These are harmless warnings and don't affect functionality.
@@ -15,7 +15,7 @@ async function main() {
   await configure({
     apiKey: process.env.LILYPAD_API_KEY!,
     projectId: process.env.LILYPAD_PROJECT_ID!,
-    logLevel: 'debug',  // Enable debug logging
+    logLevel: 'debug', // Enable debug logging
     // Don't set autoLlm here - it's already handled by register.js
   });
 
@@ -26,20 +26,20 @@ async function main() {
 
   async function answerQuestion(question: string): Promise<string | null> {
     const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: `Answer this question: ${question}` }],
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: `Answer this question: ${question}` }],
     });
-    
+
     return response.choices[0].message.content;
   }
 
   // Create a local span that wraps the LLM call
-  await span("local_span", async (s) => {
+  await span('local_span', async (s) => {
     // Log the span context
     console.log(`[DEBUG] Parent span ID: ${s.span_id}`);
     console.log(`[DEBUG] Parent span context:`, s.context);
-    
-    const response = await answerQuestion("What is the capital of France?");
+
+    const response = await answerQuestion('What is the capital of France?');
     console.log(response);
   });
 }
