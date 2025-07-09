@@ -19,19 +19,22 @@ vi.mock('../shutdown', () => ({
 }));
 
 vi.mock('../utils/stream-wrapper', () => ({
-  StreamWrapper: vi.fn().mockImplementation((stream) => {
-    const handlers: Record<string, Function[]> = {};
+  StreamWrapper: vi.fn().mockImplementation((stream, span, options) => {
+    // Return an async iterable that processes chunks through callbacks
     return {
-      on: (event: string, handler: Function) => {
-        if (!handlers[event]) handlers[event] = [];
-        handlers[event].push(handler);
-      },
-      emit: (event: string, ...args: any[]) => {
-        if (handlers[event]) {
-          handlers[event].forEach((h) => h(...args));
+      async *[Symbol.asyncIterator]() {
+        if (options?.onChunk) {
+          for await (const chunk of stream) {
+            options.onChunk(chunk);
+            yield chunk;
+          }
+        } else {
+          yield* stream;
+        }
+        if (options?.onFinalize) {
+          options.onFinalize();
         }
       },
-      [Symbol.asyncIterator]: () => stream[Symbol.asyncIterator](),
     };
   }),
   isAsyncIterable: (obj: any) => obj && typeof obj[Symbol.asyncIterator] === 'function',
@@ -301,6 +304,340 @@ describe('OpenAI Instrumentation', () => {
 
       const attributes = mockTracer.startActiveSpan.mock.calls[0][1].attributes;
       expect(attributes['gen_ai.request.top_p']).toBe(0.95);
+    });
+
+    it('should handle null response', async () => {
+      const originalFn = vi.fn().mockResolvedValue(null);
+      const params = { model: 'gpt-4' };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      // Should not crash
+      expect(mockSpan.setStatus).toHaveBeenCalledWith({ code: SpanStatusCode.OK });
+      expect(mockSpan.end).toHaveBeenCalled();
+    });
+
+    it('should handle empty messages array', async () => {
+      const originalFn = vi.fn().mockResolvedValue({});
+      const params = {
+        model: 'gpt-4',
+        messages: [],
+      };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      // Should not call addEvent for messages
+      expect(mockSpan.addEvent).not.toHaveBeenCalledWith(
+        expect.stringMatching(/gen_ai\.\w+\.message/),
+        expect.any(Object),
+      );
+    });
+
+    it('should handle message without content', async () => {
+      const originalFn = vi.fn().mockResolvedValue({});
+      const params = {
+        model: 'gpt-4',
+        messages: [{ role: 'user' }], // No content
+      };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.user.message', {
+        'gen_ai.system': 'openai',
+      });
+    });
+
+    it('should handle non-Error exceptions', async () => {
+      const error = 'String error';
+      const originalFn = vi.fn().mockRejectedValue(error);
+      const params = { model: 'gpt-4' };
+
+      await expect(instrumentOpenAICall(originalFn, [params])).rejects.toBe(error);
+
+      expect(mockSpan.setAttributes).toHaveBeenCalledWith({
+        'gen_ai.error.type': 'Error',
+        'gen_ai.error.message': 'String error',
+      });
+      expect(mockSpan.setStatus).toHaveBeenCalledWith({
+        code: SpanStatusCode.ERROR,
+        message: 'String error',
+      });
+    });
+
+    it('should handle response with empty choices array', async () => {
+      const originalFn = vi.fn().mockResolvedValue({
+        choices: [],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 0,
+          total_tokens: 10,
+        },
+      });
+
+      const params = { model: 'gpt-4' };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      // Should not call setAttribute for finish_reasons
+      expect(mockSpan.setAttribute).not.toHaveBeenCalledWith(
+        'gen_ai.response.finish_reasons',
+        expect.any(Array),
+      );
+    });
+
+    it('should handle choice without message', async () => {
+      const originalFn = vi.fn().mockResolvedValue({
+        choices: [
+          {
+            finish_reason: 'stop',
+            // No message property
+          },
+        ],
+      });
+
+      const params = { model: 'gpt-4' };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
+        'gen_ai.system': 'openai',
+        index: 0,
+        finish_reason: 'stop',
+        message: '{"role":"assistant"}',
+      });
+    });
+
+    it('should record response ID', async () => {
+      const originalFn = vi.fn().mockResolvedValue({
+        id: 'chatcmpl-123',
+        choices: [],
+      });
+
+      const params = { model: 'gpt-4' };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith('gen_ai.response.id', 'chatcmpl-123');
+    });
+
+    it('should record service tier when not auto', async () => {
+      const originalFn = vi.fn().mockResolvedValue({
+        service_tier: 'default',
+        choices: [],
+      });
+
+      const params = { model: 'gpt-4' };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith(
+        'gen_ai.openai.response.service_tier',
+        'default',
+      );
+    });
+
+    it('should not record service tier when auto', async () => {
+      const originalFn = vi.fn().mockResolvedValue({
+        service_tier: 'auto',
+        choices: [],
+      });
+
+      const params = { model: 'gpt-4' };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      expect(mockSpan.setAttribute).not.toHaveBeenCalledWith(
+        'gen_ai.openai.response.service_tier',
+        'auto',
+      );
+    });
+
+    it('should handle streaming response with complete flow', async () => {
+      const chunks = [
+        {
+          choices: [
+            {
+              delta: { content: 'Hello' },
+            },
+          ],
+        },
+        {
+          choices: [
+            {
+              delta: { content: ' world' },
+              finish_reason: 'stop',
+            },
+          ],
+        },
+        {
+          choices: [
+            {
+              delta: {},
+              finish_reason: 'stop',
+            },
+          ],
+        },
+      ];
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          for (const chunk of chunks) {
+            yield chunk;
+          }
+        },
+      };
+
+      const originalFn = vi.fn().mockResolvedValue(mockStream);
+
+      // Mock StreamWrapper to actually call callbacks
+      vi.mocked(StreamWrapper).mockImplementationOnce((stream, span, options) => {
+        // Process chunks through callbacks
+        const processStream = async () => {
+          for await (const chunk of stream) {
+            if (options?.onChunk) {
+              options.onChunk(chunk);
+            }
+          }
+          if (options?.onFinalize) {
+            options.onFinalize();
+          }
+        };
+        processStream();
+        return stream;
+      });
+
+      const params = { model: 'gpt-4', stream: true };
+      const _result = await instrumentOpenAICall(originalFn, [params]);
+
+      // Wait for async processing
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
+        'gen_ai.system': 'openai',
+        index: 0,
+        finish_reason: 'stop',
+        message: '{"role":"assistant","content":"Hello world"}',
+      });
+
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith('gen_ai.response.finish_reasons', [
+        'stop',
+      ]);
+      expect(mockSpan.setStatus).toHaveBeenCalledWith({ code: SpanStatusCode.OK });
+    });
+
+    it('should handle streaming response with no content', async () => {
+      const chunks = [
+        {
+          choices: [
+            {
+              delta: {},
+            },
+          ],
+        },
+      ];
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          for (const chunk of chunks) {
+            yield chunk;
+          }
+        },
+      };
+
+      const originalFn = vi.fn().mockResolvedValue(mockStream);
+
+      // Mock StreamWrapper to actually call callbacks
+      vi.mocked(StreamWrapper).mockImplementationOnce((stream, span, options) => {
+        const processStream = async () => {
+          for await (const chunk of stream) {
+            if (options?.onChunk) {
+              options.onChunk(chunk);
+            }
+          }
+          if (options?.onFinalize) {
+            options.onFinalize();
+          }
+        };
+        processStream();
+        return stream;
+      });
+
+      const params = { model: 'gpt-4', stream: true };
+      await instrumentOpenAICall(originalFn, [params]);
+
+      // Wait for async processing
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Should still complete without error
+      expect(mockSpan.setStatus).toHaveBeenCalledWith({ code: SpanStatusCode.OK });
+    });
+
+    it('should handle streaming response with no choices', async () => {
+      const chunks = [
+        {
+          // No choices property
+        },
+      ];
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          for (const chunk of chunks) {
+            yield chunk;
+          }
+        },
+      };
+
+      const originalFn = vi.fn().mockResolvedValue(mockStream);
+
+      // Mock StreamWrapper to actually call callbacks
+      vi.mocked(StreamWrapper).mockImplementationOnce((stream, span, options) => {
+        const processStream = async () => {
+          for await (const chunk of stream) {
+            if (options?.onChunk) {
+              options.onChunk(chunk);
+            }
+          }
+          if (options?.onFinalize) {
+            options.onFinalize();
+          }
+        };
+        processStream();
+        return stream;
+      });
+
+      const params = { model: 'gpt-4', stream: true };
+      await instrumentOpenAICall(originalFn, [params]);
+
+      // Wait for async processing
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Should still complete without error
+      expect(mockSpan.setStatus).toHaveBeenCalledWith({ code: SpanStatusCode.OK });
+    });
+
+    it('should handle choices without finish_reason', async () => {
+      const originalFn = vi.fn().mockResolvedValue({
+        choices: [
+          {
+            message: { role: 'assistant', content: 'Hello!' },
+            // No finish_reason
+          },
+        ],
+      });
+
+      const params = { model: 'gpt-4' };
+
+      await instrumentOpenAICall(originalFn, [params]);
+
+      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
+        'gen_ai.system': 'openai',
+        index: 0,
+        finish_reason: 'error', // Default value
+        message: '{"role":"assistant","content":"Hello!"}',
+      });
+
+      // Should not set finish_reasons attribute with empty array
+      expect(mockSpan.setAttribute).not.toHaveBeenCalledWith('gen_ai.response.finish_reasons', []);
     });
   });
 });

@@ -29,7 +29,7 @@ vi.mock('../utils/stream-wrapper', () => ({
       },
       emit: (event: string, ...args: any[]) => {
         if (handlers[event]) {
-          handlers[event].forEach((h) => h(...args));
+          handlers[event].forEach((handler) => handler(...args));
         }
       },
       [Symbol.asyncIterator]: () => stream[Symbol.asyncIterator](),
@@ -143,6 +143,34 @@ describe('OpenAIAutoInstrumentation', () => {
       expect(patched.OpenAI).toBeDefined();
       const instance = new patched.OpenAI({});
       expect(instance.chat.completions.create).not.toBe(mockCreate);
+    });
+
+    it('should handle module with additional exports', () => {
+      const mockCreate = vi.fn();
+      const OpenAI = class {
+        chat = {
+          completions: {
+            create: mockCreate,
+          },
+        };
+      };
+
+      const mockModule = {
+        default: OpenAI,
+        OpenAI,
+        someOtherExport: 'value',
+        anotherExport: { nested: true },
+      };
+
+      const patched = (instrumentation as any).patchOpenAIModule(mockModule);
+
+      // OpenAI exports should be wrapped
+      expect(patched.default).toBeDefined();
+      expect(patched.OpenAI).toBeDefined();
+
+      // Other exports should be preserved as-is
+      expect(patched.someOtherExport).toBe('value');
+      expect(patched.anotherExport).toEqual({ nested: true });
     });
 
     it('should handle missing OpenAI class', () => {

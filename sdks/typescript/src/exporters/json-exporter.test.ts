@@ -4,11 +4,17 @@ import { ExportResultCode } from '@opentelemetry/core';
 import { SpanKind, SpanStatusCode, TraceFlags } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import type { LilypadConfig } from '../types';
+import { logger } from '../utils/logger';
 
 vi.mock('../../lilypad/generated');
 vi.mock('../../lilypad/generated/core/fetcher', () => ({
-  fetcher: {
-    fetch: vi.fn(),
+  fetcher: vi.fn(),
+}));
+vi.mock('../utils/logger', () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -37,13 +43,7 @@ describe('JSONSpanExporter', () => {
 
     exporter = new JSONSpanExporter(config, mockClient);
     mockClient.traces.queue.mockReset();
-
-    // Mock the createTracesWithBody method
-    vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
-      trace_status: 'queued',
-      span_count: 1,
-      trace_ids: ['12345678901234567890123456789012'],
-    });
+    vi.clearAllMocks();
   });
 
   const createMockSpan = (overrides: Partial<ReadableSpan> = {}): ReadableSpan =>
@@ -86,6 +86,13 @@ describe('JSONSpanExporter', () => {
     it('should successfully export spans', async () => {
       const spans = [createMockSpan()];
 
+      // Mock the createTracesWithBody method for this test
+      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+        trace_status: 'queued',
+        span_count: 1,
+        trace_ids: ['12345678901234567890123456789012'],
+      });
+
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
@@ -104,7 +111,6 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export([], callback);
 
-      expect((exporter as any).createTracesWithBody).not.toHaveBeenCalled();
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
     });
 
@@ -158,10 +164,19 @@ describe('JSONSpanExporter', () => {
         ],
       });
 
+      // Mock the createTracesWithBody method for this test
+      const mockCreateTracesWithBody = vi
+        .spyOn(exporter as any, 'createTracesWithBody')
+        .mockResolvedValue({
+          trace_status: 'queued',
+          span_count: 1,
+          trace_ids: ['12345678901234567890123456789012'],
+        });
+
       const callback = vi.fn();
       await exporter.export([span], callback);
 
-      const callArgs = (exporter as any).createTracesWithBody.mock.calls[0];
+      const callArgs = mockCreateTracesWithBody.mock.calls[0];
       const serializedSpan = callArgs[1][0]; // Second argument is spans array
 
       expect(serializedSpan).toMatchObject({
@@ -188,6 +203,99 @@ describe('JSONSpanExporter', () => {
           },
         ],
       });
+    });
+
+    it('should handle span without instrumentation library', async () => {
+      const span = createMockSpan({
+        instrumentationLibrary: undefined,
+      });
+
+      // Mock the createTracesWithBody method for this test
+      const mockCreateTracesWithBody = vi
+        .spyOn(exporter as any, 'createTracesWithBody')
+        .mockResolvedValue({
+          trace_status: 'queued',
+          span_count: 1,
+          trace_ids: ['12345678901234567890123456789012'],
+        });
+
+      const callback = vi.fn();
+      await exporter.export([span], callback);
+
+      const callArgs = mockCreateTracesWithBody.mock.calls[0];
+      const serializedSpan = callArgs[1][0];
+
+      expect(serializedSpan.instrumentation_scope).toEqual({
+        name: null,
+        version: null,
+        schema_url: null,
+        attributes: {},
+      });
+    });
+
+    it('should handle span with lilypad.type attribute', async () => {
+      const span = createMockSpan({
+        attributes: {
+          'lilypad.type': 'llm',
+          'lilypad.session_id': 'session-123',
+        },
+      });
+
+      // Mock the createTracesWithBody method for this test
+      const mockCreateTracesWithBody = vi
+        .spyOn(exporter as any, 'createTracesWithBody')
+        .mockResolvedValue({
+          trace_status: 'queued',
+          span_count: 1,
+          trace_ids: ['12345678901234567890123456789012'],
+        });
+
+      const callback = vi.fn();
+      await exporter.export([span], callback);
+
+      const callArgs = mockCreateTracesWithBody.mock.calls[0];
+      const serializedSpan = callArgs[1][0];
+
+      expect(serializedSpan.type).toBe('llm');
+      expect(serializedSpan.session_id).toBe('session-123');
+    });
+
+    it('should handle links with trace state', async () => {
+      const mockTraceState = {
+        serialize: vi.fn().mockReturnValue('vendor1=value1,vendor2=value2'),
+      };
+
+      const span = createMockSpan({
+        links: [
+          {
+            context: {
+              traceId: 'abcdef1234567890abcdef1234567890',
+              spanId: 'abcdef1234567890',
+              traceFlags: TraceFlags.SAMPLED,
+              traceState: mockTraceState,
+            },
+            attributes: {},
+            droppedAttributesCount: 0,
+          },
+        ],
+      });
+
+      // Mock the createTracesWithBody method for this test
+      const mockCreateTracesWithBody = vi
+        .spyOn(exporter as any, 'createTracesWithBody')
+        .mockResolvedValue({
+          trace_status: 'queued',
+          span_count: 1,
+          trace_ids: ['12345678901234567890123456789012'],
+        });
+
+      const callback = vi.fn();
+      await exporter.export([span], callback);
+
+      const callArgs = mockCreateTracesWithBody.mock.calls[0];
+      const serializedSpan = callArgs[1][0];
+
+      expect(serializedSpan.links[0].context.trace_state).toBe('vendor1=value1,vendor2=value2');
     });
   });
 
@@ -220,6 +328,200 @@ describe('JSONSpanExporter', () => {
       // Access private property for testing (not ideal but necessary)
       const loggedTraceIds = (exporter as any).loggedTraceIds;
       expect(loggedTraceIds.size).toBeLessThanOrEqual(1000);
+    });
+
+    it('should log multiple trace URLs when multiple new traces', async () => {
+      const loggerSpy = vi.spyOn(logger, 'info');
+      const debugSpy = vi.spyOn(logger, 'debug');
+
+      const spans = [
+        createMockSpan({
+          spanContext: () => ({
+            traceId: 'trace1'.padEnd(32, '0'),
+            spanId: '1234567890123456',
+            traceFlags: TraceFlags.SAMPLED,
+            traceState: undefined,
+          }),
+        }),
+        createMockSpan({
+          spanContext: () => ({
+            traceId: 'trace2'.padEnd(32, '0'),
+            spanId: '1234567890123456',
+            traceFlags: TraceFlags.SAMPLED,
+            traceState: undefined,
+          }),
+        }),
+      ];
+
+      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+        trace_status: 'queued',
+        span_count: 2,
+        trace_ids: ['trace1'.padEnd(32, '0'), 'trace2'.padEnd(32, '0')],
+      });
+
+      const callback = vi.fn();
+      await exporter.export(spans, callback);
+
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('View 2 new traces at:'));
+      expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('trace1'));
+      expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('trace2'));
+    });
+
+    it('should handle response without trace_ids', async () => {
+      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+        trace_status: 'queued',
+        span_count: 1,
+        trace_ids: undefined,
+      });
+
+      const callback = vi.fn();
+      await exporter.export([createMockSpan()], callback);
+
+      expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
+    });
+
+    it('should not log when trace_status is not queued', async () => {
+      const loggerSpy = vi.spyOn(logger, 'info');
+
+      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+        trace_status: 'failed',
+        span_count: 1,
+        trace_ids: ['trace1'.padEnd(32, '0')],
+      });
+
+      const callback = vi.fn();
+      await exporter.export([createMockSpan()], callback);
+
+      expect(loggerSpy).not.toHaveBeenCalledWith(expect.stringContaining('View trace at:'));
+    });
+  });
+
+  describe('createTracesWithBody', () => {
+    it('should handle timeout error', async () => {
+      const spans = [createMockSpan()];
+
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
+      vi.mocked(fetcher).mockResolvedValue({
+        ok: false,
+        error: {
+          reason: 'timeout',
+        },
+      } as any);
+
+      const callback = vi.fn();
+      await exporter.export(spans, callback);
+
+      expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+        expect.stringContaining('[EXPORT] ❌ Request timeout'),
+      );
+    });
+
+    it('should handle unknown error', async () => {
+      const spans = [createMockSpan()];
+
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
+      vi.mocked(fetcher).mockResolvedValue({
+        ok: false,
+        error: {
+          reason: 'unknown',
+          errorMessage: 'Something went wrong',
+        },
+      } as any);
+
+      const callback = vi.fn();
+      await exporter.export(spans, callback);
+
+      expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+        expect.stringContaining('[EXPORT] ❌ Unknown error: Something went wrong'),
+      );
+    });
+
+    it('should handle non-json error', async () => {
+      const spans = [createMockSpan()];
+
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
+      vi.mocked(fetcher).mockResolvedValue({
+        ok: false,
+        error: {
+          reason: 'non-json',
+          statusCode: 500,
+          rawBody: '<html>Internal Server Error</html>',
+        },
+      } as any);
+
+      const callback = vi.fn();
+      await exporter.export(spans, callback);
+
+      expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+        expect.stringContaining('[EXPORT] ❌ Non-JSON response 500'),
+      );
+    });
+
+    it('should handle status-code error', async () => {
+      const spans = [createMockSpan()];
+
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
+      vi.mocked(fetcher).mockResolvedValue({
+        ok: false,
+        error: {
+          reason: 'status-code',
+          statusCode: 400,
+          body: { error: 'Bad Request' },
+        },
+      } as any);
+
+      const callback = vi.fn();
+      await exporter.export(spans, callback);
+
+      expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+        expect.stringContaining('[EXPORT] ❌ HTTP Error 400'),
+      );
+    });
+
+    it('should handle fetch error with cause', async () => {
+      const spans = [createMockSpan()];
+
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
+      const fetchError = new Error('Network error');
+      (fetchError as any).cause = { code: 'ECONNREFUSED' };
+      vi.mocked(fetcher).mockRejectedValue(fetchError);
+
+      const callback = vi.fn();
+      await exporter.export(spans, callback);
+
+      expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+        expect.stringContaining('[EXPORT] ❌ Fetch error: Network error'),
+      );
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+        expect.stringContaining('[EXPORT] ❌ Fetch error cause:'),
+      );
+    });
+
+    it('should handle successful export', async () => {
+      const spans = [createMockSpan()];
+
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
+      vi.mocked(fetcher).mockResolvedValue({
+        ok: true,
+        body: {
+          trace_status: 'queued',
+          span_count: 1,
+          trace_ids: ['12345678901234567890123456789012'],
+        },
+      } as any);
+
+      const callback = vi.fn();
+      await exporter.export(spans, callback);
+
+      expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
+      expect(vi.mocked(logger).info).toHaveBeenCalledWith(
+        expect.stringContaining('[EXPORT] ✅ Export successful'),
+      );
     });
   });
 

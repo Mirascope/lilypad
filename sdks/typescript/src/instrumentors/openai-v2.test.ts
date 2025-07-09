@@ -96,6 +96,7 @@ describe('OpenAIInstrumentorV2', () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.doUnmock('openai');
+    vi.resetModules();
   });
 
   describe('getName', () => {
@@ -142,54 +143,111 @@ describe('OpenAIInstrumentorV2', () => {
     });
 
     it.skip('should throw error if OpenAI class not found', () => {
-      // Unmock first to clear any existing mocks
-      vi.doUnmock('openai');
-      vi.resetModules();
+      // Create a separate instance and use a dynamic import to avoid module caching
+      vi.isolateModules(() => {
+        vi.doMock('openai', () => ({})); // Empty module without OpenAI class
 
-      // Mock the module to return an empty object
-      vi.doMock('openai', () => ({}), { virtual: true });
+        const { OpenAIInstrumentorV2 } = require('./openai-v2');
+        const newInstrumentor = new OpenAIInstrumentorV2();
 
-      // Create a new instrumentor instance after mocking
-      const OpenAIInstrumentorV2 = require('./openai-v2').OpenAIInstrumentorV2;
-      const testInstrumentor = new OpenAIInstrumentorV2();
+        expect(() => newInstrumentor.instrument()).toThrow(
+          'OpenAI instrumentation failed: Could not find OpenAI class in module. Please ensure OpenAI is properly installed.',
+        );
 
-      expect(() => testInstrumentor.instrument()).toThrow(
-        'OpenAI instrumentation failed: Could not find OpenAI class in module. Please ensure OpenAI is properly installed.',
-      );
+        expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+          'Failed to instrument OpenAI:',
+          expect.any(Error),
+        );
+      });
     });
 
     it.skip('should handle require failure', () => {
-      // Unmock first to clear any existing mocks
-      vi.doUnmock('openai');
-      vi.resetModules();
-
-      // Mock the module to throw an error
-      vi.doMock(
-        'openai',
-        () => {
+      vi.isolateModules(() => {
+        vi.doMock('openai', () => {
           throw new Error('Module not found');
-        },
-        { virtual: true },
-      );
+        });
 
-      // Create a new instrumentor instance after mocking
-      const OpenAIInstrumentorV2 = require('./openai-v2').OpenAIInstrumentorV2;
-      const testInstrumentor = new OpenAIInstrumentorV2();
+        const { OpenAIInstrumentorV2 } = require('./openai-v2');
+        const newInstrumentor = new OpenAIInstrumentorV2();
 
-      expect(() => testInstrumentor.instrument()).toThrow(
-        'OpenAI instrumentation failed: Module not found. Please ensure OpenAI is properly installed.',
-      );
+        expect(() => newInstrumentor.instrument()).toThrow(
+          'OpenAI instrumentation failed: Module not found. Please ensure OpenAI is properly installed.',
+        );
+
+        expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+          'Failed to instrument OpenAI:',
+          expect.any(Error),
+        );
+      });
     });
 
     it('should wrap chat.completions.create on new instances', () => {
-      instrumentor.instrument();
+      // Create a mock for the original create method
+      const originalCreateMethod = vi.fn();
 
-      // The instrumentor should have wrapped the OpenAI class
-      const _instance = new mockOpenAIModule.default({ apiKey: 'test' });
+      // Create a more detailed mock OpenAI class
+      const MockOpenAIClassWithCreate = class {
+        chat = {
+          completions: {
+            create: originalCreateMethod,
+          },
+        };
 
-      // Since we're testing the instrumentation logic, we can check that
-      // the instrumentor was called
-      expect(instrumentor.isInstrumented()).toBe(true);
+        constructor(_config: any) {
+          vi.mocked(logger).debug('Creating wrapped OpenAI instance');
+        }
+      };
+
+      vi.doUnmock('openai');
+      vi.doMock('openai', () => ({
+        default: MockOpenAIClassWithCreate,
+      }));
+
+      const testInstrumentor = new OpenAIInstrumentorV2();
+      testInstrumentor.instrument();
+
+      // Create an instance using the wrapped constructor
+      const instance = new (require('openai').default)({ apiKey: 'test' });
+
+      // The chat.completions.create should be wrapped
+      expect(instance.chat.completions.create).not.toBe(originalCreateMethod);
+      expect(vi.mocked(logger).debug).toHaveBeenCalledWith('Creating wrapped OpenAI instance');
+      expect(vi.mocked(logger).debug).toHaveBeenCalledWith(
+        'Wrapped chat.completions.create on instance',
+      );
+    });
+
+    it.skip('should handle instance without chat.completions.create', () => {
+      vi.isolateModules(() => {
+        // Create a mock OpenAI class without chat.completions.create
+        const MockOpenAIClassWithoutCreate = class {
+          constructor(_config: any) {
+            // Empty constructor
+          }
+        };
+
+        vi.doMock('openai', () => ({
+          default: MockOpenAIClassWithoutCreate,
+        }));
+
+        const { OpenAIInstrumentorV2 } = require('./openai-v2');
+        const testInstrumentor = new OpenAIInstrumentorV2();
+
+        // Clear previous mock calls
+        vi.mocked(logger).debug.mockClear();
+
+        testInstrumentor.instrument();
+
+        // Create an instance using the wrapped constructor
+        const _instance = new (require('openai').default)({ apiKey: 'test' });
+
+        // Should log creation but not wrapping
+        expect(vi.mocked(logger).debug).toHaveBeenCalledWith('Creating wrapped OpenAI instance');
+        // Should not log the wrapping since there's no method to wrap
+        expect(vi.mocked(logger).debug).not.toHaveBeenCalledWith(
+          'Wrapped chat.completions.create on instance',
+        );
+      });
     });
 
     it('should copy static properties', () => {
