@@ -17,6 +17,6 @@ describe("JoinPage", () => {
       params: { token: "test-token" },
     });
 
-    expect(screen.getByText("Processing your invite...")).toBeTruthy();
+    expect(await screen.findByText("Processing your invite...")).toBeTruthy();
   });
 });
