@@ -12,7 +12,7 @@ vi.mock('./exporters/json-exporter');
 vi.mock('@opentelemetry/sdk-trace-base', () => ({
   BatchSpanProcessor: vi.fn().mockImplementation(() => ({})),
 }));
-vi.mock('./lilypad', () => ({
+vi.mock('../lilypad/generated', () => ({
   LilypadClient: vi.fn().mockImplementation(() => ({})),
 }));
 
@@ -177,9 +177,29 @@ describe('configure', () => {
       expect(mockLogger.debug).toHaveBeenCalledWith('OpenAI auto-instrumentation hooks installed');
     });
 
-    // Note: Testing dynamic imports with vitest is complex
-    // These error cases are better tested with integration tests
-    // For now, we've achieved the main coverage goals
+    it('should handle errors when loading OpenAI instrumentation', async () => {
+      // This test is tricky because we need to test dynamic import failure
+      // We'll test it by mocking the module to throw during import
+      const mockError = new Error('Failed to load module');
+
+      // First mock successful to avoid issues with module resolution
+      vi.doMock('./instrumentors/openai-hook', () => ({
+        setupOpenAIHooks: vi.fn(),
+      }));
+
+      // Then immediately mock it to throw
+      vi.doMock('./instrumentors/openai-hook', () => {
+        throw mockError;
+      });
+
+      await configure(validConfig);
+
+      // The error might be wrapped or transformed, so let's check for the error messages
+      expect(mockLogger.error).toHaveBeenCalledTimes(2);
+      const errorCalls = mockLogger.error.mock.calls;
+      expect(errorCalls[0][0]).toBe('Failed to enable OpenAI auto-instrumentation:');
+      expect(errorCalls[1][0]).toBe('Error stack:');
+    });
   });
 
   describe('environment variable handling', () => {

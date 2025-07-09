@@ -15,6 +15,7 @@ export { shutdown } from './shutdown';
 export { logger } from './utils/logger';
 export { Span, span, syncSpan } from './span';
 export { session, sessionAsync, getCurrentSession, withSession, withSessionAsync } from './session';
+export { wrapOpenAI } from './wrap-openai';
 export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
 
@@ -23,11 +24,9 @@ const lilypad = {
   shutdown,
   getTracer,
   logger,
-  // New span functionality
   Span,
   span,
   syncSpan,
-  // Session functionality
   session,
   sessionAsync,
   getCurrentSession,

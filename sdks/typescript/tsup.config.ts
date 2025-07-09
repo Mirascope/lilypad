@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/register.ts'],
+  entry: ['src/index.ts', 'src/register.ts', 'src/register-otel.ts'],
   format: ['cjs', 'esm'],
   dts: true,
   sourcemap: true,
