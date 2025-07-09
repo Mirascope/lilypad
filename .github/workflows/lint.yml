@@ -6,10 +6,12 @@ on:
     branches:
       - main
       - update-typescript-sdk
+      - LILYPAD-205
   pull_request:
     branches:
       - main
       - update-typescript-sdk
+      - LILYPAD-205
 
 jobs:
   codespell:
