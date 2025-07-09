@@ -47,6 +47,22 @@ npx tsc examples/basic-auto.ts --outDir dist-examples --esModuleInterop --module
 node --require ../dist/register.js dist-examples/basic-auto.js
 ```
 
+### Important: autoLlm Import Order Constraint
+
+When using `autoLlm: true` without the `--require` flag, you must configure Lilypad **BEFORE** importing OpenAI:
+
+```typescript
+// ✅ CORRECT: Configure first, then import
+await configure({ autoLlm: true });
+const { default: OpenAI } = await import('openai');
+
+// ❌ WRONG: Import first won't be instrumented
+import OpenAI from 'openai';
+await configure({ autoLlm: true });
+```
+
+This is because Module.\_load hooks only work on first-time module loads. See [AUTO_LLM_CONSTRAINTS.md](../AUTO_LLM_CONSTRAINTS.md) for details.
+
 ### How register.ts Works
 
 When using `--require ../dist/register.js`:
