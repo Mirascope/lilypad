@@ -7,7 +7,10 @@ import lilypad from '../src';
 // Bun automatically loads .env file
 console.log('Environment variables loaded:');
 console.log('- LILYPAD_PROJECT_ID:', process.env.LILYPAD_PROJECT_ID);
-console.log('- LILYPAD_API_KEY:', process.env.LILYPAD_API_KEY ? '***' + process.env.LILYPAD_API_KEY.slice(-4) : 'not set');
+console.log(
+  '- LILYPAD_API_KEY:',
+  process.env.LILYPAD_API_KEY ? '***' + process.env.LILYPAD_API_KEY.slice(-4) : 'not set',
+);
 console.log('- LILYPAD_BASE_URL:', process.env.LILYPAD_BASE_URL);
 console.log('');
 
@@ -31,22 +34,22 @@ async function main() {
       source: '.env',
       timestamp: new Date().toISOString(),
     });
-    
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     span.info('Operation completed successfully');
     return { success: true };
   });
-  
+
   console.log('Result:', result);
-  
+
   // Wait a bit for the span to be exported
   console.log('\nWaiting for span export...');
-  await new Promise(resolve => setTimeout(resolve, 6000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 6000));
+
   console.log('\nShutting down...');
   await lilypad.shutdown();
-  
+
   console.log('\nTest completed!');
 }
 

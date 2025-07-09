@@ -1,110 +1,112 @@
 # Lilypad TypeScript SDK Examples
 
-## Getting Started
+This directory contains examples demonstrating how to use the Lilypad TypeScript SDK.
 
-### Prerequisites
+## Prerequisites
 
 1. Set environment variables:
-
    ```bash
-   export OPENAI_API_KEY="your-openai-api-key"
    export LILYPAD_API_KEY="your-lilypad-api-key"
    export LILYPAD_PROJECT_ID="your-project-id"
+   export OPENAI_API_KEY="your-openai-api-key"  # For OpenAI examples
+   
+   # Optional: Use staging environment
+   export LILYPAD_BASE_URL="https://lilypad-staging.up.railway.app/v0"
    ```
 
 2. Build the SDK:
    ```bash
-   cd /path/to/lilypad/sdks/typescript
    bun install
    bun run build
    ```
 
-## Example 1: Manual Configuration (basic.ts)
+## Available Examples
 
-Manually calling `lilypad.configure()`:
+### 1. Basic Usage (`basic.ts`)
+Basic example showing manual span creation and metadata tracking.
 
 ```bash
-# Run with tsx
 npx tsx examples/basic.ts
-
-# Or run with bun
-bun run examples/basic.ts
 ```
 
-## Example 2: Auto Instrumentation (basic-auto.ts)
-
-Using `auto_llm: true` to automatically instrument OpenAI:
+### 2. Span with Auto-instrumented LLM (`span-with-auto-llm.ts`)
+Demonstrates how to combine manual spans with auto-instrumented OpenAI calls.
 
 ```bash
-# Run with tsx (requiring register.js)
-npx tsx --require ../dist/register.js examples/basic-auto.ts
+# REQUIRED: Use --require flag for auto-instrumentation
+npx tsx --require ./dist/register.js examples/span-with-auto-llm.ts
 
-# Or run with node (using transpiled JS)
-# First compile TypeScript to JavaScript
-npx tsc examples/basic-auto.ts --outDir dist-examples --esModuleInterop --module commonjs --target es2018
-
-# Then run with node
-node --require ../dist/register.js dist-examples/basic-auto.js
+# Or with Bun (use --preload instead of --require)
+bun --preload ./dist/register.js examples/span-with-auto-llm.ts
 ```
 
-### Important: autoLlm Import Order Constraint
+**Important**: The `--require` flag is necessary for OpenAI auto-instrumentation to work. Without it, OpenAI calls won't be traced.
 
-When using `autoLlm: true` without the `--require` flag, you must configure Lilypad **BEFORE** importing OpenAI:
-
-```typescript
-// ✅ CORRECT: Configure first, then import
-await configure({ autoLlm: true });
-const { default: OpenAI } = await import('openai');
-
-// ❌ WRONG: Import first won't be instrumented
-import OpenAI from 'openai';
-await configure({ autoLlm: true });
-```
-
-This is because Module.\_load hooks only work on first-time module loads. See [AUTO_LLM_CONSTRAINTS.md](../AUTO_LLM_CONSTRAINTS.md) for details.
-
-### How register.ts Works
-
-When using `--require ../dist/register.js`:
-
-1. `register.ts` is automatically loaded at program startup
-2. `register.ts` performs the following:
-   - Reads Lilypad configuration from environment variables
-   - Intercepts OpenAI module `require` and `import` calls
-   - Automatically wraps OpenAI's `chat.completions.create` method
-   - Automatically traces all OpenAI calls
-
-This allows you to trace OpenAI calls without modifying existing code!
-
-## Example 3: Streaming (streaming.ts)
-
-How to handle streaming responses:
+### 3. Span Usage Patterns (`span-usage.ts`)
+Shows various ways to use the span API including sync/async patterns.
 
 ```bash
-# Run with tsx
+npx tsx examples/span-usage.ts
+```
+
+### 4. Span with Environment Variables (`span-with-env.ts`)
+Demonstrates using environment-specific span attributes.
+
+```bash
+npx tsx examples/span-with-env.ts
+```
+
+### 5. Streaming (`streaming.ts`)
+Shows how to handle streaming responses with proper span lifecycle management.
+
+```bash
+# With manual instrumentation
 npx tsx examples/streaming.ts
 
-# Or run with auto instrumentation
-npx tsx --require ../dist/register.js examples/streaming.ts
+# With auto-instrumentation
+npx tsx --require ./dist/register.js examples/streaming.ts
+```
+
+## Important Notes
+
+### Auto-instrumentation Requires --require Flag
+
+The `autoLlm: true` configuration option **does not work** due to Node.js module loading constraints. You must use:
+
+```bash
+npx tsx --require ./dist/register.js your-script.ts
+```
+
+This ensures:
+- ✅ OpenAI is instrumented before your code runs
+- ✅ Parent-child span relationships work correctly
+- ✅ No import order issues
+
+See [AUTO_LLM_CONSTRAINTS.md](../AUTO_LLM_CONSTRAINTS.md) for technical details.
+
+### Parent-Child Span Relationships
+
+When using `--require ./dist/register.js`, manual spans created with `span()` will correctly appear as parents of auto-instrumented OpenAI calls:
+
+```typescript
+await span("parent-operation", async () => {
+  // This OpenAI call will be a child of "parent-operation"
+  const response = await openai.chat.completions.create({...});
+});
 ```
 
 ## Troubleshooting
 
-1. If you get `Cannot find module` errors:
+1. **OpenAI calls not being traced**: Make sure you're using `--require ./dist/register.js`
+2. **Module not found errors**: Run `bun run build` to rebuild the SDK
+3. **Invalid project ID**: Ensure `LILYPAD_PROJECT_ID` is a valid UUID
+4. **Traces not appearing**: Wait 5-10 seconds for BatchSpanProcessor to export
 
-   ```bash
-   # Rebuild the SDK
-   bun run build
-   ```
+## Viewing Traces
 
-2. Verify environment variables are set:
+After running an example, you'll see output like:
+```
+[Lilypad] View trace: https://staging.lilypad.so/projects/xxx/traces/yyy
+```
 
-   ```bash
-   echo $OPENAI_API_KEY
-   echo $LILYPAD_API_KEY
-   ```
-
-3. Check traces in Lilypad dashboard:
-   - Open Lilypad dashboard in your browser
-   - Select your project
-   - Check the "Traces" tab for your requests
+Click the link to view your trace in the Lilypad dashboard.

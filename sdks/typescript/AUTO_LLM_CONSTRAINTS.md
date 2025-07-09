@@ -1,83 +1,142 @@
-# AutoLLM Import Order Constraint
+# Auto-LLM Instrumentation Constraints in TypeScript
 
-## Important Limitation
+## ⚠️ Important: autoLlm Option Does Not Work
 
-When using the `autoLlm: true` option, there is a critical constraint regarding module import order:
+**The `autoLlm: true` configuration option does not work reliably in practice.** While the documentation below explains the theoretical constraints, in reality, even with correct import order, the instrumentation fails due to various technical issues.
 
-### ❌ This will NOT work:
+## Recommended Solution: Use --require Flag
 
-```typescript
-import OpenAI from 'openai'; // OpenAI imported BEFORE configure()
-import { configure } from 'lilypad';
+```bash
+# ✅ THIS WORKS - Use this approach
+npx tsx --require ./dist/register.js your-script.ts
 
-await configure({
-  autoLlm: true, // Hook cannot intercept already-loaded module
-});
-
-const client = new OpenAI(); // Will NOT be instrumented
+# ❌ THIS DOESN'T WORK - Don't use autoLlm
+await configure({ autoLlm: true });
 ```
 
-### ✅ This WILL work:
+## Why autoLlm Fails
+
+### 1. Module Loading Order Issues
+Even with dynamic imports after `configure()`, the instrumentation is unreliable:
 
 ```typescript
-import { configure } from 'lilypad';
-
-// Configure FIRST
-await configure({
-  autoLlm: true,
-});
-
-// Import OpenAI AFTER configure()
-const { default: OpenAI } = await import('openai');
-const client = new OpenAI(); // Will be instrumented correctly
-```
-
-## Technical Explanation
-
-The `autoLlm` feature uses Node.js `Module._load` hooks to intercept and wrap the OpenAI module at load time. This approach has an inherent limitation:
-
-- **Module.\_load hooks only work when a module is loaded for the first time**
-- If the module is already in the require cache, the hook will not be triggered
-- This is a fundamental constraint of Node.js module system, not specific to our implementation
-
-## Recommended Approaches
-
-### 1. Use Dynamic Import (Most Flexible)
-
-```typescript
+// ❌ Theoretically correct but doesn't work in practice
 await configure({ autoLlm: true });
 const { default: OpenAI } = await import('openai');
 ```
 
-### 2. Use --require Flag (Most Reliable)
+### 2. ImportInTheMiddle Errors
+The OpenTelemetry instrumentation library throws errors:
+```
+TypeError: ImportInTheMiddle is not a constructor
+```
+
+### 3. Context Manager Conflicts
+Multiple TracerProvider instances can be created, breaking parent-child span relationships.
+
+## The Working Solution: register.js
+
+Using `--require ./dist/register.js` ensures:
+
+1. **Instrumentation loads first**: Before any application code
+2. **Consistent behavior**: Always works, regardless of your code structure
+3. **Parent-child relationships**: Manual spans correctly nest auto-instrumented calls
+4. **No code changes needed**: Existing OpenAI code is automatically traced
+
+### How to Use
 
 ```bash
-node --require ./dist/register.js your-app.js
+# Set required environment variables
+export LILYPAD_API_KEY="your-api-key"
+export LILYPAD_PROJECT_ID="your-project-id"
+export OPENAI_API_KEY="your-openai-key"
+
+# Run with --require flag
+npx tsx --require ./dist/register.js your-script.ts
+
+# Or with Bun (use --preload)
+bun --preload ./dist/register.js your-script.ts
 ```
 
-This ensures hooks are installed before any application code runs.
-
-### 3. Manual Wrapping (Most Control)
+### Example Code
 
 ```typescript
+// your-script.ts
 import OpenAI from 'openai';
-import { wrapOpenAI } from 'lilypad';
+import { configure, span } from 'lilypad';
 
-const client = wrapOpenAI(new OpenAI());
+// Configure SDK (DON'T use autoLlm: true)
+await configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+});
+
+const openai = new OpenAI();
+
+// Manual span will be parent of auto-instrumented OpenAI call
+await span('process-request', async (s) => {
+  s.metadata({ userId: '123' });
+  
+  // This call is automatically traced as a child span
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }],
+  });
+  
+  s.metadata({ responseId: response.id });
+});
 ```
 
-## Framework-Specific Considerations
+## Technical Background
 
-- **Next.js**: Use dynamic imports in API routes or server components
-- **Express**: Configure Lilypad in the main entry point before importing route handlers
-- **NestJS**: Configure in the bootstrap function before module initialization
-- **Serverless**: Use the --require approach or manual wrapping
+### Why Module._load Hooks Don't Work Well
 
-## Debugging Tips
+Node.js module loading is complex, especially with:
+- TypeScript transpilation
+- ESM vs CommonJS interop
+- Module caching
+- Async module loading
 
-If OpenAI calls are not being traced:
+The `Module._load` approach that `autoLlm` uses has too many edge cases and failure modes.
 
-1. Enable debug logging: `logger.setLevel('debug')`
-2. Check console for "OpenAI module loaded via Module.\_load" message
-3. Verify import order - OpenAI must be imported AFTER configure()
-4. Consider using `--require` flag for guaranteed instrumentation
+### ESM Module Loading Phases
+
+```
+┌─────────────┐     ┌─────────────┐     ┌──────────────┐     ┌────────────┐
+│ Resolution  │ --> │   Parsing   │ --> │Instantiation │ --> │ Evaluation │
+└─────────────┘     └─────────────┘     └──────────────┘     └────────────┘
+```
+
+Instrumentation must happen before Evaluation, which is why `--require` works (it runs first) while `autoLlm` fails (it runs too late).
+
+## Migration Guide
+
+If you're currently trying to use `autoLlm: true`:
+
+1. Remove `autoLlm: true` from your `configure()` call
+2. Keep your existing imports as-is (no need for dynamic imports)
+3. Run your script with `--require ./dist/register.js`
+
+```diff
+// Before (not working)
+await configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+- autoLlm: true,
+});
+
+// After (working)
+await configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+});
+```
+
+Then run with:
+```bash
+npx tsx --require ./dist/register.js your-script.ts
+```
+
+## Conclusion
+
+The `autoLlm` option is effectively deprecated. Always use `--require ./dist/register.js` for reliable OpenAI auto-instrumentation.

@@ -124,13 +124,13 @@ export class JSONSpanExporter implements SpanExporter {
     // Access the client's internal options
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const clientOptions = (this.client as any)._options;
-    
+
     // Get base URL
-    const baseUrl = await clientOptions.baseUrl || await clientOptions.environment;
+    const baseUrl = (await clientOptions.baseUrl) || (await clientOptions.environment);
     const apiKey = await clientOptions.apiKey;
-    
+
     const url = `${baseUrl}/projects/${encodeURIComponent(this.config.projectId)}/traces`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
