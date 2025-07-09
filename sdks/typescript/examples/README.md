@@ -54,14 +54,14 @@ When using `autoLlm: true` without the `--require` flag, you must configure Lily
 ```typescript
 // ✅ CORRECT: Configure first, then import
 await configure({ autoLlm: true });
-const { default: OpenAI } = await import("openai");
+const { default: OpenAI } = await import('openai');
 
 // ❌ WRONG: Import first won't be instrumented
-import OpenAI from "openai";
+import OpenAI from 'openai';
 await configure({ autoLlm: true });
 ```
 
-This is because Module._load hooks only work on first-time module loads. See [AUTO_LLM_CONSTRAINTS.md](../AUTO_LLM_CONSTRAINTS.md) for details.
+This is because Module.\_load hooks only work on first-time module loads. See [AUTO_LLM_CONSTRAINTS.md](../AUTO_LLM_CONSTRAINTS.md) for details.
 
 ### How register.ts Works
 
