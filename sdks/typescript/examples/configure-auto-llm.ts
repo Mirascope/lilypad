@@ -1,5 +1,5 @@
 /**
- * Using configure() with auto_llm in TypeScript
+ * Using configure() with autoLlm in TypeScript
  *
  * Run with:
  *   export $(cat .env | xargs) && tsx configure-auto-llm.ts
@@ -9,14 +9,14 @@ import { configure } from '../src';
 import OpenAI from 'openai';
 
 async function main() {
-  console.log('⚙️  Configure auto_llm example\n');
+  console.log('⚙️  Configure autoLlm example\n');
 
-  // Configure Lilypad with auto_llm
+  // Configure Lilypad with autoLlm
   await configure({
     apiKey: process.env.LILYPAD_API_KEY!,
     projectId: process.env.LILYPAD_PROJECT_ID!,
     baseUrl: process.env.LILYPAD_BASE_URL,
-    auto_llm: true,
+    autoLlm: true,
   });
 
   const openai = new OpenAI({

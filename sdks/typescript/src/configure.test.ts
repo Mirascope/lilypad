@@ -101,8 +101,8 @@ describe('configure', () => {
           remoteClientUrl: 'https://app.lilypad.so',
           logLevel: 'info',
           serviceName: 'lilypad-node-app',
-          auto_llm: false,
-          auto_http: false,
+          autoLlm: false,
+          autoHttp: false,
           preserveExistingPropagator: false,
           batchProcessorOptions: {
             scheduledDelayMillis: 5000,
@@ -120,7 +120,7 @@ describe('configure', () => {
         baseUrl: 'https://custom.api.com',
         logLevel: 'debug' as const,
         serviceName: 'my-service',
-        auto_llm: true,
+        autoLlm: true,
       };
 
       await configure(customConfig);
@@ -130,7 +130,7 @@ describe('configure', () => {
           baseUrl: 'https://custom.api.com',
           logLevel: 'debug',
           serviceName: 'my-service',
-          auto_llm: true,
+          autoLlm: true,
         }),
       );
     });
@@ -160,10 +160,10 @@ describe('configure', () => {
     const validConfig = {
       apiKey: 'test-api-key',
       projectId: '123e4567-e89b-12d3-a456-426614174000',
-      auto_llm: true,
+      autoLlm: true,
     };
 
-    it('should attempt to instrument OpenAI when auto_llm is true', async () => {
+    it('should attempt to instrument OpenAI when autoLlm is true', async () => {
       // Mock successful OpenAI import
       vi.doMock('openai', () => ({ default: {} }), { virtual: true });
       vi.doMock('./instrumentors/openai', () => ({
