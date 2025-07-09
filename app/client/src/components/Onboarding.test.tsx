@@ -229,7 +229,9 @@ describe("Onboarding Component", () => {
       });
 
       // The component starts with "Create" text by default
-      expect(screen.getByText("Create")).toBeTruthy();
+      await waitFor(() => {
+        expect(screen.getByText("Create")).toBeTruthy();
+      });
       expect(screen.queryByText("Creating...")).toBeFalsy();
     });
 
@@ -243,11 +245,13 @@ describe("Onboarding Component", () => {
       });
 
       // Test that form fields are present and functional
-      const orgInput = screen.getByLabelText("Organization Name");
-      const projectInput = screen.getByLabelText("Project Name");
+      await waitFor(() => {
+        const orgInput = screen.getByLabelText("Organization Name");
+        const projectInput = screen.getByLabelText("Project Name");
 
-      expect(orgInput).toBeTruthy();
-      expect(projectInput).toBeTruthy();
+        expect(orgInput).toBeTruthy();
+        expect(projectInput).toBeTruthy();
+      });
     });
   });
 
@@ -293,7 +297,9 @@ describe("Onboarding Component", () => {
 
       // Test passes if the component renders without crashing
       // Error handling logic is present in the component but requires integration testing
-      expect(screen.getByText("Create")).toBeTruthy();
+      await waitFor(() => {
+        expect(screen.getByText("Create")).toBeTruthy();
+      });
     });
   });
 

@@ -1,7 +1,7 @@
 import { Projects } from "@/src/routes/_auth/projects/index";
 import { renderRoute, mockAuthenticatedContext } from "@/src/test-utils";
 import { setupTestEnvironment } from "@/src/test-setup";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("Projects", () => {
@@ -20,7 +20,9 @@ describe("Projects", () => {
       }),
     });
 
-    expect(screen.getByText("Projects")).toBeTruthy();
-    expect(screen.getByText("Select a project to view functions.")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Projects")).toBeTruthy();
+      expect(screen.getByText("Select a project to view functions.")).toBeTruthy();
+    });
   });
 });

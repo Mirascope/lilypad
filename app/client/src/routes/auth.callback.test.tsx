@@ -1,7 +1,7 @@
 import { CallbackPage } from "@/src/routes/auth.callback";
 import { setupTestEnvironment } from "@/src/test-setup";
 import { mockAuthContext, renderRoute } from "@/src/test-utils";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it, mock } from "bun:test";
 
 describe("CallbackPage", () => {
@@ -37,7 +37,9 @@ describe("CallbackPage", () => {
       search: { code: "test-code" },
     });
 
-    expect(screen.getByText("Processing login...")).toBeTruthy();
-    expect(screen.getByText("Authenticating with github...")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Processing login...")).toBeTruthy();
+      expect(screen.getByText("Authenticating with github...")).toBeTruthy();
+    });
   });
 });
