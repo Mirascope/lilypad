@@ -266,7 +266,7 @@ const ComparePlaygrounds = ({
   );
 };
 
-const ComparePlaygroundsRoute = () => {
+export const ComparePlaygroundsRoute = () => {
   const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid } = useParams({
     from: "/_auth/projects/$projectUuid/playground/$functionName/compare/$firstFunctionUuid/$secondFunctionUuid",
   });

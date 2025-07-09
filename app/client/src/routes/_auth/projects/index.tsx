@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_auth/projects/")({
   ),
 });
 
-const Projects = () => {
+export const Projects = () => {
   const { joined } = Route.useSearch();
 
   const { setProject } = useAuth();
