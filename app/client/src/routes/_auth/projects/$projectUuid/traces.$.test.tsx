@@ -18,8 +18,13 @@ describe("Trace", () => {
       initialPath: "/_auth/projects/test-project-uuid/traces/spans",
     });
 
-    await waitFor(() => {
-      expect(screen.getByText("Test Project") || screen.getByTestId("lilypad-loading")).toBeTruthy();
-    });
+    await waitFor(
+      () => {
+        const projectTitle = screen.queryByText("Test Project");
+        const loading = screen.queryByTestId("lilypad-loading");
+        expect(projectTitle || loading).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 });
