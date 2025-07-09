@@ -70,7 +70,7 @@ const response = await openai.chat.completions.create({
 });
 ```
 
-### Option 3: Automatic Instrumentation with --require flag
+### Option 3: Automatic Instrumentation with --require flag (CommonJS)
 
 ```bash
 # Run with tsx
@@ -81,6 +81,23 @@ node --require @lilypad/typescript-sdk/dist/register.cjs your-script.js
 ```
 
 This method automatically instruments all OpenAI calls when the module is loaded, without requiring `auto_llm: true` in your configuration.
+
+### Option 4: Automatic Instrumentation with ESM Loader
+
+For ESM modules, use the loader hooks:
+
+```bash
+# Node.js >= 18.19
+node --import @lilypad/typescript-sdk/dist/register-esm-loader.mjs your-app.mjs
+
+# Node.js < 18.19
+node --loader @lilypad/typescript-sdk/dist/register-esm-loader.mjs your-app.mjs
+
+# With tsx for TypeScript ESM
+tsx --import @lilypad/typescript-sdk/dist/register-esm-loader.mjs your-app.ts
+```
+
+This provides full ESM support for auto-instrumentation.
 
 ## Configuration Options
 
@@ -109,13 +126,50 @@ interface LilypadConfig {
 
 ### Automatic Instrumentation
 
-To enable automatic instrumentation, run your application with the register module:
+#### Node.js
+
+For Node.js applications, automatic instrumentation works by using the `--require` flag:
 
 ```bash
-npx tsx --require @lilypad/typescript-sdk/dist/register.cjs your-app.ts
+# Using tsx
+npx tsx --require @lilypad/typescript-sdk/dist/register.js your-app.ts
+
+# Using Node.js directly
+node --require @lilypad/typescript-sdk/dist/register.js your-app.js
 ```
 
-This automatically traces all OpenAI calls without code changes:
+This automatically traces all OpenAI calls without code changes.
+
+#### Bun
+
+⚠️ **Note**: Bun does not support Node.js module hooks (`Module._load`), so automatic instrumentation via `--require` does not work. You must use manual instrumentation:
+
+```typescript
+import { configure, wrapOpenAI } from '@lilypad/typescript-sdk';
+import OpenAI from 'openai';
+
+// Configure Lilypad
+await configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID,
+});
+
+// Manually wrap OpenAI
+const WrappedOpenAI = wrapOpenAI(OpenAI);
+const openai = new WrappedOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Use OpenAI as normal - calls will be traced
+const response = await openai.chat.completions.create({
+  model: 'gpt-3.5-turbo',
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
+```
+
+#### Deno
+
+Similar to Bun, Deno requires manual instrumentation. Use the `wrapOpenAI` function as shown above.
 
 ### Standard Completion
 

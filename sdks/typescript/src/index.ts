@@ -11,6 +11,7 @@ import { logger } from './utils/logger';
 export { configure, getTracerProvider, getTracer } from './configure';
 export { shutdown } from './shutdown';
 export { logger } from './utils/logger';
+export { wrapOpenAI } from './wrap-openai';
 export type { LilypadConfig, LogLevel } from './types';
 
 const lilypad = {

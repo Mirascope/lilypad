@@ -181,7 +181,7 @@ function wrapChatCompletionsCreate(original: Function): Function {
           'gen_ai.openai.request.service_tier':
             params?.service_tier !== 'auto' ? params?.service_tier : undefined,
           [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
-          'lilypad.type': 'llm',
+          'lilypad.type': 'trace',
         }),
       },
       async (span) => {

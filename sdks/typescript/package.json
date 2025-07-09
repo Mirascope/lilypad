@@ -11,7 +11,8 @@
     "package.json"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && npm run copy-esm-loaders",
+    "copy-esm-loaders": "cp src/register-esm-loader.mjs dist/ && cp src/esm-hooks.mjs dist/",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,9 +24,12 @@
     "fix": "eslint . --ext .ts,.tsx --fix && prettier --write .",
     "clean": "rm -rf dist coverage .turbo",
     "prepublishOnly": "bun run build",
-    "example:basic": "tsx examples/basic.ts",
-    "example:auto": "tsx --require ./dist/register.cjs examples/basic-auto.ts",
-    "example:auto:node": "node --require ./dist/register.cjs ./dist-examples/basic-auto.js"
+    "example:basic": "bun run examples/basic.ts",
+    "example:auto": "bun --require ./dist/register.js examples/basic-auto.ts",
+    "example:auto:node": "node --require ./dist/register.js ./dist-examples/basic-auto.js",
+    "example:basic-llm": "bun --require ./dist/register.js examples/basic-auto-llm.ts",
+    "example:streaming-llm": "bun --require ./dist/register.js examples/streaming-auto-llm.ts",
+    "example:configure-llm": "bun run examples/configure-auto-llm.ts"
   },
   "keywords": [
     "lilypad",
