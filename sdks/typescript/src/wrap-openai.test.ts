@@ -92,7 +92,7 @@ describe('wrapOpenAI', () => {
     it('should log debug message when wrapping', () => {
       wrapOpenAI(OpenAIClass);
 
-      expect(logger.debug).toHaveBeenCalledWith('[wrapOpenAI] Wrapping OpenAI class');
+      expect(logger.debug).toHaveBeenCalledWith('[wrapOpenAI] Wrapping OpenAI instance');
     });
 
     it('should handle missing chat.completions.create gracefully', () => {

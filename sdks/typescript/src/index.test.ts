@@ -72,16 +72,19 @@ describe('index', () => {
     it('should have correct shape', () => {
       expect(Object.keys(lilypad).sort()).toEqual(
         [
+          'AsyncTrace',
           'configure',
+          'getCurrentSession',
           'getTracer',
           'logger',
+          'session',
+          'sessionAsync',
           'shutdown',
           'Span',
           'span',
           'syncSpan',
-          'session',
-          'sessionAsync',
-          'getCurrentSession',
+          'Trace',
+          'trace',
           'withSession',
           'withSessionAsync',
         ].sort(),
