@@ -5,6 +5,7 @@ This directory contains examples demonstrating how to use the Lilypad TypeScript
 ## Prerequisites
 
 1. Set environment variables:
+
    ```bash
    export LILYPAD_API_KEY="your-lilypad-api-key"
    export LILYPAD_PROJECT_ID="your-project-id"
@@ -20,6 +21,7 @@ This directory contains examples demonstrating how to use the Lilypad TypeScript
 ## Core Examples
 
 ### 1. Basic Usage (`basic.ts`)
+
 Simple example showing basic SDK configuration and OpenAI integration.
 
 ```bash
@@ -31,7 +33,9 @@ npx tsx examples/basic.ts
 ```
 
 ### 2. Comprehensive Example (`comprehensive.ts`)
+
 Complete example demonstrating all major features:
+
 - @trace decorator (Bun) and wrapWithTrace (tsx)
 - OpenAI integration
 - Wrap mode with annotations
@@ -49,6 +53,7 @@ npx tsx --require ./dist/register.js examples/comprehensive.ts
 ```
 
 ### 3. Streaming (`streaming.ts`)
+
 Shows how to handle streaming responses from OpenAI with proper span lifecycle management.
 
 ```bash
@@ -60,7 +65,9 @@ npx tsx --require ./dist/register.js examples/streaming.ts
 ```
 
 ### 4. Trace Wrap Mode (`trace-wrap-mode.ts`)
+
 Advanced tracing features using wrap mode:
+
 - Post-execution annotations
 - Tagging spans
 - Assigning traces to team members
@@ -72,19 +79,25 @@ bun run examples/trace-wrap-mode.ts
 ## Running Examples
 
 ### Option 1: Using Bun (Recommended)
+
 Bun has native support for TypeScript and decorators:
+
 ```bash
 bun run examples/[example-name].ts
 ```
 
 ### Option 2: Using tsx with Decorators
+
 For decorator support in tsx, use the custom tsconfig:
+
 ```bash
 npx tsx --tsconfig tsconfig.tsx.json examples/[example-name].ts
 ```
 
 ### Option 3: With Auto-instrumentation
+
 To automatically trace OpenAI calls without manual wrapping:
+
 ```bash
 npx tsx --require ./dist/register.js examples/[example-name].ts
 ```
@@ -108,6 +121,7 @@ npx tsx --require ./dist/register.js examples/[example-name].ts
 ## Viewing Traces
 
 After running an example, look for output like:
+
 ```
 [Lilypad] View trace: https://app.lilypad.so/projects/xxx/traces/yyy
 ```

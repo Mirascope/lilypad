@@ -15,17 +15,25 @@ export function ensureError(error: unknown): Error {
   if (error instanceof Error) {
     return error;
   }
-  
+
   const message = typeof error === 'string' ? error : String(error);
-  
-  // Use cause to preserve the original error information (ES2022+)
-  // For older environments, this will be ignored but won't break
+
+  // Create error with message
+  const err = new Error(message);
+
+  // Try to add cause property if supported
   try {
-    return new Error(message, { cause: error });
+    Object.defineProperty(err, 'cause', {
+      value: error,
+      enumerable: false,
+      writable: true,
+      configurable: true,
+    });
   } catch {
-    // Fallback for environments that don't support cause
-    return new Error(message);
+    // Ignore if property definition fails
   }
+
+  return err;
 }
 
 /**
@@ -40,7 +48,7 @@ export function setGlobalErrorHandler(handler: ErrorHandler | null): void {
  */
 export function handleBackgroundError(error: unknown, context?: Record<string, unknown>): void {
   const errorObj = ensureError(error);
-  
+
   // Call custom handler if set
   if (globalErrorHandler) {
     try {
@@ -49,7 +57,7 @@ export function handleBackgroundError(error: unknown, context?: Record<string, u
       logger.error('Error in global error handler:', handlerError);
     }
   }
-  
+
   // Always log the error
   logger.error('Background operation error:', errorObj, context);
 }

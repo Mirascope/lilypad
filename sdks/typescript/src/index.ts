@@ -20,7 +20,7 @@ export { wrapOpenAI } from './wrap-openai';
 export { trace, Trace, AsyncTrace, getCurrentSpan, logToCurrentSpan, wrapWithTrace } from './trace';
 export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
-export type { TraceOptions, Annotation } from './trace';
+export type { TraceOptions } from './trace';
 
 const lilypad = {
   configure,

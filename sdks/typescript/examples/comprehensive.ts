@@ -1,6 +1,6 @@
 /**
  * Comprehensive example demonstrating all major features of Lilypad TypeScript SDK
- * 
+ *
  * Features covered:
  * - Basic configuration
  * - @trace decorator (Bun) / wrapWithTrace (tsx)
@@ -32,7 +32,7 @@ class AIService {
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'You are a text analyzer.' },
-        { role: 'user', content: `Analyze this text: ${text}` }
+        { role: 'user', content: `Analyze this text: ${text}` },
       ],
     });
     return response.choices[0].message.content;
@@ -44,10 +44,10 @@ class DataProcessor {
   processData = wrapWithTrace(
     async (data: string): Promise<string> => {
       // Simulate processing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       return data.toUpperCase();
     },
-    { name: 'processData', tags: ['data-processing'] }
+    { name: 'processData', tags: ['data-processing'] },
   );
 
   analyzeData = wrapWithTrace(
@@ -59,7 +59,7 @@ class DataProcessor {
         timestamp: Date.now(),
       };
     },
-    { mode: 'wrap', name: 'analyzeData' }
+    { mode: 'wrap', name: 'analyzeData' },
   );
 }
 
@@ -80,7 +80,7 @@ async function main() {
   // Test data processor (no OpenAI dependency)
   console.log('1. Data Processing Example:');
   const processor = new DataProcessor();
-  
+
   const processed = await processor.processData('hello world');
   console.log('Processed:', processed);
 
@@ -88,18 +88,8 @@ async function main() {
   const analysisTrace = await processor.analyzeData({ test: true, count: 42 });
   if (analysisTrace && 'response' in analysisTrace) {
     console.log('Analysis:', analysisTrace.response);
-    
-    // Add annotations (only available in wrap mode)
-    try {
-      await analysisTrace.annotate({
-        label: 'pass',
-        reasoning: 'Analysis completed successfully',
-        type: 'automatic',
-      });
-      console.log('✅ Annotation added');
-    } catch (error) {
-      console.log('⚠️  Could not add annotation');
-    }
+  } else {
+    console.log('Analysis result:', analysisTrace);
   }
 
   // Test OpenAI integration (if API key available)
@@ -107,16 +97,13 @@ async function main() {
     console.log('\n2. OpenAI Integration Example:');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const aiService = new AIService(client);
-    
+
     try {
       const text = await aiService.generateText('Write a haiku about coding');
       console.log('Generated:', text);
-      
+
       const analysis = await aiService.analyzeText('The quick brown fox jumps over the lazy dog');
-      if (analysis && 'response' in analysis) {
-        console.log('Analysis:', analysis.response);
-        // Can add annotations here too
-      }
+      console.log('Analysis result:', analysis);
     } catch (error) {
       console.log('OpenAI error:', error instanceof Error ? error.message : error);
     }
@@ -125,13 +112,13 @@ async function main() {
   console.log('\n📝 Usage Instructions:');
   console.log('\nFor Bun (native decorator support):');
   console.log('  bun run examples/comprehensive.ts');
-  
+
   console.log('\nFor tsx (with custom config):');
   console.log('  npx tsx --tsconfig tsconfig.tsx.json examples/comprehensive.ts');
-  
+
   console.log('\nFor auto-instrumentation (OpenAI calls automatically traced):');
   console.log('  npx tsx --require ./dist/register.js examples/comprehensive.ts');
-  
+
   console.log('\n🔑 Environment Variables:');
   console.log('  LILYPAD_API_KEY=your-api-key');
   console.log('  LILYPAD_PROJECT_ID=your-project-id');

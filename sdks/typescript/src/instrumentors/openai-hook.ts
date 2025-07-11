@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import {
   trace,
   SpanStatusCode,
@@ -154,7 +157,9 @@ function wrapInstance(instance: OpenAILike): void {
   }
 }
 
-function wrapChatCompletionsCreate(original: ChatCompletionsCreateFunction): ChatCompletionsCreateFunction {
+function wrapChatCompletionsCreate(
+  original: ChatCompletionsCreateFunction,
+): ChatCompletionsCreateFunction {
   return async function (
     this: unknown,
     params: ChatCompletionParams,

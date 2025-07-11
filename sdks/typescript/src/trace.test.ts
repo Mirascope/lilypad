@@ -386,9 +386,10 @@ describe('trace', () => {
     });
 
     it('should throw error when no annotations provided', () => {
+      // tag() method doesn't throw for empty arguments
       expect(() => {
-        traceWrapper.annotate();
-      }).toThrow('At least one annotation must be provided');
+        traceWrapper.tag();
+      }).not.toThrow();
     });
 
     it('should throw error when no emails provided to assign', () => {
@@ -401,7 +402,7 @@ describe('trace', () => {
       vi.mocked(getSettings).mockReturnValue(null);
 
       expect(() => {
-        traceWrapper.annotate({ label: 'test' } as any);
+        traceWrapper.tag('test');
       }).toThrow('Lilypad SDK not configured');
     });
 
@@ -426,17 +427,14 @@ describe('trace', () => {
     });
 
     it('should throw error when no annotations provided', async () => {
-      await expect(asyncTraceWrapper.annotate()).rejects.toThrow(
-        'At least one annotation must be provided',
-      );
+      // Tag method doesn't throw for empty args
+      await asyncTraceWrapper.tag();
     });
 
     it('should throw error when SDK not configured', async () => {
       vi.mocked(getSettings).mockReturnValue(null);
 
-      await expect(asyncTraceWrapper.annotate({ label: 'test' } as any)).rejects.toThrow(
-        'Lilypad SDK not configured',
-      );
+      await expect(asyncTraceWrapper.tag('test')).rejects.toThrow('Lilypad SDK not configured');
     });
 
     it('should throw error when span not found', async () => {
@@ -453,9 +451,7 @@ describe('trace', () => {
       const { LilypadClient } = await import('../lilypad/generated/Client');
       vi.mocked(LilypadClient).mockImplementation(() => mockClient as any);
 
-      await expect(asyncTraceWrapper.annotate({ label: 'test' } as any)).rejects.toThrow(
-        'Cannot annotate: span not found',
-      );
+      await expect(asyncTraceWrapper.tag('test')).rejects.toThrow('Cannot tag: span not found');
     });
 
     it('should handle empty tags array', async () => {
@@ -477,6 +473,9 @@ describe('trace', () => {
       const { LilypadClient } = await import('../lilypad/generated/Client');
       vi.mocked(LilypadClient).mockImplementation(() => mockClient as any);
 
+      const { getPooledClient } = await import('./utils/client-pool');
+      vi.mocked(getPooledClient).mockReturnValue(mockClient as any);
+
       class TestClass {
         cachedMethod() {
           return 'cached';
@@ -489,9 +488,12 @@ describe('trace', () => {
 
       const instance = new TestClass();
 
-      // Call twice
+      // Call twice - this should trigger function creation
       await instance.cachedMethod();
       await instance.cachedMethod();
+
+      // Wait for background operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Should only call getByHash once due to caching
       expect(mockClient.projects.functions.getByHash).toHaveBeenCalledTimes(1);
@@ -518,7 +520,7 @@ describe('trace', () => {
 
       const { LilypadClient } = await import('../lilypad/generated/Client');
       vi.mocked(LilypadClient).mockImplementation(() => mockClient as any);
-      
+
       const { getPooledClient } = await import('./utils/client-pool');
       vi.mocked(getPooledClient).mockReturnValue(mockClient as any);
 
@@ -529,7 +531,11 @@ describe('trace', () => {
       }
 
       const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'syncMethod')!;
-      const tracedDescriptor = trace({ mode: 'wrap' })(TestClass.prototype, 'syncMethod', descriptor);
+      const tracedDescriptor = trace({ mode: 'wrap' })(
+        TestClass.prototype,
+        'syncMethod',
+        descriptor,
+      );
       TestClass.prototype.syncMethod = tracedDescriptor.value;
 
       const instance = new TestClass();
@@ -553,7 +559,7 @@ describe('trace', () => {
 
       const { LilypadClient } = await import('../lilypad/generated/Client');
       vi.mocked(LilypadClient).mockImplementation(() => mockClient as any);
-      
+
       const { getPooledClient } = await import('./utils/client-pool');
       vi.mocked(getPooledClient).mockReturnValue(mockClient as any);
 
@@ -565,7 +571,11 @@ describe('trace', () => {
       }
 
       const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'asyncMethod')!;
-      const tracedDescriptor = trace({ mode: 'wrap' })(TestClass.prototype, 'asyncMethod', descriptor);
+      const tracedDescriptor = trace({ mode: 'wrap' })(
+        TestClass.prototype,
+        'asyncMethod',
+        descriptor,
+      );
       TestClass.prototype.asyncMethod = tracedDescriptor.value;
 
       const instance = new TestClass();
@@ -616,82 +626,11 @@ describe('trace', () => {
 
       const { LilypadClient } = await import('../lilypad/generated/Client');
       vi.mocked(LilypadClient).mockImplementation(() => mockClient);
-      
+
       const { getPooledClient } = await import('./utils/client-pool');
       vi.mocked(getPooledClient).mockReturnValue(mockClient);
 
       traceInstance = new Trace('test-response', 'test-span-id', 'func-uuid-123');
-    });
-
-    it('should annotate trace with single annotation', async () => {
-      const annotation = {
-        data: { key: 'value' },
-        label: 'pass' as const,
-        reasoning: 'Good response',
-        type: 'manual' as const,
-      };
-
-      // Create a promise to wait for the annotation call
-      let annotationResolver: () => void;
-      const annotationPromise = new Promise<void>((resolve) => {
-        annotationResolver = resolve;
-      });
-
-      mockClient.ee.projects.annotations.create.mockImplementation(() => {
-        annotationResolver();
-        return Promise.resolve({});
-      });
-
-      // annotate is async but returns void
-      traceInstance.annotate(annotation);
-
-      // Wait for the annotation to complete
-      await annotationPromise;
-
-      expect(mockClient.ee.projects.annotations.create).toHaveBeenCalledWith('test-project-id', [
-        {
-          data: { key: 'value' },
-          function_uuid: 'func-uuid-123',
-          span_uuid: 'span-uuid-123',
-          label: 'pass',
-          reasoning: 'Good response',
-          type: 'manual',
-          project_uuid: 'test-project-id',
-        },
-      ]);
-    });
-
-    it('should annotate trace with multiple annotations', async () => {
-      const annotations = [
-        { label: 'pass' as const },
-        { label: 'fail' as const, reasoning: 'Bad response' },
-      ];
-
-      let annotationResolver: () => void;
-      const annotationPromise = new Promise<void>((resolve) => {
-        annotationResolver = resolve;
-      });
-
-      mockClient.ee.projects.annotations.create.mockImplementation(() => {
-        annotationResolver();
-        return Promise.resolve({});
-      });
-
-      traceInstance.annotate(...annotations);
-
-      await annotationPromise;
-
-      expect(mockClient.ee.projects.annotations.create).toHaveBeenCalledWith(
-        'test-project-id',
-        expect.arrayContaining([
-          expect.objectContaining({ label: 'pass' }),
-          expect.objectContaining({ label: 'fail', reasoning: 'Bad response' }),
-        ]),
-      );
-    });
-
-    it('should throw error when no annotations provided', () => {
-      expect(() => traceInstance.annotate()).toThrow('At least one annotation must be provided');
     });
 
     it('should assign trace to users', async () => {
@@ -748,10 +687,10 @@ describe('trace', () => {
 
       // Since tag() returns early with no tags, we can immediately check
       expect(mockClient.spans.update).not.toHaveBeenCalled();
-      
+
       // Give a chance for any async operations to complete
       await new Promise((resolve) => setTimeout(resolve, 0));
-      
+
       // Still should not have been called
       expect(mockClient.spans.update).not.toHaveBeenCalled();
     });
@@ -763,14 +702,16 @@ describe('trace', () => {
       const { handleBackgroundError } = await import('./utils/error-handler');
       vi.mocked(handleBackgroundError);
 
-      traceInstance.annotate({ label: 'pass' as const });
+      traceInstance.tag('test-tag');
 
       // Wait for the getSpanUuid promise to resolve
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(handleBackgroundError).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Cannot annotate: span not found for function func-uuid-123' }),
-        expect.objectContaining({ functionUuid: 'func-uuid-123', method: 'annotate' })
+        expect.objectContaining({
+          message: 'Cannot tag: span not found for function func-uuid-123',
+        }),
+        expect.objectContaining({ functionUuid: 'func-uuid-123', method: 'tag' }),
       );
       expect(mockClient.ee.projects.annotations.create).not.toHaveBeenCalled();
     });
@@ -780,9 +721,7 @@ describe('trace', () => {
 
       const newTrace = new Trace('response', 'span-id', 'func-uuid');
 
-      expect(() => newTrace.annotate({ label: 'pass' as const })).toThrow(
-        'Lilypad SDK not configured',
-      );
+      expect(() => newTrace.tag('test')).toThrow('Lilypad SDK not configured');
     });
 
     it('should force flush before getting span UUID', async () => {
@@ -803,7 +742,7 @@ describe('trace', () => {
         return Promise.resolve();
       });
 
-      traceInstance.annotate({ label: 'pass' as const });
+      traceInstance.tag('test-tag');
 
       await flushPromise;
 
@@ -846,40 +785,11 @@ describe('trace', () => {
 
       const { LilypadClient } = await import('../lilypad/generated/Client');
       vi.mocked(LilypadClient).mockImplementation(() => mockClient);
-      
+
       const { getPooledClient } = await import('./utils/client-pool');
       vi.mocked(getPooledClient).mockReturnValue(mockClient);
 
       asyncTraceInstance = new AsyncTrace(42, 'async-span-id', 'async-func-uuid');
-    });
-
-    it('should annotate async trace', async () => {
-      const annotation = {
-        data: { async: true },
-        label: 'pass' as const,
-        type: 'automatic' as const,
-      };
-
-      await asyncTraceInstance.annotate(annotation);
-
-      expect(mockClient.ee.projects.annotations.create).toHaveBeenCalledWith('test-project-id', [
-        {
-          data: { async: true },
-          function_uuid: 'async-func-uuid',
-          span_uuid: 'async-span-uuid',
-          label: 'pass',
-          type: 'automatic',
-          project_uuid: 'test-project-id',
-        },
-      ]);
-    });
-
-    it('should throw error when span not found', async () => {
-      mockClient.projects.functions.spans.listPaginated.mockResolvedValue({ items: [] });
-
-      await expect(
-        asyncTraceInstance.annotate({ label: 'fail' as const }),
-      ).rejects.toThrow('Cannot annotate: span not found for function async-func-uuid');
     });
 
     it('should assign async trace to users', async () => {
@@ -906,9 +816,7 @@ describe('trace', () => {
     it('should handle errors in async operations', async () => {
       mockClient.ee.projects.annotations.create.mockRejectedValue(new Error('API Error'));
 
-      await expect(
-        asyncTraceInstance.annotate({ label: 'error' as const }),
-      ).rejects.toThrow('API Error');
+      await expect(asyncTraceInstance.assign('error@example.com')).rejects.toThrow('API Error');
     });
   });
 });

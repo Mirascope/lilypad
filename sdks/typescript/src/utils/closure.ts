@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 
 export interface DependencyInfo {
   version: string;
-  extras?: string[] | null;
+  extras?: string[];
 }
 
 export interface ClosureData {

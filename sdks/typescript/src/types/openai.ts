@@ -62,7 +62,7 @@ export interface ChatCompletionChunk {
 // Type for chat.completions.create function
 export type ChatCompletionsCreateFunction = (
   params: ChatCompletionParams,
-  options?: unknown
+  options?: unknown,
 ) => Promise<ChatCompletionResponse | AsyncIterable<ChatCompletionChunk>>;
 
 // Interface for OpenAI-like instances

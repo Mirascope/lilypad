@@ -6,21 +6,18 @@
  */
 
 import { trace as otelTrace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
-import type { Span as OTelSpan } from '@opentelemetry/api';
+import type { Span as OTelSpan, Attributes } from '@opentelemetry/api';
 import { getSettings } from './utils/settings';
-import { LilypadClient } from '../lilypad/generated/Client';
+// _LilypadClient type is used in the closure analysis below
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { LilypadClient as _LilypadClient } from '../lilypad/generated/Client';
 import { safeStringify } from './utils/json';
 import { getCachedClosure } from './utils/closure';
 import { getProvider } from './configure';
 import { getPooledClient } from './utils/client-pool';
 import { handleBackgroundError, ensureError } from './utils/error-handler';
 import { logger } from './utils/logger';
-import type {
-  AnnotationCreate,
-  FunctionCreate,
-  Label,
-  EvaluationType,
-} from '../lilypad/generated/api/types';
+import type { AnnotationCreate, FunctionCreate } from '../lilypad/generated/api/types';
 import type { SpanAttributesValue } from './types/span';
 
 /**
@@ -31,21 +28,6 @@ export interface TraceOptions {
   mode?: 'wrap' | null;
   tags?: string[];
   attributes?: Record<string, SpanAttributesValue>;
-}
-
-/**
- * Valid annotation data value types
- */
-export type AnnotationDataValue = string | number | boolean | string[] | number[] | boolean[] | Record<string, unknown>;
-
-/**
- * Annotation data structure
- */
-export interface Annotation {
-  data?: Record<string, AnnotationDataValue> | null;
-  label?: Label | null;
-  reasoning?: string | null;
-  type?: EvaluationType | null;
 }
 
 /**
@@ -65,10 +47,25 @@ export function logToCurrentSpan(
 ): void {
   const span = getCurrentSpan();
   if (span) {
-    span.addEvent(level, {
+    const eventAttributes: Attributes = {
       [`${level}.message`]: message,
-      ...attributes,
-    });
+    };
+
+    // Convert attributes to OpenTelemetry format
+    if (attributes) {
+      for (const [key, value] of Object.entries(attributes)) {
+        if (value !== undefined && value !== null) {
+          // Convert arrays to string representation
+          if (Array.isArray(value)) {
+            eventAttributes[key] = JSON.stringify(value);
+          } else {
+            eventAttributes[key] = value as string | number | boolean;
+          }
+        }
+      }
+    }
+
+    span.addEvent(level, eventAttributes);
 
     if (level === 'error' || level === 'critical') {
       span.setStatus({ code: SpanStatusCode.ERROR, message });
@@ -196,72 +193,17 @@ abstract class TraceBase<T> {
 
     return null;
   }
-
-  protected createAnnotationRequests(
-    projectId: string,
-    spanUuid: string,
-    annotations: Annotation[],
-  ): AnnotationCreate[] {
-    return annotations.map(
-      (annotation) =>
-        ({
-          data: annotation.data,
-          function_uuid: this.functionUuid,
-          span_uuid: spanUuid,
-          label: annotation.label,
-          reasoning: annotation.reasoning,
-          type: annotation.type,
-          project_uuid: projectId,
-        }) as AnnotationCreate,
-    );
-  }
 }
 
 /**
  * Fire-and-forget trace wrapper for backward compatibility
- * 
+ *
  * @deprecated This class performs async operations without proper error handling.
  * Use AsyncTrace instead for production code.
- * 
+ *
  * WARNING: Errors in annotation/assignment/tagging are silently logged and cannot be caught.
  */
 export class Trace<T> extends TraceBase<T> {
-  /**
-   * @deprecated Sync trace methods will be removed in the next major version.
-   * Use AsyncTrace for proper error handling.
-   */
-  annotate(...annotations: Annotation[]): void {
-    if (!annotations.length) {
-      throw new Error('At least one annotation must be provided');
-    }
-
-    const settings = getSettings();
-    if (!settings) {
-      throw new Error('Lilypad SDK not configured');
-    }
-
-    // Execute asynchronously in background - errors cannot be caught by caller
-    void this.getSpanUuid()
-      .then(async (spanUuid) => {
-        if (!spanUuid) {
-          const error = new Error(`Cannot annotate: span not found for function ${this.functionUuid}`);
-          handleBackgroundError(error, { functionUuid: this.functionUuid, method: 'annotate' });
-          return;
-        }
-
-        const client = getPooledClient(settings);
-        const requests = this.createAnnotationRequests(settings.projectId, spanUuid, annotations);
-        await client.ee.projects.annotations.create(settings.projectId, requests);
-      })
-      .catch((error) => {
-        handleBackgroundError(error, { 
-          functionUuid: this.functionUuid, 
-          method: 'annotate',
-          annotations: annotations.length 
-        });
-      });
-  }
-
   /**
    * @deprecated Sync trace methods will be removed in the next major version.
    * Use AsyncTrace for proper error handling.
@@ -280,7 +222,9 @@ export class Trace<T> extends TraceBase<T> {
     void this.getSpanUuid()
       .then(async (spanUuid) => {
         if (!spanUuid) {
-          const error = new Error(`Cannot assign: span not found for function ${this.functionUuid}`);
+          const error = new Error(
+            `Cannot assign: span not found for function ${this.functionUuid}`,
+          );
           handleBackgroundError(error, { functionUuid: this.functionUuid, method: 'assign' });
           return;
         }
@@ -298,10 +242,10 @@ export class Trace<T> extends TraceBase<T> {
         await client.ee.projects.annotations.create(settings.projectId, request);
       })
       .catch((error) => {
-        handleBackgroundError(error, { 
-          functionUuid: this.functionUuid, 
+        handleBackgroundError(error, {
+          functionUuid: this.functionUuid,
           method: 'assign',
-          emails: emails.length 
+          emails: emails.length,
         });
       });
   }
@@ -331,10 +275,10 @@ export class Trace<T> extends TraceBase<T> {
         await client.spans.update(spanUuid, { tags_by_name: tags });
       })
       .catch((error) => {
-        handleBackgroundError(error, { 
-          functionUuid: this.functionUuid, 
+        handleBackgroundError(error, {
+          functionUuid: this.functionUuid,
           method: 'tag',
-          tags 
+          tags,
         });
       });
   }
@@ -344,27 +288,6 @@ export class Trace<T> extends TraceBase<T> {
  * Asynchronous trace wrapper
  */
 export class AsyncTrace<T> extends TraceBase<T> {
-  async annotate(...annotations: Annotation[]): Promise<void> {
-    if (!annotations.length) {
-      throw new Error('At least one annotation must be provided');
-    }
-
-    const settings = getSettings();
-    if (!settings) {
-      throw new Error('Lilypad SDK not configured');
-    }
-
-    const spanUuid = await this.getSpanUuid();
-    if (!spanUuid) {
-      throw new Error(`Cannot annotate: span not found for function ${this.functionUuid}`);
-    }
-
-    const client = getPooledClient(settings);
-
-    const requests = this.createAnnotationRequests(settings.projectId, spanUuid, annotations);
-    await client.ee.projects.annotations.create(settings.projectId, requests);
-  }
-
   async assign(...emails: string[]): Promise<void> {
     if (!emails.length) {
       throw new Error('At least one email address must be provided');
@@ -415,15 +338,15 @@ export class AsyncTrace<T> extends TraceBase<T> {
 
 /**
  * Wrap a standalone function with tracing (high-order function usage)
- * 
+ *
  * @param fn - Function to trace
  * @param options - Trace options
  * @returns Traced function
- * 
+ *
  * @example
  * const traced = wrapWithTrace(async (x: number) => x * 2, { name: 'double' });
  * const result = await traced(5);
- * 
+ *
  * @example
  * // With auto_llm enabled, combine with custom tracing:
  * const processData = wrapWithTrace(
@@ -437,23 +360,23 @@ export class AsyncTrace<T> extends TraceBase<T> {
  */
 export function wrapWithTrace<T extends (...args: any[]) => any>(
   fn: T,
-  options?: TraceOptions | string
+  options?: TraceOptions | string,
 ): T {
   const opts: TraceOptions = typeof options === 'string' ? { name: options } : options || {};
   const spanName = opts.name || fn.name || 'anonymous';
-  
+
   const settings = getSettings();
   if (!settings) {
     logger.warn('Lilypad SDK not configured. Function will execute without tracing.');
     return fn;
   }
-  
-  const isAsync = fn.constructor.name === 'AsyncFunction' || 
-                  fn.constructor.name === 'AsyncGeneratorFunction';
-  
-  return (async function (...args: Parameters<T>): Promise<ReturnType<T>> {
+
+  const isAsync =
+    fn.constructor.name === 'AsyncFunction' || fn.constructor.name === 'AsyncGeneratorFunction';
+
+  return async function (...args: Parameters<T>): Promise<ReturnType<T>> {
     const tracer = otelTrace.getTracer('lilypad');
-    
+
     return tracer.startActiveSpan(
       spanName,
       {
@@ -467,7 +390,7 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
       },
       async (span) => {
         let functionUuid = '';
-        
+
         try {
           // Set argument values
           const argValues: Record<string, unknown> = {};
@@ -475,12 +398,12 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
             argValues[`arg${index}`] = arg;
           });
           span.setAttribute('lilypad.trace.arg_values', safeStringify(argValues));
-          
+
           // Set tags if provided
           if (opts.tags) {
             span.setAttribute('lilypad.trace.tags', opts.tags);
           }
-          
+
           // Get or create function
           if (opts.mode === 'wrap') {
             const uuid = await getOrCreateFunction(
@@ -509,14 +432,14 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
               })
               .catch((err) => logger.error('Failed to create function:', ensureError(err)));
           }
-          
+
           // Execute the original function
           const result = await fn(...args);
-          
+
           // Set output
           span.setAttribute('lilypad.trace.output', safeStringify(result));
           span.setStatus({ code: SpanStatusCode.OK });
-          
+
           // Handle wrap mode
           if (opts.mode === 'wrap') {
             const spanId = span.spanContext().spanId;
@@ -524,7 +447,7 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
               ? new AsyncTrace(result, spanId, functionUuid)
               : new Trace(result, spanId, functionUuid);
           }
-          
+
           return result;
         } catch (error) {
           const err = ensureError(error);
@@ -539,16 +462,16 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
         }
       },
     );
-  }) as T;
+  } as T;
 }
 
 /**
  * Type guard to check if we're using Stage-3 decorators
  */
 function isStage3DecoratorContext(
-  args: [object, string | symbol, PropertyDescriptor?] | [unknown, { kind: string }]
-): args is [unknown, { kind: string }] {
-  return args.length === 2 && typeof args[1] === 'object' && 'kind' in args[1];
+  args: any[],
+): args is [unknown, { kind: string; name?: string | symbol }] {
+  return args.length === 2 && typeof args[1] === 'object' && args[1] !== null && 'kind' in args[1];
 }
 
 /**
@@ -559,13 +482,13 @@ function isStage3DecoratorContext(
  *
  * @param options - Trace options or name string
  * @returns Method decorator
- * 
+ *
  * @example
  * // Works with both decorator standards
  * class Service {
  *   @trace()
  *   async method() { ... }
- *   
+ *
  *   @trace({ mode: 'wrap', tags: ['api'] })
  *   async traced() { ... }
  * }
@@ -575,22 +498,110 @@ export function trace(options?: TraceOptions | string): any {
 
   // Return a function that handles both decorator signatures
   return function (...args: any[]) {
+    // Debug logging to understand what tsx is passing
+    logger.debug('[trace decorator] Args:', {
+      length: args.length,
+      types: args.map((arg) => typeof arg),
+      arg0Type: typeof args[0],
+      arg1Type: typeof args[1],
+      arg2Type: typeof args[2],
+      isStage3:
+        args.length === 2 && typeof args[1] === 'object' && args[1] !== null && 'kind' in args[1],
+    });
+
     // Stage-3 decorator detection
     if (isStage3DecoratorContext(args)) {
-      const [, context] = args;
-      
+      const [value, context] = args;
+
+      logger.debug('[trace decorator] Stage-3 context:', {
+        kind: context.kind,
+        name: context.name,
+        nameType: typeof context.name,
+        valueType: typeof value,
+      });
+
       if (context.kind !== 'method') {
         throw new Error('trace decorator can only be applied to methods');
       }
 
-      return function (this: any, originalMethod: any, ...methodArgs: any[]) {
-        return traceMethod.call(this, originalMethod, opts, context.name as string, methodArgs);
+      // In Stage-3, value is the original method
+      if (typeof value !== 'function') {
+        // This is the case where tsx might be passing something else
+        logger.warn('[trace decorator] Stage-3 value is not a function:', {
+          valueType: typeof value,
+          value: value,
+        });
+
+        // Try to handle tsx's transformation
+        return function (originalMethod: any) {
+          logger.debug('[trace decorator] tsx Stage-3 wrapper called with:', {
+            originalMethodType: typeof originalMethod,
+          });
+
+          if (typeof originalMethod !== 'function') {
+            throw new Error(
+              `trace decorator: originalMethod is not a function, got ${typeof originalMethod}`,
+            );
+          }
+
+          const methodName = typeof context.name === 'string' ? context.name : String(context.name);
+
+          // Return the wrapped method
+          return function (this: any, ...args: any[]) {
+            return traceMethod.call(this, originalMethod, opts, methodName, args);
+          };
+        };
+      }
+
+      // Standard Stage-3 decorator - value is the original method
+      const originalMethod = value;
+      const methodName = typeof context.name === 'string' ? context.name : String(context.name);
+
+      // Return the replacement method
+      return function (this: any, ...args: any[]) {
+        return traceMethod.call(this, originalMethod, opts, methodName, args);
       };
     }
-    
+
     // Legacy decorator
-    const [target, propertyKey, descriptor] = args as [object, string | symbol, PropertyDescriptor?];
-    
+    const [target, propertyKey, descriptor] = args as [
+      object,
+      string | symbol,
+      PropertyDescriptor?,
+    ];
+
+    logger.debug('[trace decorator] Legacy decorator args:', {
+      targetType: typeof target,
+      propertyKeyType: typeof propertyKey,
+      propertyKey: propertyKey,
+      descriptorType: typeof descriptor,
+      hasDescriptor: !!descriptor,
+      descriptorValue: descriptor?.value,
+      descriptorValueType: descriptor ? typeof descriptor.value : 'no descriptor',
+    });
+
+    // Handle the case where tsx passes the method name as the second argument
+    // when using --require (no descriptor)
+    if (!descriptor && typeof propertyKey === 'string' && typeof target === 'function') {
+      logger.debug('[trace decorator] tsx --require mode detected, using target as constructor');
+
+      // In this case, target is the constructor and propertyKey is the method name
+      // We need to wrap the method on the prototype
+      const prototype = target.prototype;
+      const originalMethod = prototype[propertyKey];
+
+      if (typeof originalMethod !== 'function') {
+        throw new Error(`trace decorator: method ${propertyKey} is not a function on prototype`);
+      }
+
+      // Create a wrapped method
+      prototype[propertyKey] = function (this: any, ...args: any[]) {
+        return traceMethod.call(this, originalMethod, opts, propertyKey as string, args);
+      };
+
+      return;
+    }
+
     if (!descriptor) {
       throw new Error('trace decorator descriptor is undefined - check TypeScript configuration');
     }
@@ -616,7 +627,7 @@ function traceMethod(
   originalMethod: Function,
   opts: TraceOptions,
   propertyKey: string | symbol,
-  args: unknown[]
+  args: unknown[],
 ): any {
   const settings = getSettings();
   if (!settings) {
@@ -664,7 +675,7 @@ function traceMethod(
         // For wrap mode, we need to wait for the function UUID
         if (opts.mode === 'wrap') {
           const uuid = await getOrCreateFunction(
-            originalMethod,
+            originalMethod as (...args: unknown[]) => unknown,
             settings.projectId,
             settings.apiKey,
             settings.baseUrl || 'https://api.getlilypad.com',
@@ -676,7 +687,7 @@ function traceMethod(
         } else {
           // For non-wrap mode, we can fire and forget
           getOrCreateFunction(
-            originalMethod,
+            originalMethod as (...args: unknown[]) => unknown,
             settings.projectId,
             settings.apiKey,
             settings.baseUrl || 'https://api.getlilypad.com',
@@ -706,7 +717,7 @@ function traceMethod(
           // For sync functions, log deprecation warning
           logger.warn(
             'Returning Trace (fire-and-forget) for synchronous functions is deprecated. ' +
-            'Consider using async functions with AsyncTrace for proper error handling.'
+              'Consider using async functions with AsyncTrace for proper error handling.',
           );
           return new Trace(result, spanId, functionUuid);
         }

@@ -5,22 +5,17 @@
 import { LilypadClient } from '../../lilypad/generated/Client';
 import type { LilypadSettings } from './settings';
 
-interface ClientPoolKey {
-  apiKey: string;
-  baseUrl: string;
-}
-
 class ClientPool {
   private clients = new Map<string, LilypadClient>();
-  
+
   private getKey(settings: LilypadSettings): string {
     return `${settings.apiKey}:${settings.baseUrl || 'https://api.getlilypad.com'}`;
   }
-  
+
   get(settings: LilypadSettings): LilypadClient {
     const key = this.getKey(settings);
     let client = this.clients.get(key);
-    
+
     if (!client) {
       client = new LilypadClient({
         environment: () => settings.baseUrl || 'https://api.getlilypad.com',
@@ -28,10 +23,10 @@ class ClientPool {
       });
       this.clients.set(key, client);
     }
-    
+
     return client;
   }
-  
+
   clear(): void {
     this.clients.clear();
   }

@@ -154,12 +154,22 @@ export async function* wrapAsyncGenerator<T>(
  * Type guard to check if a value is an AsyncIterable
  */
 export function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
-  return value != null && typeof value[Symbol.asyncIterator] === 'function';
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    Symbol.asyncIterator in value &&
+    typeof (value as any)[Symbol.asyncIterator] === 'function'
+  );
 }
 
 /**
  * Type guard to check if a value is an AsyncIterator
  */
 export function isAsyncIterator<T>(value: unknown): value is AsyncIterator<T> {
-  return value != null && typeof value.next === 'function';
+  return (
+    value != null &&
+    typeof value === 'object' &&
+    'next' in value &&
+    typeof (value as any).next === 'function'
+  );
 }

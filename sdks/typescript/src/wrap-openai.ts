@@ -8,12 +8,11 @@ import type { Span } from '@opentelemetry/api';
 import { logger } from './utils/logger';
 import { isAsyncIterable } from './utils/stream-wrapper';
 import { ensureError } from './utils/error-handler';
-import type { 
-  ChatCompletionParams, 
-  ChatCompletionResponse, 
-  ChatCompletionChunk,
+import type {
+  ChatCompletionParams,
+  ChatCompletionResponse,
   OpenAILike,
-  ChatCompletionsCreateFunction 
+  ChatCompletionsCreateFunction,
 } from './types/openai';
 
 // Type guard for ChatCompletionResponse
@@ -98,13 +97,25 @@ function recordResponse(span: Span, response: ChatCompletionResponse): void {
 async function* wrapStream<T>(span: Span, stream: AsyncIterable<T>): AsyncIterable<T> {
   let content = '';
   let finishReason: string | null = null;
-  let usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | undefined;
+  let usage:
+    | { prompt_tokens: number; completion_tokens: number; total_tokens: number }
+    | undefined = {
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    total_tokens: 0,
+  };
 
   try {
     for await (const chunk of stream) {
       // Process chunk
       // Handle chunk data
-      if (chunk && typeof chunk === 'object' && 'choices' in chunk && Array.isArray(chunk.choices) && chunk.choices[0]) {
+      if (
+        chunk &&
+        typeof chunk === 'object' &&
+        'choices' in chunk &&
+        Array.isArray(chunk.choices) &&
+        chunk.choices[0]
+      ) {
         const choice = chunk.choices[0];
         if (choice.delta?.content) {
           content += choice.delta.content;
@@ -114,7 +125,11 @@ async function* wrapStream<T>(span: Span, stream: AsyncIterable<T>): AsyncIterab
         }
       }
       if (chunk && typeof chunk === 'object' && 'usage' in chunk && chunk.usage) {
-        usage = chunk.usage;
+        usage = chunk.usage as {
+          prompt_tokens: number;
+          completion_tokens: number;
+          total_tokens: number;
+        };
       }
 
       yield chunk;
@@ -163,7 +178,7 @@ async function* wrapStream<T>(span: Span, stream: AsyncIterable<T>): AsyncIterab
 
 // Helper function to wrap chat completions
 function wrapChatCompletionsCreate(
-  originalCreate: ChatCompletionsCreateFunction
+  originalCreate: ChatCompletionsCreateFunction,
 ): ChatCompletionsCreateFunction {
   return async (params: ChatCompletionParams, ...restArgs: unknown[]) => {
     const tracer = trace.getTracer('lilypad-openai', '0.1.0');
@@ -240,28 +255,26 @@ function wrapChatCompletionsCreate(
  * Wraps an OpenAI instance or class to add tracing
  */
 export function wrapOpenAI<T extends OpenAILike>(instance: T): T;
-export function wrapOpenAI<T extends new (...args: any[]) => OpenAILike>(
-  constructor: T
-): T;
+export function wrapOpenAI<T extends new (...args: any[]) => OpenAILike>(constructor: T): T;
 export function wrapOpenAI<T extends object>(openaiInstance: T): T {
   logger.debug('[wrapOpenAI] Wrapping OpenAI instance');
 
   // Check if it's an instance or a class
-  const isInstance = typeof openaiInstance === 'object' && openaiInstance.chat;
+  const isInstance = typeof openaiInstance === 'object' && 'chat' in openaiInstance;
 
   if (isInstance) {
+    // Type assertion to access chat property
+    const instance = openaiInstance as OpenAILike;
     // Wrap instance methods directly
-    if (openaiInstance.chat?.completions?.create) {
-      const originalCreate = openaiInstance.chat.completions.create.bind(
-        openaiInstance.chat.completions,
-      );
-      openaiInstance.chat.completions.create = wrapChatCompletionsCreate(originalCreate);
+    if (instance.chat?.completions?.create) {
+      const originalCreate = instance.chat.completions.create.bind(instance.chat.completions);
+      instance.chat.completions.create = wrapChatCompletionsCreate(originalCreate);
     }
     return openaiInstance; // Modified in-place
   }
 
   // Otherwise, assume it's a class and create a wrapper
-  const OpenAIClass = openaiInstance;
+  const OpenAIClass = openaiInstance as new (...args: any[]) => OpenAILike;
 
   // Create a wrapper class
   class WrappedOpenAI extends OpenAIClass {

@@ -35,15 +35,13 @@ class QuestionService {
   @trace()
   async answerQuestion(question: string): Promise<string | null> {
     const convertedQuestion = question.toLowerCase().trim();
-    
+
     // This OpenAI call is automatically traced thanks to auto_llm
     const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
-      messages: [
-        { role: 'user', content: `Answer this question: ${convertedQuestion}` }
-      ],
+      messages: [{ role: 'user', content: `Answer this question: ${convertedQuestion}` }],
     });
-    
+
     return response.choices[0].message.content;
   }
 }
@@ -55,6 +53,7 @@ console.log(response);
 ```
 
 This example demonstrates:
+
 - **Auto-instrumentation**: OpenAI calls are automatically traced with `auto_llm: true`
 - **Custom tracing**: Your own functions can be traced with the `@trace()` decorator
 - **Complete visibility**: Both your business logic and LLM calls are captured in the same trace
@@ -132,6 +131,7 @@ const response = await client.chat.completions.create({
 ```
 
 Run with:
+
 ```bash
 # With tsx (TypeScript)
 npx tsx --require @lilypad/typescript-sdk/dist/register.js your-script.ts
@@ -332,6 +332,7 @@ npx tsx --tsconfig tsconfig.tsx.json --require ./dist/register.js your-file.ts
 ```
 
 Example:
+
 ```typescript
 import { trace } from '@lilypad/typescript-sdk';
 
@@ -362,7 +363,7 @@ class DataService {
     async (input: string): Promise<string> => {
       return input.toUpperCase();
     },
-    { name: 'processData' }
+    { name: 'processData' },
   );
 
   fetchData = wrapWithTrace(
@@ -370,7 +371,7 @@ class DataService {
       const response = await fetch(`/api/data/${id}`);
       return response.json();
     },
-    { name: 'fetchData', tags: ['api', 'fetch'] }
+    { name: 'fetchData', tags: ['api', 'fetch'] },
   );
 }
 ```
@@ -399,14 +400,6 @@ const result = service.analyzeData(someData);
 // result is a Trace<T> object, not the raw result
 console.log(result.response); // Access the actual result: { score: 0.85, category: 'positive' }
 
-// Add annotations
-result.annotate({
-  label: 'pass',
-  reasoning: 'Score above threshold',
-  type: 'automatic',
-  data: { threshold: 0.8 }
-});
-
 // Add tags
 result.tag('production', 'analytics');
 
@@ -433,22 +426,21 @@ const traceResult = await mlService.predict(inputData);
 // Access the response
 const prediction = traceResult.response;
 
-// Async annotation
-await traceResult.annotate({
-  label: prediction.confidence > 0.9 ? 'pass' : 'fail',
-  reasoning: `Confidence: ${prediction.confidence}`,
-  type: 'automatic'
-});
+// Add tags based on confidence
+await traceResult.tag(
+  prediction.confidence > 0.9 ? 'high-confidence' : 'low-confidence',
+  'ml-prediction',
+);
 ```
 
 ### Trace Options
 
 ```typescript
 interface TraceOptions {
-  name?: string;           // Custom span name (default: class.method)
-  mode?: 'wrap' | null;    // Return mode: 'wrap' returns Trace object, null returns raw result
-  tags?: string[];         // Tags to attach to the span
-  attributes?: Record<string, any>;  // Additional span attributes
+  name?: string; // Custom span name (default: class.method)
+  mode?: 'wrap' | null; // Return mode: 'wrap' returns Trace object, null returns raw result
+  tags?: string[]; // Tags to attach to the span
+  attributes?: Record<string, any>; // Additional span attributes
 }
 ```
 
@@ -456,10 +448,10 @@ interface TraceOptions {
 
 ```typescript
 interface Annotation {
-  data?: Record<string, any> | null;    // Custom data to attach
-  label?: 'pass' | 'fail' | null;       // Evaluation label
-  reasoning?: string | null;             // Explanation for the evaluation
-  type?: 'manual' | 'automatic' | null;  // How the annotation was created
+  data?: Record<string, any> | null; // Custom data to attach
+  label?: 'pass' | 'fail' | null; // Evaluation label
+  reasoning?: string | null; // Explanation for the evaluation
+  type?: 'manual' | 'automatic' | null; // How the annotation was created
 }
 ```
 
