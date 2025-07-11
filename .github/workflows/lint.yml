@@ -7,11 +7,14 @@ on:
       - main
       - update-typescript-sdk
       - LILYPAD-205
+      - LILYPAD-207
+
   pull_request:
     branches:
       - main
       - update-typescript-sdk
       - LILYPAD-205
+      - LILYPAD-207
 
 jobs:
   codespell:
