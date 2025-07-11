@@ -84,9 +84,10 @@ async function getOrCreateFunction(
   projectId: string,
   apiKey: string,
   baseUrl: string,
+  isVersioned: boolean = false,
 ): Promise<string | null> {
   try {
-    const closure = getCachedClosure(fn);
+    const closure = getCachedClosure(fn, undefined, isVersioned);
 
     // Check cache first
     const cached = functionUuidCache.get(closure.hash);
@@ -120,7 +121,7 @@ async function getOrCreateFunction(
       signature: closure.signature,
       arg_types: {},
       dependencies: closure.dependencies,
-      is_versioned: false,
+      is_versioned: isVersioned,
       prompt_template: '',
     };
 
@@ -336,6 +337,19 @@ export class AsyncTrace<T> extends TraceBase<T> {
   }
 }
 
+// Overload signatures for wrapWithTrace
+export function wrapWithTrace<T extends (...args: any[]) => any>(fn: T, name?: string): T;
+export function wrapWithTrace<T extends (...args: any[]) => any>(
+  fn: T,
+  options: { mode?: null } & Omit<TraceOptions, 'mode'>,
+): T;
+export function wrapWithTrace<T extends (...args: any[]) => any>(
+  fn: T,
+  options: { mode: 'wrap' } & Omit<TraceOptions, 'mode'>,
+): T extends (...args: any[]) => Promise<infer R>
+  ? (...args: Parameters<T>) => Promise<AsyncTrace<R>>
+  : (...args: Parameters<T>) => Trace<ReturnType<T>>;
+
 /**
  * Wrap a standalone function with tracing (high-order function usage)
  *
@@ -347,16 +361,6 @@ export class AsyncTrace<T> extends TraceBase<T> {
  * const traced = wrapWithTrace(async (x: number) => x * 2, { name: 'double' });
  * const result = await traced(5);
  *
- * @example
- * // With auto_llm enabled, combine with custom tracing:
- * const processData = wrapWithTrace(
- *   async (data: string) => {
- *     // This OpenAI call is auto-traced
- *     const response = await openai.chat.completions.create({...});
- *     return response.choices[0].message.content;
- *   },
- *   { name: 'processData', tags: ['data-processing'] }
- * );
  */
 export function wrapWithTrace<T extends (...args: any[]) => any>(
   fn: T,
@@ -374,7 +378,7 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
   const isAsync =
     fn.constructor.name === 'AsyncFunction' || fn.constructor.name === 'AsyncGeneratorFunction';
 
-  return async function (...args: Parameters<T>): Promise<ReturnType<T>> {
+  const tracedFunction = async function (...args: Parameters<T>): Promise<ReturnType<T>> {
     const tracer = otelTrace.getTracer('lilypad');
 
     return tracer.startActiveSpan(
@@ -405,12 +409,14 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
           }
 
           // Get or create function
-          if (opts.mode === 'wrap') {
+          const isVersioned = false;
+          if (opts.mode === 'wrap' || isVersioned) {
             const uuid = await getOrCreateFunction(
               fn,
               settings.projectId,
               settings.apiKey,
               settings.baseUrl || 'https://api.getlilypad.com',
+              isVersioned,
             );
             if (uuid) {
               functionUuid = uuid;
@@ -423,6 +429,7 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
               settings.projectId,
               settings.apiKey,
               settings.baseUrl || 'https://api.getlilypad.com',
+              isVersioned,
             )
               .then((uuid) => {
                 if (uuid) {
@@ -463,6 +470,8 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
       },
     );
   } as T;
+
+  return tracedFunction;
 }
 
 /**
@@ -473,6 +482,11 @@ function isStage3DecoratorContext(
 ): args is [unknown, { kind: string; name?: string | symbol }] {
   return args.length === 2 && typeof args[1] === 'object' && args[1] !== null && 'kind' in args[1];
 }
+
+// Overload signatures for trace decorator
+export function trace(name?: string): any;
+export function trace(options: { mode?: null } & Omit<TraceOptions, 'mode'>): any;
+export function trace(options: { mode: 'wrap' } & Omit<TraceOptions, 'mode'>): any;
 
 /**
  * Industry-standard trace decorator implementation with dual decorator support
@@ -491,6 +505,8 @@ function isStage3DecoratorContext(
  *
  *   @trace({ mode: 'wrap', tags: ['api'] })
  *   async traced() { ... }
+ *
+ *   async versionedMethod() { ... }
  * }
  */
 export function trace(options?: TraceOptions | string): any {
@@ -558,9 +574,11 @@ export function trace(options?: TraceOptions | string): any {
       const methodName = typeof context.name === 'string' ? context.name : String(context.name);
 
       // Return the replacement method
-      return function (this: any, ...args: any[]) {
+      const tracedMethod = function (this: any, ...args: any[]) {
         return traceMethod.call(this, originalMethod, opts, methodName, args);
       };
+
+      return tracedMethod;
     }
 
     // Legacy decorator
@@ -595,9 +613,11 @@ export function trace(options?: TraceOptions | string): any {
       }
 
       // Create a wrapped method
-      prototype[propertyKey] = function (this: any, ...args: any[]) {
+      const tracedMethod = function (this: any, ...args: any[]) {
         return traceMethod.call(this, originalMethod, opts, propertyKey as string, args);
       };
+
+      prototype[propertyKey] = tracedMethod;
 
       return;
     }
@@ -672,13 +692,15 @@ function traceMethod(
         }
 
         // Get or create function
-        // For wrap mode, we need to wait for the function UUID
-        if (opts.mode === 'wrap') {
+        // For wrap mode or versioned functions, we need to wait for the function UUID
+        const isVersioned = false;
+        if (opts.mode === 'wrap' || isVersioned) {
           const uuid = await getOrCreateFunction(
             originalMethod as (...args: unknown[]) => unknown,
             settings.projectId,
             settings.apiKey,
             settings.baseUrl || 'https://api.getlilypad.com',
+            isVersioned,
           );
           if (uuid) {
             functionUuid = uuid;
@@ -691,6 +713,7 @@ function traceMethod(
             settings.projectId,
             settings.apiKey,
             settings.baseUrl || 'https://api.getlilypad.com',
+            isVersioned,
           )
             .then((uuid) => {
               if (uuid) {

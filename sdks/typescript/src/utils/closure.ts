@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { logger } from './logger';
 
 export interface DependencyInfo {
   version: string;
@@ -11,6 +12,7 @@ export interface ClosureData {
   code: string;
   hash: string;
   dependencies: Record<string, DependencyInfo>;
+  isVersioned?: boolean;
 }
 
 // Type for any callable function - using unknown is safer than any
@@ -71,12 +73,24 @@ export class Closure implements ClosureData {
    * Create a closure from a function
    * Note: This is a simplified version compared to Python implementation
    */
-  static fromFunction(fn: AnyFunction, dependencies?: Record<string, DependencyInfo>): Closure {
+  static fromFunction(
+    fn: AnyFunction,
+    dependencies?: Record<string, DependencyInfo>,
+    isVersioned: boolean = false,
+  ): Closure {
     const name = getQualifiedName(fn);
-    const signature = getFunctionSignature(fn);
     const code = fn.toString();
 
-    // Generate hash from the code
+    // Debug log
+    logger.debug(`[Closure.fromFunction] Creating closure for function ${name}:`, {
+      name,
+      codeLength: code.length,
+      codePreview: code.substring(0, 100),
+      isVersioned,
+    });
+
+    // Always use simple hashing since we removed versioning support
+    const signature = getFunctionSignature(fn);
     const hash = crypto
       .createHash('sha256')
       .update(code)
@@ -89,6 +103,7 @@ export class Closure implements ClosureData {
       code,
       hash,
       dependencies: dependencies || {},
+      isVersioned,
     });
   }
 }
@@ -102,13 +117,20 @@ const functionCache = new WeakMap<AnyFunction, Closure>();
 export function getCachedClosure(
   fn: AnyFunction,
   dependencies?: Record<string, DependencyInfo>,
+  isVersioned: boolean = false,
 ): Closure {
+  // For versioned functions, always create a new closure to ensure
+  // we get the latest code
+  if (isVersioned) {
+    return Closure.fromFunction(fn, dependencies, isVersioned);
+  }
+
   const cached = functionCache.get(fn);
   if (cached && !dependencies) {
     return cached;
   }
 
-  const closure = Closure.fromFunction(fn, dependencies);
+  const closure = Closure.fromFunction(fn, dependencies, isVersioned);
   functionCache.set(fn, closure);
   return closure;
 }
