@@ -431,6 +431,41 @@ await traceResult.tag(
   prediction.confidence > 0.9 ? 'high-confidence' : 'low-confidence',
   'ml-prediction',
 );
+
+// Add evaluation annotation
+await traceResult.annotate({
+  label: prediction.confidence > 0.9 ? 'pass' : 'fail',
+  reasoning: `Model confidence: ${prediction.confidence}`,
+  type: 'manual',
+  data: { prediction: prediction.prediction, threshold: 0.9 },
+});
+```
+
+### Trace Annotations
+
+The `annotate` method allows you to add evaluation data to your traces:
+
+```typescript
+// Single annotation
+result.annotate({
+  label: 'pass', // 'pass' or 'fail'
+  reasoning: 'Response was accurate and helpful',
+  type: 'manual', // 'manual', 'verified', or 'edited'
+  data: { accuracy_score: 0.95, response_time_ms: 230 },
+});
+
+// Multiple annotations
+result.annotate(
+  { label: 'pass', reasoning: 'Accuracy check passed' },
+  { label: 'fail', reasoning: 'Latency exceeded threshold', data: { latency_ms: 1500 } },
+);
+
+// AsyncTrace requires await
+await asyncResult.annotate({
+  label: 'pass',
+  reasoning: 'All validation checks passed',
+  type: 'verified',
+});
 ```
 
 ### Trace Options
@@ -448,10 +483,10 @@ interface TraceOptions {
 
 ```typescript
 interface Annotation {
-  data?: Record<string, any> | null; // Custom data to attach
-  label?: 'pass' | 'fail' | null; // Evaluation label
+  data?: Record<string, any> | null; // Custom metadata to attach
+  label?: 'pass' | 'fail' | null; // Evaluation result
   reasoning?: string | null; // Explanation for the evaluation
-  type?: 'manual' | 'automatic' | null; // How the annotation was created
+  type?: 'manual' | 'verified' | 'edited' | null; // How the annotation was created
 }
 ```
 

@@ -71,7 +71,11 @@
     "example:comprehensive:tsx": "tsx --tsconfig tsconfig.tsx.json examples/comprehensive.ts",
     "example:comprehensive:auto": "tsx --require ./dist/register.js examples/comprehensive.ts",
     "example:streaming": "bun run examples/streaming.ts",
-    "example:trace-wrap": "bun run examples/trace-wrap-mode.ts"
+    "example:trace-wrap": "bun run examples/trace-wrap-mode.ts",
+    "example:annotate-simple": "bun run examples/trace-annotate-simple.ts",
+    "example:annotate-wrap": "bun run examples/trace-annotate-wrap.ts",
+    "example:annotate-wrap:auto": "tsx --require ./dist/register.js examples/trace-annotate-wrap-main.ts",
+    "example:annotate-retry": "bun run examples/trace-annotate-with-retry.ts"
   },
   "keywords": [
     "lilypad",
