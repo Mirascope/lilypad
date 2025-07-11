@@ -1,7 +1,7 @@
 import { SpanDetailPage } from "@/src/routes/_auth/projects/$projectUuid/traces/detail.$spanUuid";
 import { setupTestEnvironment } from "@/src/test-setup";
 import { mockAuthenticatedContext, renderRoute } from "@/src/test-utils";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("SpanDetailPage", () => {
@@ -18,6 +18,8 @@ describe("SpanDetailPage", () => {
       initialPath: "/_auth/projects/test-project-uuid/traces/detail/test-span-uuid",
     });
 
-    expect(screen.getByText("Trace Hierarchy")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Trace Hierarchy")).toBeTruthy();
+    });
   });
 });

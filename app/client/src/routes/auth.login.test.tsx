@@ -1,7 +1,7 @@
 import { LoginComponent } from "@/src/routes/auth.login";
 import { renderRoute, mockAuthContext } from "@/src/test-utils";
 import { setupTestEnvironment } from "@/src/test-setup";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("LoginComponent", () => {
@@ -19,8 +19,10 @@ describe("LoginComponent", () => {
       }),
     });
 
-    expect(screen.getByText("Welcome to Lilypad")).toBeTruthy();
-    expect(screen.getByText("Sign in to continue")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Welcome to Lilypad")).toBeTruthy();
+      expect(screen.getByText("Sign in to continue")).toBeTruthy();
+    });
   });
 
   it("should render with redirect parameter", async () => {
@@ -34,7 +36,9 @@ describe("LoginComponent", () => {
       search: { redirect: "/projects" },
     });
 
-    expect(screen.getByText("Welcome to Lilypad")).toBeTruthy();
-    expect(screen.getByText("Sign in to continue")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Welcome to Lilypad")).toBeTruthy();
+      expect(screen.getByText("Sign in to continue")).toBeTruthy();
+    });
   });
 });

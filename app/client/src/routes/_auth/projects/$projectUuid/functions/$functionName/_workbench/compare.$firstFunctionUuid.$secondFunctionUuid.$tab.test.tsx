@@ -1,7 +1,7 @@
 import { CompareWorkbench } from "@/src/routes/_auth/projects/$projectUuid/functions/$functionName/_workbench/compare.$firstFunctionUuid.$secondFunctionUuid.$tab";
 import { renderRoute, mockAuthenticatedContext } from "@/src/test-utils";
 import { setupTestEnvironment } from "@/src/test-setup";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it, mock } from "bun:test";
 
 describe("CompareWorkbench", () => {
@@ -84,8 +84,10 @@ describe("CompareWorkbench", () => {
       },
     });
 
-    expect(screen.getByText("test_function")).toBeTruthy();
-    expect(screen.getByText("Back to Functions")).toBeTruthy();
-    expect(screen.getByText("Compare")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("test_function")).toBeTruthy();
+      expect(screen.getByText("Back to Functions")).toBeTruthy();
+      expect(screen.getByText("Compare")).toBeTruthy();
+    });
   });
 });

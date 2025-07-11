@@ -1,7 +1,7 @@
 import { ComparePlaygroundsRoute } from "@/src/routes/_auth/projects/$projectUuid/playground/$functionName/compare.$firstFunctionUuid.$secondFunctionUuid";
 import { renderRoute, mockAuthenticatedContext } from "@/src/test-utils";
 import { setupTestEnvironment } from "@/src/test-setup";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it, mock } from "bun:test";
 
 describe("ComparePlaygroundsRoute", () => {
@@ -97,7 +97,9 @@ describe("ComparePlaygroundsRoute", () => {
       },
     });
 
-    expect(screen.getByText("Compare Functions")).toBeTruthy();
-    expect(screen.getByText("Comparison requires versioned functions and playground access.")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Compare Functions")).toBeTruthy();
+      expect(screen.getByText("Comparison requires versioned functions and playground access.")).toBeTruthy();
+    });
   });
 });

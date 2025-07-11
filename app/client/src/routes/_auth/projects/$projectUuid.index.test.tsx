@@ -1,7 +1,7 @@
 import { ProjectDashboard } from "@/src/routes/_auth/projects/$projectUuid.index";
 import { setupTestEnvironment } from "@/src/test-setup";
 import { mockAuthenticatedContext, renderRoute } from "@/src/test-utils";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("ProjectDashboard", () => {
@@ -18,8 +18,10 @@ describe("ProjectDashboard", () => {
       initialPath: "/_auth/projects/test-project-uuid/",
     });
 
-    expect(screen.getByText("Total Cost")).toBeTruthy();
-    expect(screen.getByText("Total Tokens")).toBeTruthy();
-    expect(screen.getByText("Total API Calls")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Total Cost")).toBeTruthy();
+      expect(screen.getByText("Total Tokens")).toBeTruthy();
+      expect(screen.getByText("Total API Calls")).toBeTruthy();
+    });
   });
 });
