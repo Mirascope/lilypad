@@ -1,7 +1,7 @@
 import { TraceContainer } from "@/src/routes/_auth/projects/$projectUuid/traces.$";
 import { setupTestEnvironment } from "@/src/test-setup";
 import { mockAuthenticatedContext, renderRoute } from "@/src/test-utils";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("Trace", () => {
@@ -18,6 +18,13 @@ describe("Trace", () => {
       initialPath: "/_auth/projects/test-project-uuid/traces/spans",
     });
 
-    expect(screen.getByText("Test Project") || screen.getByTestId("lilypad-loading")).toBeTruthy();
+    await waitFor(
+      () => {
+        const projectTitle = screen.queryByText("Test Project");
+        const loading = screen.queryByTestId("lilypad-loading");
+        expect(projectTitle || loading).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 });

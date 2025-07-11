@@ -1,7 +1,7 @@
 import { AnnotationLayout } from "@/src/routes/_auth/projects/$projectUuid/annotations/$";
 import { renderRoute, mockAuthenticatedContext } from "@/src/test-utils";
 import { setupTestEnvironment } from "@/src/test-setup";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("AnnotationLayout", () => {
@@ -19,6 +19,8 @@ describe("AnnotationLayout", () => {
     });
 
     // Since annotations can be empty, check for the "No Annotation Selected" state
-    expect(screen.getByText("No Annotation Selected")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("No Annotation Selected")).toBeTruthy();
+    });
   });
 });

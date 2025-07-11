@@ -1,7 +1,7 @@
 import { Settings } from "@/src/routes/_auth/settings.$";
 import { renderRoute, mockAuthenticatedContext } from "@/src/test-utils";
 import { setupTestEnvironment } from "@/src/test-setup";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it, mock } from "bun:test";
 
 describe("Settings", () => {
@@ -27,6 +27,8 @@ describe("Settings", () => {
       params: { _splat: "overview" },
     });
 
-    expect(screen.getByText("Settings")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Settings")).toBeTruthy();
+    });
   });
 });
