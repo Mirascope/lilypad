@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/detail
   component: () => <SpanDetailPage />,
 });
 
-const SpanDetailPage = () => {
+export const SpanDetailPage = () => {
   const navigate = useNavigate();
   const { projectUuid, spanUuid } = useParams({ from: Route.id });
   const handleBackToTraces = () => {

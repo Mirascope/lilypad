@@ -730,9 +730,13 @@ def test_span_creation_with_real_tracer_provider() -> None:
     # Set up a real tracer provider
     provider = RealTracerProvider()
 
+    def mock_get_tracer(name, **kwargs):
+        # Pass the provider to real_get_tracer
+        return real_get_tracer(name, tracer_provider=provider)
+
     with (
         patch("lilypad.spans.get_tracer_provider", return_value=provider),
-        patch("lilypad.spans.get_tracer", side_effect=real_get_tracer),
+        patch("lilypad.spans.get_tracer", side_effect=mock_get_tracer),
         span("real tracer test") as s,
     ):
         s.info("Using real tracer")
@@ -747,3 +751,53 @@ def test_span_type_attribute() -> None:
 
     dummy = dummy_spans[0]
     assert dummy.attributes.get("lilypad.type") == "trace"
+
+
+def test_span_nonrecording_span_warning() -> None:
+    """Test span behavior when NonRecordingSpan is returned (lines 48-57)."""
+    # Reset the warning flag
+    Span._warned_not_configured = False
+
+    # Create a mock NonRecordingSpan
+    class NonRecordingSpan:
+        """Mock NonRecordingSpan class."""
+
+        pass
+
+    mock_nonrecording_span = NonRecordingSpan()
+
+    # Mock get_tracer to return our NonRecordingSpan
+    with patch("lilypad.spans.get_tracer") as mock_get_tracer:
+        mock_get_tracer.return_value.start_span.return_value = mock_nonrecording_span
+
+        # Capture log output
+        with patch("lilypad.spans.logging.getLogger") as mock_get_logger:
+            mock_logger = Mock()
+            mock_get_logger.return_value = mock_logger
+
+            # Create span
+            with span("test span") as s:
+                # Verify it's marked as noop
+                assert s._noop is True
+                assert s._span is None
+
+                # Verify warning was logged
+                mock_logger.warning.assert_called_once()
+                warning_msg = mock_logger.warning.call_args[0][0]
+                assert "Lilypad has not been configured" in warning_msg
+                assert "Tracing is disabled" in warning_msg
+                assert "test span" in mock_logger.warning.call_args[0][1]
+
+                # Verify the flag was set
+                assert Span._warned_not_configured is True
+
+            # Create another span - should not log warning again
+            mock_logger.warning.reset_mock()
+            with span("another test span") as s2:
+                assert s2._noop is True
+                assert s2._span is None
+                # Should not log warning again
+                mock_logger.warning.assert_not_called()
+
+    # Reset the flag
+    Span._warned_not_configured = False

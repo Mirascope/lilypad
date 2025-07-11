@@ -42,6 +42,20 @@ class Span:
 
         tracer = get_tracer("lilypad")
         self._span: OTSpan = tracer.start_span(self.name)
+
+        # Check if we got a NonRecordingSpan (happens when tracing is not properly configured)
+        if hasattr(self._span, "__class__") and self._span.__class__.__name__ == "NonRecordingSpan":
+            if not Span._warned_not_configured:
+                logging.getLogger("lilypad").warning(
+                    "Lilypad has not been configured. Tracing is disabled "
+                    "for span '%s'. Call `lilypad.configure(...)` early in program start-up.",
+                    self.name,
+                )
+                Span._warned_not_configured = True
+            self._noop = True
+            self._span = None
+            return self
+
         self._span.set_attribute("lilypad.type", "trace")
 
         current_session = SESSION_CONTEXT.get()
@@ -190,6 +204,11 @@ class Span:
     def opentelemetry_span(self) -> OTSpan | None:
         """Return the underlying OpenTelemetry span."""
         return None if self._noop else self._span
+
+    @property
+    def is_noop(self) -> bool:
+        """Return whether this span is in no-op mode."""
+        return self._noop
 
 
 def span(name: str) -> Span:

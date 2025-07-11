@@ -7503,7 +7503,6 @@ client = Lilypad(
 client.projects.functions.spans.list_paginated(
     project_uuid="project_uuid",
     function_uuid="function_uuid",
-    environment_uuid="environment_uuid",
 )
 
 ```
@@ -7536,7 +7535,7 @@ client.projects.functions.spans.list_paginated(
 <dl>
 <dd>
 
-**environment_uuid:** `str` 
+**environment_uuid:** `typing.Optional[str]` 
     
 </dd>
 </dl>

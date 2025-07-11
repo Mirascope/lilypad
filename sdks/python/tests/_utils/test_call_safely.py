@@ -1,10 +1,11 @@
 """Tests for lilypad._utils.call_safely module."""
 
+import logging
 import pytest
 
 from lilypad.exceptions import LilypadException
 from lilypad.generated.core.api_error import ApiError
-from lilypad._utils.call_safely import call_safely
+from lilypad._utils.call_safely import call_safely, _default_logger
 
 
 def test_call_safely() -> None:
@@ -123,3 +124,32 @@ async def test_call_safely_async_with_exclude() -> None:
 
     # LilypadException should trigger fallback since it's not excluded
     assert await async_error_not_excluded() == "async fallback"
+
+
+def test_default_logger() -> None:
+    """Test _default_logger function creates logger with handler when none exists."""
+    # Create a logger without handlers to trigger the setup code
+    test_logger_name = "test_lilypad_logger"
+
+    # Clear any existing handlers
+    logger = logging.getLogger(test_logger_name)
+    logger.handlers.clear()
+
+    # Call _default_logger which should add handler
+    result_logger = _default_logger(test_logger_name)
+
+    # Verify logger has handler now
+    assert len(result_logger.handlers) == 1
+    assert isinstance(result_logger.handlers[0], logging.StreamHandler)
+    assert result_logger.level == logging.INFO
+
+    # Verify formatter is set
+    formatter = result_logger.handlers[0].formatter
+    assert formatter is not None
+    assert "%(asctime)s" in formatter._fmt
+    assert "%(name)s" in formatter._fmt
+    assert "%(levelname)s" in formatter._fmt
+    assert "%(message)s" in formatter._fmt
+
+    # Clean up
+    logger.handlers.clear()

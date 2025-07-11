@@ -29,3 +29,8 @@ jobs:
         run: |
           cd app/client
           bun typecheck
+
+      - name: Run tests
+        run: |
+          cd app/client
+          bun test

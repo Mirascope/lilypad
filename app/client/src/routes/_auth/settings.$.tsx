@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_auth/settings/$")({
   component: () => <Settings />,
 });
 
-const Settings = () => {
+export const Settings = () => {
   const navigate = useNavigate();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const { data: settings } = useSuspenseQuery(settingsQueryOptions());

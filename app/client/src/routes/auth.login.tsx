@@ -34,7 +34,7 @@ export const Route = createFileRoute("/auth/login")({
   component: () => <LoginComponent />,
 });
 
-const LoginComponent = () => {
+export const LoginComponent = () => {
   const { redirect } = Route.useSearch();
   const [showModal, setShowModal] = useState<boolean>(false);
   const { loadPrivacyPolicyVersion, loadTermsVersion } = useAuth();
