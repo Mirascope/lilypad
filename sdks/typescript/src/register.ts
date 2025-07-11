@@ -18,7 +18,7 @@ import { JSONSpanExporter } from './exporters/json-exporter';
 // Enable debug logging based on environment variable
 const logLevel = process.env.LILYPAD_LOG_LEVEL || 'info';
 if (logLevel && ['debug', 'info', 'warn', 'error'].includes(logLevel)) {
-  logger.setLevel(logLevel as any);
+  logger.setLevel(logLevel as 'debug' | 'info' | 'warn' | 'error');
 }
 
 // Check environment variables

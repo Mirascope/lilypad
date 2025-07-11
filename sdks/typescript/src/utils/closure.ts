@@ -13,10 +13,13 @@ export interface ClosureData {
   dependencies: Record<string, DependencyInfo>;
 }
 
+// Type for any callable function - using unknown is safer than any
+type AnyFunction = (...args: unknown[]) => unknown;
+
 /**
  * Get the qualified name of a function
  */
-export function getQualifiedName(fn: Function): string {
+export function getQualifiedName(fn: AnyFunction): string {
   // In TypeScript/JavaScript, we don't have __qualname__ like Python
   // Use function name or 'anonymous'
   return fn.name || 'anonymous';
@@ -25,7 +28,7 @@ export function getQualifiedName(fn: Function): string {
 /**
  * Get function signature (simplified version)
  */
-function getFunctionSignature(fn: Function): string {
+function getFunctionSignature(fn: AnyFunction): string {
   const fnStr = fn.toString();
 
   // Extract the function signature part
@@ -68,7 +71,7 @@ export class Closure implements ClosureData {
    * Create a closure from a function
    * Note: This is a simplified version compared to Python implementation
    */
-  static fromFunction(fn: Function, dependencies?: Record<string, DependencyInfo>): Closure {
+  static fromFunction(fn: AnyFunction, dependencies?: Record<string, DependencyInfo>): Closure {
     const name = getQualifiedName(fn);
     const signature = getFunctionSignature(fn);
     const code = fn.toString();
@@ -91,13 +94,13 @@ export class Closure implements ClosureData {
 }
 
 // Function cache for memoization
-const functionCache = new WeakMap<Function, Closure>();
+const functionCache = new WeakMap<AnyFunction, Closure>();
 
 /**
  * Get or create closure for a function with caching
  */
 export function getCachedClosure(
-  fn: Function,
+  fn: AnyFunction,
   dependencies?: Record<string, DependencyInfo>,
 ): Closure {
   const cached = functionCache.get(fn);

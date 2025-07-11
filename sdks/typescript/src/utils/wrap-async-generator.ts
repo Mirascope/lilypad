@@ -153,13 +153,13 @@ export async function* wrapAsyncGenerator<T>(
 /**
  * Type guard to check if a value is an AsyncIterable
  */
-export function isAsyncIterable<T>(value: any): value is AsyncIterable<T> {
+export function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
   return value != null && typeof value[Symbol.asyncIterator] === 'function';
 }
 
 /**
  * Type guard to check if a value is an AsyncIterator
  */
-export function isAsyncIterator<T>(value: any): value is AsyncIterator<T> {
+export function isAsyncIterator<T>(value: unknown): value is AsyncIterator<T> {
   return value != null && typeof value.next === 'function';
 }

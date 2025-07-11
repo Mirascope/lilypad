@@ -4,8 +4,27 @@
  */
 
 import { trace, context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import type { Span } from '@opentelemetry/api';
 import { logger } from './utils/logger';
 import { isAsyncIterable } from './utils/stream-wrapper';
+import { ensureError } from './utils/error-handler';
+import type { 
+  ChatCompletionParams, 
+  ChatCompletionResponse, 
+  ChatCompletionChunk,
+  OpenAILike,
+  ChatCompletionsCreateFunction 
+} from './types/openai';
+
+// Type guard for ChatCompletionResponse
+function isCompletionResponse(value: unknown): value is ChatCompletionResponse {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'choices' in value &&
+    Array.isArray((value as ChatCompletionResponse).choices)
+  );
+}
 
 // Import GenAI semantic conventions
 import {
@@ -21,12 +40,12 @@ import {
 } from './constants/gen-ai-semantic-conventions';
 
 // Helper function to record response data
-function recordResponse(span: any, response: any): void {
+function recordResponse(span: Span, response: ChatCompletionResponse): void {
   if (!response) return;
 
   // Record response attributes
   if (response.choices && response.choices.length > 0) {
-    response.choices.forEach((choice: any, index: number) => {
+    response.choices.forEach((choice, index) => {
       const message: Record<string, unknown> = {
         role: choice.message?.role || 'assistant',
       };
@@ -45,8 +64,8 @@ function recordResponse(span: any, response: any): void {
 
     // Record finish reasons
     const finishReasons = response.choices
-      .map((c: any) => c.finish_reason)
-      .filter((reason: any): reason is string => Boolean(reason));
+      .map((c) => c.finish_reason)
+      .filter((reason): reason is string => Boolean(reason));
     if (finishReasons.length > 0) {
       span.setAttribute(SEMATTRS_GEN_AI_RESPONSE_FINISH_REASONS, finishReasons);
     }
@@ -76,15 +95,16 @@ function recordResponse(span: any, response: any): void {
 }
 
 // Helper function to wrap streaming responses
-async function* wrapStream(span: any, stream: AsyncIterable<any>): AsyncIterable<any> {
+async function* wrapStream<T>(span: Span, stream: AsyncIterable<T>): AsyncIterable<T> {
   let content = '';
   let finishReason: string | null = null;
-  let usage: any = null;
+  let usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | undefined;
 
   try {
     for await (const chunk of stream) {
       // Process chunk
-      if (chunk.choices?.[0]) {
+      // Handle chunk data
+      if (chunk && typeof chunk === 'object' && 'choices' in chunk && Array.isArray(chunk.choices) && chunk.choices[0]) {
         const choice = chunk.choices[0];
         if (choice.delta?.content) {
           content += choice.delta.content;
@@ -93,7 +113,7 @@ async function* wrapStream(span: any, stream: AsyncIterable<any>): AsyncIterable
           finishReason = choice.finish_reason;
         }
       }
-      if (chunk.usage) {
+      if (chunk && typeof chunk === 'object' && 'usage' in chunk && chunk.usage) {
         usage = chunk.usage;
       }
 
@@ -129,21 +149,23 @@ async function* wrapStream(span: any, stream: AsyncIterable<any>): AsyncIterable
 
     span.setStatus({ code: SpanStatusCode.OK });
   } catch (error) {
-    span.recordException(error as Error);
+    const err = ensureError(error);
+    span.recordException(err);
     span.setStatus({
       code: SpanStatusCode.ERROR,
-      message: error instanceof Error ? error.message : String(error),
+      message: err.message,
     });
-    throw error;
+    throw err;
   } finally {
     span.end();
   }
 }
 
 // Helper function to wrap chat completions
-function wrapChatCompletionsCreate(originalCreate: Function) {
-  return async (...args: any[]) => {
-    const [params] = args;
+function wrapChatCompletionsCreate(
+  originalCreate: ChatCompletionsCreateFunction
+): ChatCompletionsCreateFunction {
+  return async (params: ChatCompletionParams, ...restArgs: unknown[]) => {
     const tracer = trace.getTracer('lilypad-openai', '0.1.0');
 
     logger.debug('[wrapOpenAI] Creating span for model:', params?.model);
@@ -169,7 +191,7 @@ function wrapChatCompletionsCreate(originalCreate: Function) {
       try {
         // Record messages
         if (params?.messages) {
-          params.messages.forEach((message: any) => {
+          params.messages.forEach((message) => {
             span.addEvent(`gen_ai.${message.role}.message`, {
               'gen_ai.system': 'openai',
               content:
@@ -181,26 +203,30 @@ function wrapChatCompletionsCreate(originalCreate: Function) {
         }
 
         // Call original
-        const result = await originalCreate(...args);
+        const result = await originalCreate(params, ...restArgs);
 
         // Handle streaming
         if (params?.stream && isAsyncIterable(result)) {
+          // Type guard ensures result is AsyncIterable
           return wrapStream(span, result);
         }
 
         // Handle regular response
-        recordResponse(span, result);
+        if (isCompletionResponse(result)) {
+          recordResponse(span, result);
+        }
 
         span.setStatus({ code: SpanStatusCode.OK });
         logger.debug('[wrapOpenAI] Span completed successfully');
         return result;
       } catch (error) {
-        span.recordException(error as Error);
+        const err = ensureError(error);
+        span.recordException(err);
         span.setStatus({
           code: SpanStatusCode.ERROR,
-          message: error instanceof Error ? error.message : String(error),
+          message: err.message,
         });
-        throw error;
+        throw err;
       } finally {
         if (!params?.stream) {
           span.end();
@@ -210,7 +236,14 @@ function wrapChatCompletionsCreate(originalCreate: Function) {
   };
 }
 
-export function wrapOpenAI(openaiInstance: any): any {
+/**
+ * Wraps an OpenAI instance or class to add tracing
+ */
+export function wrapOpenAI<T extends OpenAILike>(instance: T): T;
+export function wrapOpenAI<T extends new (...args: any[]) => OpenAILike>(
+  constructor: T
+): T;
+export function wrapOpenAI<T extends object>(openaiInstance: T): T {
   logger.debug('[wrapOpenAI] Wrapping OpenAI instance');
 
   // Check if it's an instance or a class
@@ -224,7 +257,7 @@ export function wrapOpenAI(openaiInstance: any): any {
       );
       openaiInstance.chat.completions.create = wrapChatCompletionsCreate(originalCreate);
     }
-    return openaiInstance;
+    return openaiInstance; // Modified in-place
   }
 
   // Otherwise, assume it's a class and create a wrapper
@@ -232,7 +265,7 @@ export function wrapOpenAI(openaiInstance: any): any {
 
   // Create a wrapper class
   class WrappedOpenAI extends OpenAIClass {
-    constructor(...args: any[]) {
+    constructor(...args: unknown[]) {
       super(...args);
 
       // Wrap chat.completions.create
@@ -243,5 +276,5 @@ export function wrapOpenAI(openaiInstance: any): any {
     }
   }
 
-  return WrappedOpenAI;
+  return WrappedOpenAI as T;
 }

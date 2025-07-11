@@ -17,7 +17,7 @@ export { logger } from './utils/logger';
 export { Span, span, syncSpan } from './span';
 export { session, sessionAsync, getCurrentSession, withSession, withSessionAsync } from './session';
 export { wrapOpenAI } from './wrap-openai';
-export { trace, Trace, AsyncTrace, getCurrentSpan, logToCurrentSpan } from './trace';
+export { trace, Trace, AsyncTrace, getCurrentSpan, logToCurrentSpan, wrapWithTrace } from './trace';
 export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
 export type { TraceOptions, Annotation } from './trace';
