@@ -22,9 +22,17 @@ generate-sdk-typescript:
 	bun run fern generate --group typescript-sdk --local && rm -fr typescript/lilypad/generated/.git
 	cd typescript && bun run prettier --write lilypad/generated --log-level=error || true
 	@echo "Fixing generated TypeScript exports..."
-	@sed -i.bak 's/export { BinaryResponse }/export type { BinaryResponse }/g' typescript/lilypad/generated/core/fetcher/index.ts && rm typescript/lilypad/generated/core/fetcher/index.ts.bak
-	@sed -i.bak '/export type { BinaryResponse }/a\
-export { getBinaryResponse } from "./BinaryResponse.js";' typescript/lilypad/generated/core/fetcher/index.ts && rm typescript/lilypad/generated/core/fetcher/index.ts.bak
+	@# Cross-platform sed command - works on both macOS and Linux
+	@if grep -q "export { BinaryResponse }" typescript/lilypad/generated/core/fetcher/index.ts; then \
+		if [ "$$(uname)" = "Darwin" ]; then \
+			sed -i '.bak' 's/export { BinaryResponse }/export type { BinaryResponse }/g' typescript/lilypad/generated/core/fetcher/index.ts && rm typescript/lilypad/generated/core/fetcher/index.ts.bak; \
+		else \
+			sed -i 's/export { BinaryResponse }/export type { BinaryResponse }/g' typescript/lilypad/generated/core/fetcher/index.ts; \
+		fi \
+	fi
+	@if ! grep -q "export { getBinaryResponse }" typescript/lilypad/generated/core/fetcher/index.ts; then \
+		echo 'export { getBinaryResponse } from "./BinaryResponse.js";' >> typescript/lilypad/generated/core/fetcher/index.ts; \
+	fi
 	@echo "Building TypeScript SDK after generation..."
 	cd typescript && bun run build
 
