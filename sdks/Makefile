@@ -21,6 +21,12 @@ generate-sdk-python:
 generate-sdk-typescript:
 	bun run fern generate --group typescript-sdk --local && rm -fr typescript/lilypad/generated/.git
 	cd typescript && bun run prettier --write lilypad/generated --log-level=error || true
+	@echo "Fixing generated TypeScript exports..."
+	@sed -i.bak 's/export { BinaryResponse }/export type { BinaryResponse }/g' typescript/lilypad/generated/core/fetcher/index.ts && rm typescript/lilypad/generated/core/fetcher/index.ts.bak
+	@sed -i.bak '/export type { BinaryResponse }/a\
+export { getBinaryResponse } from "./BinaryResponse.js";' typescript/lilypad/generated/core/fetcher/index.ts && rm typescript/lilypad/generated/core/fetcher/index.ts.bak
+	@echo "Building TypeScript SDK after generation..."
+	cd typescript && bun run build
 
 clean:
 	rm -rf python/src/lilypad/.git || true
