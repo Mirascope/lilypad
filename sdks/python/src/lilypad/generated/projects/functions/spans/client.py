@@ -86,7 +86,7 @@ class SpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -101,7 +101,7 @@ class SpansClient:
 
         function_uuid : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         limit : typing.Optional[int]
 
@@ -129,7 +129,6 @@ class SpansClient:
         client.projects.functions.spans.list_paginated(
             project_uuid="project_uuid",
             function_uuid="function_uuid",
-            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.list_paginated(
@@ -227,7 +226,7 @@ class AsyncSpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -242,7 +241,7 @@ class AsyncSpansClient:
 
         function_uuid : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         limit : typing.Optional[int]
 
@@ -275,7 +274,6 @@ class AsyncSpansClient:
             await client.projects.functions.spans.list_paginated(
                 project_uuid="project_uuid",
                 function_uuid="function_uuid",
-                environment_uuid="environment_uuid",
             )
 
 
