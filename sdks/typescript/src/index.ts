@@ -18,9 +18,20 @@ export { Span, span, syncSpan } from './span';
 export { session, sessionAsync, getCurrentSession, withSession, withSessionAsync } from './session';
 export { wrapOpenAI } from './wrap-openai';
 export { trace, Trace, AsyncTrace, getCurrentSpan, logToCurrentSpan, wrapWithTrace } from './trace';
+export { trace as lilypad } from './trace';
 export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
 export type { TraceOptions } from './trace';
+
+export { createVersionedFunction, isVersionedFunction } from './versioning/versioned-function';
+export type {
+  VersionedFunction,
+  AsyncVersionedFunction,
+  VersionedFunctionMethods,
+  FunctionVersion,
+  VersionedTrace,
+  AsyncVersionedTrace,
+} from './types/versioning';
 
 const lilypad = {
   configure,

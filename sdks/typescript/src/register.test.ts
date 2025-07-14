@@ -9,6 +9,7 @@ vi.mock('./utils/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  setGlobalLogLevel: vi.fn(),
 }));
 
 vi.mock('./configure', () => ({

@@ -9,7 +9,7 @@ import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 
-import { logger } from './utils/logger';
+import { logger, setGlobalLogLevel } from './utils/logger';
 import { setSettings } from './utils/settings';
 import { getOrCreateContextManager } from './utils/shared-context';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
@@ -18,7 +18,7 @@ import { JSONSpanExporter } from './exporters/json-exporter';
 // Enable debug logging based on environment variable
 const logLevel = process.env.LILYPAD_LOG_LEVEL || 'info';
 if (logLevel && ['debug', 'info', 'warn', 'error'].includes(logLevel)) {
-  logger.setLevel(logLevel as 'debug' | 'info' | 'warn' | 'error');
+  setGlobalLogLevel(logLevel as 'debug' | 'info' | 'warn' | 'error'); // ここを変更
 }
 
 // Check environment variables

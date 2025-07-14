@@ -71,7 +71,10 @@
     "example:comprehensive:tsx": "tsx --tsconfig tsconfig.tsx.json examples/comprehensive.ts",
     "example:comprehensive:auto": "tsx --require ./dist/register.js examples/comprehensive.ts",
     "example:streaming": "bun run examples/streaming.ts",
-    "example:trace-wrap": "bun run examples/trace-wrap-mode.ts"
+    "example:trace-wrap": "bun run examples/trace-wrap-mode.ts",
+    "example:trace": "bun run examples/test-trace-decorator.ts",
+    "example:trace-features": "bun run examples/test-trace-features.ts",
+    "example:trace-openai": "bun --require ./dist/register.js examples/test-trace-decorator.ts"
   },
   "keywords": [
     "lilypad",
@@ -102,6 +105,8 @@
     "@opentelemetry/sdk-trace-node": "^1.19.0",
     "@opentelemetry/semantic-conventions": "^1.34.0",
     "@types/shimmer": "^1.2.0",
+    "acorn": "^8.15.0",
+    "acorn-walk": "^8.3.4",
     "import-in-the-middle": "^1.14.2",
     "js-base64": "^3.7.7",
     "qs": "^6.14.0",

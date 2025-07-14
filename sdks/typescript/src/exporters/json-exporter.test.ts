@@ -7,7 +7,7 @@ import type { LilypadConfig } from '../types';
 import { logger } from '../utils/logger';
 
 vi.mock('../../lilypad/generated');
-vi.mock('../../lilypad/generated/core/fetcher', () => ({
+vi.mock('../../lilypad/generated/core/fetcher/index.js', () => ({
   fetcher: vi.fn(),
 }));
 vi.mock('../utils/logger', () => ({
@@ -397,8 +397,9 @@ describe('JSONSpanExporter', () => {
     it('should handle timeout error', async () => {
       const spans = [createMockSpan()];
 
-      // Mock fetch to simulate timeout
-      global.fetch = vi.fn().mockRejectedValue(new Error('Request timeout'));
+      // Mock the imported fetcher to simulate timeout
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher/index.js');
+      vi.mocked(fetcher).mockRejectedValue(new Error('Request timeout'));
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
@@ -413,12 +414,13 @@ describe('JSONSpanExporter', () => {
     it('should handle unknown error', async () => {
       const spans = [createMockSpan()];
 
-      // Mock fetch to return error response
-      global.fetch = vi.fn().mockResolvedValue({
+      // Mock the imported fetcher to return error response
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher/index.js');
+      vi.mocked(fetcher).mockResolvedValue({
         ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: vi.fn().mockResolvedValue('Something went wrong'),
+        error: {
+          reason: 'Something went wrong',
+        },
       });
 
       const callback = vi.fn();
@@ -434,12 +436,13 @@ describe('JSONSpanExporter', () => {
     it('should handle non-json error', async () => {
       const spans = [createMockSpan()];
 
-      // Mock fetch to return non-JSON response
-      global.fetch = vi.fn().mockResolvedValue({
+      // Mock the imported fetcher
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher/index.js');
+      vi.mocked(fetcher).mockResolvedValue({
         ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        text: vi.fn().mockResolvedValue('<html>Internal Server Error</html>'),
+        error: {
+          reason: '<html>Internal Server Error</html>',
+        },
       });
 
       const callback = vi.fn();
@@ -447,35 +450,41 @@ describe('JSONSpanExporter', () => {
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
       expect(vi.mocked(logger).error).toHaveBeenCalledWith(
-        'Server error response: <html>Internal Server Error</html>',
+        'Error exporting spans:',
+        expect.any(Error),
       );
     });
 
     it('should handle status-code error', async () => {
       const spans = [createMockSpan()];
 
-      // Mock fetch to return 400 error
-      global.fetch = vi.fn().mockResolvedValue({
+      // Mock the imported fetcher
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher/index.js');
+      vi.mocked(fetcher).mockResolvedValue({
         ok: false,
-        status: 400,
-        statusText: 'Bad Request',
-        text: vi.fn().mockResolvedValue('Bad Request'),
+        error: {
+          reason: 'Bad Request',
+        },
       });
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
-      expect(vi.mocked(logger).error).toHaveBeenCalledWith('Server error response: Bad Request');
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
+        'Error exporting spans:',
+        expect.any(Error),
+      );
     });
 
     it('should handle fetch error with cause', async () => {
       const spans = [createMockSpan()];
 
-      // Mock fetch to throw network error
+      // Mock the imported fetcher to throw network error
       const fetchError = new Error('Network error');
       (fetchError as any).cause = { code: 'ECONNREFUSED' };
-      global.fetch = vi.fn().mockRejectedValue(fetchError);
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher/index.js');
+      vi.mocked(fetcher).mockRejectedValue(fetchError);
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
@@ -487,15 +496,16 @@ describe('JSONSpanExporter', () => {
     it('should handle successful export', async () => {
       const spans = [createMockSpan()];
 
-      // Mock fetch to return success
-      global.fetch = vi.fn().mockResolvedValue({
+      // Mock the imported fetcher to return success
+      const { fetcher } = await import('../../lilypad/generated/core/fetcher/index.js');
+      vi.mocked(fetcher).mockResolvedValue({
         ok: true,
-        json: vi.fn().mockResolvedValue({
+        body: {
           trace_status: 'queued',
           span_count: 1,
           trace_ids: ['12345678901234567890123456789012'],
           message: 'Spans queued for processing',
-        }),
+        },
       });
 
       const callback = vi.fn();

@@ -2,6 +2,14 @@
 
 This directory contains examples demonstrating how to use the Lilypad TypeScript SDK.
 
+## Important: TypeScript Decorators
+
+**TypeScript decorators (`@trace`) only work on class methods, not standalone functions.**
+
+- ✅ Use `@trace()` on class methods
+- ❌ Cannot use `@trace()` on standalone functions
+- ✅ Use `wrapWithTrace()` for standalone functions
+
 ## Prerequisites
 
 1. Set environment variables:
@@ -32,7 +40,23 @@ bun run examples/basic.ts
 npx tsx examples/basic.ts
 ```
 
-### 2. Comprehensive Example (`comprehensive.ts`)
+### 2. Trace Decorator Examples (`trace-decorator-examples.ts`, `trace-decorator-class-methods.ts`)
+
+Comprehensive examples showing how to use `@trace` decorator on class methods:
+
+- Basic class methods with `@trace()`
+- Async methods with error handling
+- Wrap mode for post-processing
+- Versioning with decorators
+- Custom tags and attributes
+
+```bash
+# Run decorator examples
+bun run examples/trace-decorator-examples.ts
+bun run examples/trace-decorator-class-methods.ts
+```
+
+### 3. Comprehensive Example (`comprehensive.ts`)
 
 Complete example demonstrating all major features:
 

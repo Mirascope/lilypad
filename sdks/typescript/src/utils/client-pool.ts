@@ -9,7 +9,7 @@ class ClientPool {
   private clients = new Map<string, LilypadClient>();
 
   private getKey(settings: LilypadSettings): string {
-    return `${settings.apiKey}:${settings.baseUrl || 'https://api.getlilypad.com'}`;
+    return `${settings.apiKey}:${settings.baseUrl}`;
   }
 
   get(settings: LilypadSettings): LilypadClient {
@@ -18,7 +18,7 @@ class ClientPool {
 
     if (!client) {
       client = new LilypadClient({
-        environment: () => settings.baseUrl || 'https://api.getlilypad.com',
+        environment: () => settings.baseUrl!,
         apiKey: () => settings.apiKey,
       });
       this.clients.set(key, client);

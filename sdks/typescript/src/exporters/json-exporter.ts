@@ -121,33 +121,36 @@ export class JSONSpanExporter implements SpanExporter {
   }
 
   private async makeCustomTracesRequest(spanData: SerializedSpan[]): Promise<TracesQueueResponse> {
-    // Access the client's internal options
+    // Access the client's internal options to use the generated client's fetcher
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const clientOptions = (this.client as any)._options;
 
-    // Get base URL
+    // Get base URL and API key
     const baseUrl = (await clientOptions.baseUrl) || (await clientOptions.environment);
     const apiKey = await clientOptions.apiKey;
 
-    const url = `${baseUrl}/projects/${encodeURIComponent(this.config.projectId)}/traces`;
+    // Import the core fetcher from the generated client
+    const { fetcher } = await import('../../lilypad/generated/core/fetcher/index.js');
 
-    const response = await fetch(url, {
+    const response = await fetcher({
+      url: `${baseUrl}/projects/${encodeURIComponent(this.config.projectId)}/traces`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey,
       },
-      body: JSON.stringify(spanData),
+      body: spanData,
+      timeoutMs: 60000,
+      requestType: 'json',
+      responseType: 'json',
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      logger.error(`Server error response: ${errorText}`);
-      throw new Error(`Export failed: ${response.status} ${response.statusText}`);
+      logger.error(`Server error response:`, response.error);
+      throw new Error(`Export failed: ${response.error.reason}`);
     }
 
-    const data: TracesQueueResponse = await response.json();
-    return data;
+    return response.body as TracesQueueResponse;
   }
 
   private logTraceUrls(responseData: TracesQueueResponse): void {

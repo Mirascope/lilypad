@@ -53,3 +53,8 @@ export class Logger {
 }
 
 export const logger = new Logger();
+
+// Function to set global log level
+export function setGlobalLogLevel(level: LogLevel | 'none'): void {
+  logger.setLevel(level);
+}
