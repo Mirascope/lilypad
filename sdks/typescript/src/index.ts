@@ -23,7 +23,34 @@ export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
 export type { TraceOptions } from './trace';
 
-export { createVersionedFunction, isVersionedFunction } from './versioning/versioned-function';
+export { isVersionedFunction, createVersionedFunctionCore } from './versioning/versioned-function';
+import { getSettings } from './utils/settings';
+
+// Export a wrapper that supports both old and new API
+export function createVersionedFunction<T extends (...args: any[]) => any>(
+  fn: T,
+  nameOrOptions?: string | { name?: string; hash?: string; uuid?: string; dependencies?: Record<string, string> },
+  projectId?: string,
+  functionUuid?: string,
+): import('./types/versioning').VersionedFunction<T> {
+  const { createVersionedFunctionCore } = require('./versioning/versioned-function');
+  const settings = getSettings();
+  
+  // Support both API styles
+  if (typeof nameOrOptions === 'string') {
+    // New API: createVersionedFunction(fn, name, projectId, functionUuid)
+    return createVersionedFunctionCore(fn, nameOrOptions, projectId || settings?.projectId || '', functionUuid);
+  } else {
+    // Old API: createVersionedFunction(fn, options)
+    const options = nameOrOptions || {};
+    return createVersionedFunctionCore(
+      fn,
+      options.name || fn.name || 'anonymous',
+      settings?.projectId || '',
+      options.uuid
+    );
+  }
+}
 export type {
   VersionedFunction,
   AsyncVersionedFunction,

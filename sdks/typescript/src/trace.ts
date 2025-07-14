@@ -386,6 +386,8 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
 ): T {
   const opts: TraceOptions = typeof options === 'string' ? { name: options } : options || {};
   const spanName = opts.name || fn.name || 'anonymous';
+  // Create Python-compatible function name for API
+  const functionName = spanName.replace(/[^a-zA-Z0-9_]/g, '_');
 
   const settings = getSettings();
   if (!settings) {
@@ -451,7 +453,7 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
               settings.apiKey,
               settings.baseUrl!,
               isVersioned,
-              spanName, // Pass spanName as functionName
+              functionName, // Use Python-compatible name for API
             );
             if (uuid) {
               functionUuid = uuid;
@@ -532,7 +534,7 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
           settings.apiKey,
           settings.baseUrl!,
           true, // isVersioned
-          spanName,
+          functionName, // Use Python-compatible name for API
         );
       }
 
@@ -543,7 +545,7 @@ export function wrapWithTrace<T extends (...args: any[]) => any>(
     // Create versioned wrapper
     const versionedFn = createVersionedFunction(
       tracedFunction as T,
-      spanName,
+      functionName, // Use Python-compatible name
       settings.projectId,
       '', // UUID will be set dynamically
     );
@@ -678,7 +680,7 @@ export function trace(options?: TraceOptions | string): any {
             if (settings) {
               const versionedMethod = createVersionedFunction(
                 tracedMethod as any,
-                opts.name || methodName,
+                (opts.name || methodName).replace(/[^a-zA-Z0-9_]/g, '_'), // Python-compatible name
                 settings.projectId,
                 '', // Function UUID will be set when first called
               );
@@ -705,7 +707,7 @@ export function trace(options?: TraceOptions | string): any {
         if (settings) {
           const versionedMethod = createVersionedFunction(
             tracedMethod as any,
-            opts.name || methodName,
+            (opts.name || methodName).replace(/[^a-zA-Z0-9_]/g, '_'), // Python-compatible name
             settings.projectId,
             '', // Function UUID will be set when first called
           );
@@ -759,7 +761,7 @@ export function trace(options?: TraceOptions | string): any {
           // Create a versioned wrapper that includes tracing
           const versionedWrapper = createVersionedFunction(
             tracedMethod as any,
-            opts.name || propertyKey,
+            (opts.name || String(propertyKey)).replace(/[^a-zA-Z0-9_]/g, '_'), // Python-compatible name
             settings.projectId,
             '', // Function UUID will be set when first called
           );
@@ -795,7 +797,7 @@ export function trace(options?: TraceOptions | string): any {
         // Create a versioned wrapper that includes tracing
         const versionedWrapper = createVersionedFunction(
           tracedMethod as any,
-          opts.name || String(propertyKey),
+          (opts.name || `${target.constructor.name}_${String(propertyKey)}`).replace(/[^a-zA-Z0-9_]/g, '_'), // Python-compatible name
           settings.projectId,
           '', // Function UUID will be set when first called
         );
@@ -827,7 +829,12 @@ function traceMethod(
     return originalMethod.apply(this, args);
   }
 
+  // Create span name (for display)
   const spanName = opts.name || `${this.constructor.name}.${String(propertyKey)}`;
+  
+  // Create function name (for API - must be valid Python identifier)
+  const functionName = opts.name?.replace(/[^a-zA-Z0-9_]/g, '_') || 
+    `${this.constructor.name}_${String(propertyKey)}`;
   const isAsync =
     originalMethod.constructor.name === 'AsyncFunction' ||
     originalMethod.constructor.name === 'AsyncGeneratorFunction';
@@ -890,7 +897,7 @@ function traceMethod(
             settings.apiKey,
             settings.baseUrl!,
             isVersioned,
-            spanName, // Pass spanName as functionName
+            functionName, // Pass functionName for API
           );
           if (uuid) {
             functionUuid = uuid;
@@ -904,6 +911,7 @@ function traceMethod(
             settings.apiKey,
             settings.baseUrl!,
             isVersioned,
+            functionName, // Pass functionName for API
           )
             .then((uuid) => {
               if (uuid) {
