@@ -7,11 +7,14 @@ on:
       - main
       - update-typescript-sdk # to ensure pushes to this branch also check SDK generation
       - LILYPAD-205
+      - LILYPAD-207
+
   pull_request:
     branches:
       - main
       - update-typescript-sdk # to ensure PRs against this branch also check SDK generation
       - LILYPAD-205
+      - LILYPAD-207
 
 jobs:
   check-openapi-generation:
@@ -90,9 +93,7 @@ jobs:
 
       - name: Generate Python SDK
         working-directory: sdks
-        run: |
-          bun run fern generate --group python-sdk --local
-          rm -fr python/src/lilypad/.git
+        run: make generate-sdk-python
 
       - name: Check for Python SDK differences
         run: |
@@ -140,11 +141,13 @@ jobs:
         working-directory: sdks
         run: bun install
 
+      - name: Install TypeScript SDK dependencies
+        working-directory: sdks/typescript
+        run: bun install
+
       - name: Generate TypeScript SDK
         working-directory: sdks
-        run: |
-          bun run fern generate --group typescript-sdk --local
-          rm -fr typescript/lilypad/generated/.git
+        run: make generate-sdk-typescript
 
       - name: Check for TypeScript SDK differences
         run: |

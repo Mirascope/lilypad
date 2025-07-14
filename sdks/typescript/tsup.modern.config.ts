@@ -2,7 +2,8 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts', 'src/register.ts', 'src/register-otel.ts'],
-  format: ['cjs', 'esm'],
+  format: ['esm'],
+  outDir: 'dist/modern',
   dts: {
     compilerOptions: {
       // Disable isolatedModules for declaration generation only
@@ -16,9 +17,10 @@ export default defineConfig({
   treeshake: false, // Disable tree shaking to preserve side effects in register.ts
   external: ['openai'],
   noExternal: ['@opentelemetry/*', './lilypad/generated/**'],
-  // Include the generated client in the build
+  // Target modern Node.js versions for ESM build
   esbuildOptions: (options) => {
     options.platform = 'node';
+    options.target = 'node20';
     options.resolveExtensions = ['.ts', '.js', '.json'];
   },
 });

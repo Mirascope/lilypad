@@ -1,5 +1,7 @@
 import type { LilypadConfig } from '../types';
 
+export type LilypadSettings = LilypadConfig;
+
 let currentSettings: LilypadConfig | null = null;
 
 export function getSettings(): LilypadConfig | null {
