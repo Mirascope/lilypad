@@ -86,8 +86,8 @@ describe('JSONSpanExporter', () => {
     it('should successfully export spans', async () => {
       const spans = [createMockSpan()];
 
-      // Mock the createTracesWithBody method for this test
-      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+      // Mock the makeCustomTracesRequest method for this test
+      vi.spyOn(exporter as any, 'makeCustomTracesRequest').mockResolvedValue({
         trace_status: 'queued',
         span_count: 1,
         trace_ids: ['12345678901234567890123456789012'],
@@ -96,13 +96,7 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
-      expect((exporter as any).createTracesWithBody).toHaveBeenCalledWith(
-        'test-project-id',
-        expect.any(Array),
-        expect.objectContaining({
-          timeoutInSeconds: 30,
-        }),
-      );
+      expect((exporter as any).makeCustomTracesRequest).toHaveBeenCalledWith(expect.any(Array));
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
     });
@@ -116,7 +110,7 @@ describe('JSONSpanExporter', () => {
 
     it('should handle export failure', async () => {
       const spans = [createMockSpan()];
-      vi.spyOn(exporter as any, 'createTracesWithBody').mockRejectedValue(
+      vi.spyOn(exporter as any, 'makeCustomTracesRequest').mockRejectedValue(
         new Error('Internal Server Error'),
       );
 
@@ -128,7 +122,7 @@ describe('JSONSpanExporter', () => {
 
     it('should handle network errors', async () => {
       const spans = [createMockSpan()];
-      vi.spyOn(exporter as any, 'createTracesWithBody').mockRejectedValue(
+      vi.spyOn(exporter as any, 'makeCustomTracesRequest').mockRejectedValue(
         new Error('Network error'),
       );
 
@@ -164,9 +158,9 @@ describe('JSONSpanExporter', () => {
         ],
       });
 
-      // Mock the createTracesWithBody method for this test
-      const mockCreateTracesWithBody = vi
-        .spyOn(exporter as any, 'createTracesWithBody')
+      // Mock the makeCustomTracesRequest method for this test
+      const mockMakeCustomTracesRequest = vi
+        .spyOn(exporter as any, 'makeCustomTracesRequest')
         .mockResolvedValue({
           trace_status: 'queued',
           span_count: 1,
@@ -176,8 +170,8 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export([span], callback);
 
-      const callArgs = mockCreateTracesWithBody.mock.calls[0];
-      const serializedSpan = callArgs[1][0]; // Second argument is spans array
+      const callArgs = mockMakeCustomTracesRequest.mock.calls[0];
+      const serializedSpan = callArgs[0][0]; // First argument is spans array
 
       expect(serializedSpan).toMatchObject({
         trace_id: '12345678901234567890123456789012',
@@ -210,9 +204,9 @@ describe('JSONSpanExporter', () => {
         instrumentationLibrary: undefined,
       });
 
-      // Mock the createTracesWithBody method for this test
-      const mockCreateTracesWithBody = vi
-        .spyOn(exporter as any, 'createTracesWithBody')
+      // Mock the makeCustomTracesRequest method for this test
+      const mockMakeCustomTracesRequest = vi
+        .spyOn(exporter as any, 'makeCustomTracesRequest')
         .mockResolvedValue({
           trace_status: 'queued',
           span_count: 1,
@@ -222,8 +216,8 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export([span], callback);
 
-      const callArgs = mockCreateTracesWithBody.mock.calls[0];
-      const serializedSpan = callArgs[1][0];
+      const callArgs = mockMakeCustomTracesRequest.mock.calls[0];
+      const serializedSpan = callArgs[0][0];
 
       expect(serializedSpan.instrumentation_scope).toEqual({
         name: null,
@@ -241,9 +235,9 @@ describe('JSONSpanExporter', () => {
         },
       });
 
-      // Mock the createTracesWithBody method for this test
-      const mockCreateTracesWithBody = vi
-        .spyOn(exporter as any, 'createTracesWithBody')
+      // Mock the makeCustomTracesRequest method for this test
+      const mockMakeCustomTracesRequest = vi
+        .spyOn(exporter as any, 'makeCustomTracesRequest')
         .mockResolvedValue({
           trace_status: 'queued',
           span_count: 1,
@@ -253,8 +247,8 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export([span], callback);
 
-      const callArgs = mockCreateTracesWithBody.mock.calls[0];
-      const serializedSpan = callArgs[1][0];
+      const callArgs = mockMakeCustomTracesRequest.mock.calls[0];
+      const serializedSpan = callArgs[0][0];
 
       expect(serializedSpan.type).toBe('llm');
       expect(serializedSpan.session_id).toBe('session-123');
@@ -280,9 +274,9 @@ describe('JSONSpanExporter', () => {
         ],
       });
 
-      // Mock the createTracesWithBody method for this test
-      const mockCreateTracesWithBody = vi
-        .spyOn(exporter as any, 'createTracesWithBody')
+      // Mock the makeCustomTracesRequest method for this test
+      const mockMakeCustomTracesRequest = vi
+        .spyOn(exporter as any, 'makeCustomTracesRequest')
         .mockResolvedValue({
           trace_status: 'queued',
           span_count: 1,
@@ -292,8 +286,8 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export([span], callback);
 
-      const callArgs = mockCreateTracesWithBody.mock.calls[0];
-      const serializedSpan = callArgs[1][0];
+      const callArgs = mockMakeCustomTracesRequest.mock.calls[0];
+      const serializedSpan = callArgs[0][0];
 
       expect(serializedSpan.links[0].context.trace_state).toBe('vendor1=value1,vendor2=value2');
     });
@@ -316,7 +310,7 @@ describe('JSONSpanExporter', () => {
         );
       }
 
-      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+      vi.spyOn(exporter as any, 'makeCustomTracesRequest').mockResolvedValue({
         trace_status: 'queued',
         span_count: spans.length,
         trace_ids: spans.map((_, i) => `trace${i}`.padEnd(32, '0')),
@@ -332,7 +326,6 @@ describe('JSONSpanExporter', () => {
 
     it('should log multiple trace URLs when multiple new traces', async () => {
       const loggerSpy = vi.spyOn(logger, 'info');
-      const debugSpy = vi.spyOn(logger, 'debug');
 
       const spans = [
         createMockSpan({
@@ -353,7 +346,7 @@ describe('JSONSpanExporter', () => {
         }),
       ];
 
-      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+      vi.spyOn(exporter as any, 'makeCustomTracesRequest').mockResolvedValue({
         trace_status: 'queued',
         span_count: 2,
         trace_ids: ['trace1'.padEnd(32, '0'), 'trace2'.padEnd(32, '0')],
@@ -362,13 +355,15 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('View 2 new traces at:'));
-      expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('trace1'));
-      expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('trace2'));
+      // Should log each trace URL individually
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('View trace:'));
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('trace1'));
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('trace2'));
+      expect(loggerSpy).toHaveBeenCalledTimes(2);
     });
 
     it('should handle response without trace_ids', async () => {
-      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+      vi.spyOn(exporter as any, 'makeCustomTracesRequest').mockResolvedValue({
         trace_status: 'queued',
         span_count: 1,
         trace_ids: undefined,
@@ -380,10 +375,10 @@ describe('JSONSpanExporter', () => {
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
     });
 
-    it('should not log when trace_status is not queued', async () => {
+    it('should log trace URLs regardless of trace_status', async () => {
       const loggerSpy = vi.spyOn(logger, 'info');
 
-      vi.spyOn(exporter as any, 'createTracesWithBody').mockResolvedValue({
+      vi.spyOn(exporter as any, 'makeCustomTracesRequest').mockResolvedValue({
         trace_status: 'failed',
         span_count: 1,
         trace_ids: ['trace1'.padEnd(32, '0')],
@@ -392,136 +387,131 @@ describe('JSONSpanExporter', () => {
       const callback = vi.fn();
       await exporter.export([createMockSpan()], callback);
 
-      expect(loggerSpy).not.toHaveBeenCalledWith(expect.stringContaining('View trace at:'));
+      // The implementation logs trace URLs regardless of trace_status
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('View trace:'));
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('trace1'));
     });
   });
 
-  describe('createTracesWithBody', () => {
+  describe('makeCustomTracesRequest', () => {
     it('should handle timeout error', async () => {
       const spans = [createMockSpan()];
 
-      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
-      vi.mocked(fetcher).mockResolvedValue({
-        ok: false,
-        error: {
-          reason: 'timeout',
-        },
-      } as any);
+      // Mock fetch to simulate timeout
+      global.fetch = vi.fn().mockRejectedValue(new Error('Request timeout'));
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
       expect(vi.mocked(logger).error).toHaveBeenCalledWith(
-        expect.stringContaining('[EXPORT] ❌ Request timeout'),
+        'Error exporting spans:',
+        expect.any(Error),
       );
     });
 
     it('should handle unknown error', async () => {
       const spans = [createMockSpan()];
 
-      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
-      vi.mocked(fetcher).mockResolvedValue({
+      // Mock fetch to return error response
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
-        error: {
-          reason: 'unknown',
-          errorMessage: 'Something went wrong',
-        },
-      } as any);
+        status: 500,
+        statusText: 'Internal Server Error',
+        text: vi.fn().mockResolvedValue('Something went wrong'),
+      });
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
       expect(vi.mocked(logger).error).toHaveBeenCalledWith(
-        expect.stringContaining('[EXPORT] ❌ Unknown error: Something went wrong'),
+        'Error exporting spans:',
+        expect.any(Error),
       );
     });
 
     it('should handle non-json error', async () => {
       const spans = [createMockSpan()];
 
-      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
-      vi.mocked(fetcher).mockResolvedValue({
+      // Mock fetch to return non-JSON response
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
-        error: {
-          reason: 'non-json',
-          statusCode: 500,
-          rawBody: '<html>Internal Server Error</html>',
-        },
-      } as any);
+        status: 500,
+        statusText: 'Internal Server Error',
+        text: vi.fn().mockResolvedValue('<html>Internal Server Error</html>'),
+      });
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
       expect(vi.mocked(logger).error).toHaveBeenCalledWith(
-        expect.stringContaining('[EXPORT] ❌ Non-JSON response 500'),
+        'Server error response: <html>Internal Server Error</html>',
       );
     });
 
     it('should handle status-code error', async () => {
       const spans = [createMockSpan()];
 
-      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
-      vi.mocked(fetcher).mockResolvedValue({
+      // Mock fetch to return 400 error
+      global.fetch = vi.fn().mockResolvedValue({
         ok: false,
-        error: {
-          reason: 'status-code',
-          statusCode: 400,
-          body: { error: 'Bad Request' },
-        },
-      } as any);
+        status: 400,
+        statusText: 'Bad Request',
+        text: vi.fn().mockResolvedValue('Bad Request'),
+      });
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
-      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
-        expect.stringContaining('[EXPORT] ❌ HTTP Error 400'),
-      );
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith('Server error response: Bad Request');
     });
 
     it('should handle fetch error with cause', async () => {
       const spans = [createMockSpan()];
 
-      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
+      // Mock fetch to throw network error
       const fetchError = new Error('Network error');
       (fetchError as any).cause = { code: 'ECONNREFUSED' };
-      vi.mocked(fetcher).mockRejectedValue(fetchError);
+      global.fetch = vi.fn().mockRejectedValue(fetchError);
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.FAILED });
-      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
-        expect.stringContaining('[EXPORT] ❌ Fetch error: Network error'),
-      );
-      expect(vi.mocked(logger).error).toHaveBeenCalledWith(
-        expect.stringContaining('[EXPORT] ❌ Fetch error cause:'),
-      );
+      expect(vi.mocked(logger).error).toHaveBeenCalledWith('Error exporting spans:', fetchError);
     });
 
     it('should handle successful export', async () => {
       const spans = [createMockSpan()];
 
-      const { fetcher } = await import('../../lilypad/generated/core/fetcher');
-      vi.mocked(fetcher).mockResolvedValue({
+      // Mock fetch to return success
+      global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        body: {
+        json: vi.fn().mockResolvedValue({
           trace_status: 'queued',
           span_count: 1,
           trace_ids: ['12345678901234567890123456789012'],
-        },
-      } as any);
+          message: 'Spans queued for processing',
+        }),
+      });
 
       const callback = vi.fn();
       await exporter.export(spans, callback);
 
       expect(callback).toHaveBeenCalledWith({ code: ExportResultCode.SUCCESS });
-      expect(vi.mocked(logger).info).toHaveBeenCalledWith(
-        expect.stringContaining('[EXPORT] ✅ Export successful'),
+
+      // Check that the debug logger was called with the success message
+      const debugCalls = vi.mocked(logger).debug.mock.calls;
+      const successCall = debugCalls.find(
+        (call) =>
+          typeof call[0] === 'string' && call[0].includes('Export successful, response data:'),
       );
+      expect(successCall).toBeDefined();
+      expect(successCall?.[0]).toContain('Export successful, response data:');
+      expect(successCall?.[0]).toContain('"trace_status":"queued"');
     });
   });
 

@@ -30,6 +30,17 @@ describe('configure', () => {
           register: vi.fn(),
         }) as any,
     );
+    // Clear environment variables that might affect tests
+    delete process.env.LILYPAD_BASE_URL;
+    delete process.env.LILYPAD_REMOTE_API_URL;
+    delete process.env.LILYPAD_REMOTE_CLIENT_URL;
+  });
+
+  afterEach(() => {
+    // Clean up environment variables after each test
+    delete process.env.LILYPAD_BASE_URL;
+    delete process.env.LILYPAD_REMOTE_API_URL;
+    delete process.env.LILYPAD_REMOTE_CLIENT_URL;
   });
 
   describe('configuration validation', () => {

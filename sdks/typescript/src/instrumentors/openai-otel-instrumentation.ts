@@ -192,18 +192,42 @@ export class OpenAIInstrumentation extends InstrumentationBase {
         const tracer = instrumentation.tracer;
         const config = instrumentation._config as OpenAIInstrumentationConfig;
 
-        // Start span using the OTel way
-        const span = tracer.startSpan(`openai.chat.completions ${params?.model || 'unknown'}`, {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-            [SEMATTRS_GEN_AI_REQUEST_MODEL]: params?.model,
-            [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
-            [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
-            [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
-            [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
-            'lilypad.type': 'llm',
+        // Get the active context to preserve parent-child relationships
+        const activeContext = context.active();
+        const parentSpan = trace.getSpan(activeContext);
+
+        if (parentSpan) {
+          logger.debug('[OpenAIInstrumentation] Found parent span:', {
+            parentSpanId: parentSpan.spanContext().spanId,
+            parentTraceId: parentSpan.spanContext().traceId,
+            parentSpanName: (parentSpan as any).name || 'unknown',
+          });
+        } else {
+          logger.debug('[OpenAIInstrumentation] No parent span found in context');
+        }
+
+        // Start span using the OTel way with active context
+        const span = tracer.startSpan(
+          `openai.chat.completions ${params?.model || 'unknown'}`,
+          {
+            kind: SpanKind.CLIENT,
+            attributes: {
+              [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+              [SEMATTRS_GEN_AI_REQUEST_MODEL]: params?.model,
+              [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
+              [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
+              [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
+              [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
+              'lilypad.type': 'llm',
+            },
           },
+          activeContext,
+        );
+
+        logger.debug('[OpenAIInstrumentation] Created OpenAI span:', {
+          spanId: span.spanContext().spanId,
+          traceId: span.spanContext().traceId,
+          parentSpanId: (span as any).parentSpanId,
         });
 
         // Set span in context for proper context propagation
@@ -321,19 +345,26 @@ export class OpenAIInstrumentation extends InstrumentationBase {
       const tracer = instrumentation.tracer;
       const config = instrumentation._config as OpenAIInstrumentationConfig;
 
+      // Get the active context to preserve parent-child relationships
+      const activeContext = context.active();
+
       // Use the same span creation logic as the main wrapped method
-      const span = tracer.startSpan(`chat ${params?.model || 'unknown'}`, {
-        kind: SpanKind.CLIENT,
-        attributes: {
-          [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-          'server.address': 'api.openai.com',
-          [SEMATTRS_GEN_AI_REQUEST_MODEL]: params?.model,
-          [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
-          [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
-          [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
-          [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
+      const span = tracer.startSpan(
+        `chat ${params?.model || 'unknown'}`,
+        {
+          kind: SpanKind.CLIENT,
+          attributes: {
+            [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+            'server.address': 'api.openai.com',
+            [SEMATTRS_GEN_AI_REQUEST_MODEL]: params?.model,
+            [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
+            [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
+            [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
+            [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
+          },
         },
-      });
+        activeContext,
+      );
 
       return context.with(trace.setSpan(context.active(), span), async () => {
         try {
@@ -562,19 +593,26 @@ export class OpenAIInstrumentation extends InstrumentationBase {
       const tracer = instrumentation.tracer;
       const config = instrumentation._config as OpenAIInstrumentationConfig;
 
+      // Get the active context to preserve parent-child relationships
+      const activeContext = context.active();
+
       // Create span
-      const span = tracer.startSpan(`chat ${params?.model || 'unknown'}`, {
-        kind: SpanKind.CLIENT,
-        attributes: {
-          [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-          'server.address': 'api.openai.com',
-          [SEMATTRS_GEN_AI_REQUEST_MODEL]: params?.model,
-          [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
-          [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
-          [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
-          [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
+      const span = tracer.startSpan(
+        `chat ${params?.model || 'unknown'}`,
+        {
+          kind: SpanKind.CLIENT,
+          attributes: {
+            [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+            'server.address': 'api.openai.com',
+            [SEMATTRS_GEN_AI_REQUEST_MODEL]: params?.model,
+            [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
+            [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
+            [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
+            [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
+          },
         },
-      });
+        activeContext,
+      );
 
       return context.with(trace.setSpan(context.active(), span), async () => {
         try {

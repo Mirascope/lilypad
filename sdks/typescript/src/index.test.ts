@@ -59,11 +59,32 @@ describe('index', () => {
       expect(lilypad.shutdown).toBe(shutdown);
       expect(lilypad.getTracer).toBe(getTracer);
       expect(lilypad.logger).toBe(logger);
+      expect(lilypad.Span).toBeDefined();
+      expect(lilypad.span).toBeDefined();
+      expect(lilypad.syncSpan).toBeDefined();
+      expect(lilypad.session).toBeDefined();
+      expect(lilypad.sessionAsync).toBeDefined();
+      expect(lilypad.getCurrentSession).toBeDefined();
+      expect(lilypad.withSession).toBeDefined();
+      expect(lilypad.withSessionAsync).toBeDefined();
     });
 
     it('should have correct shape', () => {
       expect(Object.keys(lilypad).sort()).toEqual(
-        ['configure', 'getTracer', 'logger', 'shutdown'].sort(),
+        [
+          'configure',
+          'getTracer',
+          'logger',
+          'shutdown',
+          'Span',
+          'span',
+          'syncSpan',
+          'session',
+          'sessionAsync',
+          'getCurrentSession',
+          'withSession',
+          'withSessionAsync',
+        ].sort(),
       );
     });
   });

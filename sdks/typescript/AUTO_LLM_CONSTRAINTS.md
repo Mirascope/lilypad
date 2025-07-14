@@ -1,83 +1,168 @@
-# AutoLLM Import Order Constraint
+# Auto-LLM Instrumentation Constraints in TypeScript
 
-## Important Limitation
+## ⚠️ Important: autoLlm Option Has Limited Reliability
 
-When using the `autoLlm: true` option, there is a critical constraint regarding module import order:
+**The `autoLlm: true` configuration option has significant limitations and only works under specific conditions.** While it can work in some cases, the `--require` flag is much more reliable.
 
-### ❌ This will NOT work:
-
-```typescript
-import OpenAI from 'openai'; // OpenAI imported BEFORE configure()
-import { configure } from 'lilypad';
-
-await configure({
-  autoLlm: true, // Hook cannot intercept already-loaded module
-});
-
-const client = new OpenAI(); // Will NOT be instrumented
-```
-
-### ✅ This WILL work:
-
-```typescript
-import { configure } from 'lilypad';
-
-// Configure FIRST
-await configure({
-  autoLlm: true,
-});
-
-// Import OpenAI AFTER configure()
-const { default: OpenAI } = await import('openai');
-const client = new OpenAI(); // Will be instrumented correctly
-```
-
-## Technical Explanation
-
-The `autoLlm` feature uses Node.js `Module._load` hooks to intercept and wrap the OpenAI module at load time. This approach has an inherent limitation:
-
-- **Module.\_load hooks only work when a module is loaded for the first time**
-- If the module is already in the require cache, the hook will not be triggered
-- This is a fundamental constraint of Node.js module system, not specific to our implementation
-
-## Recommended Approaches
-
-### 1. Use Dynamic Import (Most Flexible)
-
-```typescript
-await configure({ autoLlm: true });
-const { default: OpenAI } = await import('openai');
-```
-
-### 2. Use --require Flag (Most Reliable)
+## Recommended Solution: Use --require Flag
 
 ```bash
-node --require ./dist/register.js your-app.js
+# ✅ THIS WORKS - Use this approach
+npx tsx --require ./dist/register.js your-script.ts
+
+# ❌ THIS DOESN'T WORK - Don't use autoLlm
+await configure({ autoLlm: true });
 ```
 
-This ensures hooks are installed before any application code runs.
+## When autoLlm Might Work
 
-### 3. Manual Wrapping (Most Control)
+The `autoLlm` option can work in simple cases if you strictly follow the import order:
 
 ```typescript
-import OpenAI from 'openai';
-import { wrapOpenAI } from 'lilypad';
-
-const client = wrapOpenAI(new OpenAI());
+// ✅ This might work (but not guaranteed)
+await configure({ autoLlm: true });
+const { default: OpenAI } = await import('openai'); // Dynamic import AFTER configure
 ```
 
-## Framework-Specific Considerations
+However, it often fails due to:
 
-- **Next.js**: Use dynamic imports in API routes or server components
-- **Express**: Configure Lilypad in the main entry point before importing route handlers
-- **NestJS**: Configure in the bootstrap function before module initialization
-- **Serverless**: Use the --require approach or manual wrapping
+### 1. ImportInTheMiddle Errors
 
-## Debugging Tips
+The OpenTelemetry instrumentation library throws errors:
 
-If OpenAI calls are not being traced:
+```
+TypeError: ImportInTheMiddle is not a constructor
+```
 
-1. Enable debug logging: `logger.setLevel('debug')`
-2. Check console for "OpenAI module loaded via Module.\_load" message
-3. Verify import order - OpenAI must be imported AFTER configure()
-4. Consider using `--require` flag for guaranteed instrumentation
+### 2. Context Manager Conflicts
+
+Multiple TracerProvider instances can be created, breaking parent-child span relationships.
+
+### 3. Module Cache Issues
+
+If OpenAI is already in the module cache (from another file), instrumentation won't apply.
+
+## The Working Solution: register.js
+
+Using `--require ./dist/register.js` ensures:
+
+1. **Instrumentation loads first**: Before any application code
+2. **Consistent behavior**: Always works, regardless of your code structure
+3. **Parent-child relationships**: Manual spans correctly nest auto-instrumented calls
+4. **No code changes needed**: Existing OpenAI code is automatically traced
+
+### How to Use
+
+```bash
+# Set required environment variables
+export LILYPAD_API_KEY="your-api-key"
+export LILYPAD_PROJECT_ID="your-project-id"
+export OPENAI_API_KEY="your-openai-key"
+
+# Run with --require flag
+npx tsx --require ./dist/register.js your-script.ts
+
+# Or with Bun (use --preload)
+bun --preload ./dist/register.js your-script.ts
+```
+
+### Example Code
+
+```typescript
+// your-script.ts
+import OpenAI from 'openai';
+import { configure, span } from 'lilypad';
+
+// Configure SDK (DON'T use autoLlm: true)
+await configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+});
+
+const openai = new OpenAI();
+
+// Manual span will be parent of auto-instrumented OpenAI call
+await span('process-request', async (s) => {
+  s.metadata({ userId: '123' });
+
+  // This call is automatically traced as a child span
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }],
+  });
+
+  s.metadata({ responseId: response.id });
+});
+```
+
+## Technical Background
+
+### Why Module.\_load Hooks Don't Work Well
+
+Node.js module loading is complex, especially with:
+
+- TypeScript transpilation
+- ESM vs CommonJS interop
+- Module caching
+- Async module loading
+
+The `Module._load` approach that `autoLlm` uses has too many edge cases and failure modes.
+
+### ESM Module Loading Phases
+
+```
+┌─────────────┐     ┌─────────────┐     ┌──────────────┐     ┌────────────┐
+│ Resolution  │ --> │   Parsing   │ --> │Instantiation │ --> │ Evaluation │
+└─────────────┘     └─────────────┘     └──────────────┘     └────────────┘
+```
+
+Instrumentation must happen before Evaluation, which is why `--require` works (it runs first) while `autoLlm` fails (it runs too late).
+
+## Migration Guide
+
+If you're currently trying to use `autoLlm: true`:
+
+1. Remove `autoLlm: true` from your `configure()` call
+2. Keep your existing imports as-is (no need for dynamic imports)
+3. Run your script with `--require ./dist/register.js`
+
+```diff
+// Before (not working)
+await configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+- autoLlm: true,
+});
+
+// After (working)
+await configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+});
+```
+
+Then run with:
+
+```bash
+npx tsx --require ./dist/register.js your-script.ts
+```
+
+## Summary: When to Use Each Approach
+
+### Use `--require` (Recommended)
+
+- ✅ Always works reliably
+- ✅ No import order constraints
+- ✅ Works with existing code
+- ✅ Proper parent-child span relationships
+
+### Use `autoLlm: true` (Limited Use Cases)
+
+- ⚠️ Only works with strict dynamic import order
+- ⚠️ May fail with ImportInTheMiddle errors
+- ⚠️ Not recommended for production
+- ✅ Might be useful if you can't modify the startup command
+
+## Conclusion
+
+While `autoLlm` can work in specific scenarios with careful import ordering, the `--require ./dist/register.js` approach is strongly recommended for its reliability and ease of use.

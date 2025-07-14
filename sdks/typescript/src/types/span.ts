@@ -2,6 +2,35 @@
  * Type definitions for span serialization
  */
 
+// Span attribute types (OpenTelemetry spec compliant)
+export type SpanAttributeValue = string | number | boolean;
+export type SpanAttributeArray = SpanAttributeValue[];
+export type SpanAttributesValue = SpanAttributeValue | SpanAttributeArray;
+
+// Span attributes with proper typing
+export type SpanAttributes = Record<string, SpanAttributesValue | undefined | null>;
+
+// Metadata can contain any serializable value
+export interface SpanMetadata {
+  [key: string]: unknown;
+}
+
+// Span options for configuration
+export interface SpanOptions {
+  kind?: import('@opentelemetry/api').SpanKind;
+  attributes?: SpanAttributes;
+  startTime?: number;
+}
+
+// Validation constants
+export const SPAN_LIMITS = {
+  MAX_ATTRIBUTE_VALUE_LENGTH: 10000,
+  MAX_ATTRIBUTES_COUNT: 128,
+  MAX_EVENT_ATTRIBUTES_COUNT: 32,
+  MAX_EVENT_COUNT: 128,
+  MAX_LINK_COUNT: 128,
+} as const;
+
 export interface SerializedSpan {
   trace_id: string;
   span_id: string;
@@ -44,24 +73,3 @@ export interface SpanExportPayload {
   project_id: string;
   spans: SerializedSpan[];
 }
-
-/**
- * Type definitions for span attributes
- */
-export type SpanAttributeValue = string | number | boolean;
-export type SpanAttributeArray = SpanAttributeValue[];
-export type SpanAttributesValue = SpanAttributeValue | SpanAttributeArray;
-
-export interface SpanMetadata {
-  [key: string]: unknown;
-}
-
-/**
- * Span limits based on OpenTelemetry specifications
- */
-export const SPAN_LIMITS = {
-  MAX_ATTRIBUTES_COUNT: 128,
-  MAX_ATTRIBUTE_VALUE_LENGTH: 10000,
-  MAX_EVENT_COUNT: 128,
-  MAX_LINK_COUNT: 128,
-} as const;

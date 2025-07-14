@@ -8,10 +8,10 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { context } from '@opentelemetry/api';
 
 import { logger } from './utils/logger';
+import { setSettings } from './utils/settings';
+import { getOrCreateContextManager } from './utils/shared-context';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 
@@ -37,9 +37,16 @@ logger.info('[Register] Environment check:', {
 if (!apiKey) {
   logger.warn('[Register] No LILYPAD_API_KEY found, auto-instrumentation disabled');
 } else {
-  // Set up context manager explicitly
-  const contextManager = new AsyncLocalStorageContextManager();
-  context.setGlobalContextManager(contextManager.enable());
+  // Use shared context manager singleton
+  getOrCreateContextManager();
+
+  // Save settings for manual span() support
+  setSettings({
+    apiKey,
+    projectId,
+    baseUrl: baseUrl || 'https://api.app.lilypad.so/v0',
+    serviceName: serviceName || 'lilypad-node-app',
+  });
 
   // Create resource
   const resource = Resource.default().merge(

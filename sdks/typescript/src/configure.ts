@@ -5,8 +5,9 @@ import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { trace } from '@opentelemetry/api';
 
 import type { LilypadConfig } from './types';
-import { setSettings, isConfigured } from './utils/settings';
+import { setSettings, isConfigured, getSettings } from './utils/settings';
 import { logger } from './utils/logger';
+import { getOrCreateContextManager } from './utils/shared-context';
 import { CryptoIdGenerator } from './utils/id-generator';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { LilypadClient } from '../lilypad/generated';
@@ -15,6 +16,27 @@ import { LilypadClient } from '../lilypad/generated';
 let _provider: NodeTracerProvider | null = null;
 
 export async function configure(config: LilypadConfig): Promise<void> {
+  // Check if already configured via register.js
+  const existingProvider = trace.getTracerProvider();
+  const existingSettings = getSettings();
+
+  if (existingSettings && existingProvider) {
+    logger.info('Lilypad SDK already configured via register.js, updating settings only');
+
+    // Merge new config with existing settings
+    const mergedConfig = {
+      ...existingSettings,
+      ...config,
+    };
+
+    setSettings(mergedConfig);
+    logger.debug('Settings updated with merged configuration');
+
+    // If user provides additional exporter config, we could add it to existing provider
+    // For now, we just return since the provider is already set up
+    return;
+  }
+
   if (isConfigured()) {
     logger.warn('Lilypad SDK already configured. Skipping reconfiguration.');
     return;
@@ -89,6 +111,10 @@ export async function configure(config: LilypadConfig): Promise<void> {
   logger.debug(`Using baseUrl: ${finalConfig.baseUrl}`);
   logger.debug(`Using remoteClientUrl: ${finalConfig.remoteClientUrl}`);
 
+  // Use shared context manager singleton
+  getOrCreateContextManager();
+  logger.debug('Using shared context manager');
+
   const resource = Resource.default().merge(
     new Resource({
       [SEMRESATTRS_SERVICE_NAME]: finalConfig.serviceName,
@@ -103,7 +129,6 @@ export async function configure(config: LilypadConfig): Promise<void> {
 
   const client = new LilypadClient({
     environment: baseUrl,
-    baseUrl: baseUrl,
     apiKey: apiKey,
   });
   logger.debug(`Created LilypadClient with baseUrl: ${finalConfig.baseUrl}`);
