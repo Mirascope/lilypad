@@ -248,7 +248,7 @@ async def get_spans_by_function_uuid_paginated(
     project_uuid: UUID,
     function_uuid: UUID,
     span_service: Annotated[SpanService, Depends(SpanService)],
-    environment_uuid: Annotated[UUID, Query()],
+    environment_uuid: Annotated[UUID | None, Query()] = None,
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
     order: Literal["asc", "desc"] = Query(

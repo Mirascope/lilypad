@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/annotations/$
   },
 });
 
-const AnnotationLayout = () => {
+export const AnnotationLayout = () => {
   const { projectUuid, _splat: annotationUuid } = useParams({ from: Route.id });
   const { data: annotations } = useSuspenseQuery(annotationsByProjectQueryOptions(projectUuid));
   const navigate = useNavigate();
