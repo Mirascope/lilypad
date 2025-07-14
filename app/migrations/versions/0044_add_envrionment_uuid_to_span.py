@@ -10,7 +10,6 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlmodel import text
 
 # revision identifiers, used by Alembic.
 revision: str = "0044"
@@ -33,45 +32,6 @@ def upgrade() -> None:
             ["uuid"],
             ondelete="CASCADE",
         )
-
-    # Data migration should be outside the batch_alter_table context
-    batch_size = 10000
-    op.execute(
-        text("""
-        DO $$
-        DECLARE
-            rows_updated INTEGER;
-        BEGIN
-            LOOP
-                UPDATE spans s
-                SET environment_uuid = (
-                    SELECT e.uuid 
-                    FROM environments e 
-                    INNER JOIN api_keys ak ON ak.environment_uuid = e.uuid
-                    WHERE ak.project_uuid = s.project_uuid 
-                    ORDER BY e.created_at ASC
-                    LIMIT 1
-                )
-                WHERE s.uuid IN (
-                    SELECT uuid 
-                    FROM spans 
-                    WHERE environment_uuid IS NULL 
-                    AND project_uuid IS NOT NULL
-                    LIMIT :batch_size
-                );
-                
-                GET DIAGNOSTICS rows_updated = ROW_COUNT;
-                
-                IF rows_updated = 0 THEN
-                    EXIT;
-                END IF;
-                
-                -- Optional: Add a small delay to reduce load
-                PERFORM pg_sleep(0.1);
-            END LOOP;
-        END $$;
-    """).bindparams(batch_size=batch_size)
-    )
     # ### end Alembic commands ###
 
 

@@ -507,6 +507,10 @@ describe('trace', () => {
         forceFlush: vi.fn().mockResolvedValue(undefined),
         shutdown: vi.fn().mockResolvedValue(undefined),
       } as any);
+      
+      // Mock logger to reduce noise in tests
+      const { logger } = await import('./utils/logger');
+      vi.mocked(logger.debug).mockImplementation(() => {});
     });
 
     it('should return Trace object for sync method with wrap mode', async () => {
@@ -748,6 +752,89 @@ describe('trace', () => {
 
       expect(mockForceFlush).toHaveBeenCalledTimes(1);
     });
+
+    it('should annotate trace with evaluation data', async () => {
+      let annotateResolver: () => void;
+      const annotatePromise = new Promise<void>((resolve) => {
+        annotateResolver = resolve;
+      });
+
+      mockClient.ee.projects.annotations.create.mockImplementation(() => {
+        annotateResolver();
+        return Promise.resolve({});
+      });
+
+      traceInstance.annotate(
+        {
+          label: 'pass',
+          reasoning: 'Test passed successfully',
+          type: 'manual',
+          data: { score: 0.95 },
+        },
+        {
+          label: 'fail',
+          reasoning: 'Secondary evaluation failed',
+          type: 'verified',
+          data: null,
+        },
+      );
+
+      await annotatePromise;
+
+      expect(mockClient.ee.projects.annotations.create).toHaveBeenCalledWith('test-project-id', [
+        {
+          label: 'pass',
+          reasoning: 'Test passed successfully',
+          type: 'manual',
+          data: { score: 0.95 },
+          function_uuid: 'func-uuid-123',
+          project_uuid: 'test-project-id',
+          span_uuid: 'span-uuid-123',
+        },
+        {
+          label: 'fail',
+          reasoning: 'Secondary evaluation failed',
+          type: 'verified',
+          data: null,
+          function_uuid: 'func-uuid-123',
+          project_uuid: 'test-project-id',
+          span_uuid: 'span-uuid-123',
+        },
+      ]);
+    });
+
+    it('should throw error when no annotations provided', () => {
+      expect(() => traceInstance.annotate()).toThrow('At least one annotation must be provided');
+    });
+
+    it('should handle annotate SDK not configured error', () => {
+      vi.mocked(getSettings).mockReturnValue(null);
+
+      const newTrace = new Trace('response', 'span-id', 'func-uuid');
+
+      expect(() => newTrace.annotate({ label: 'pass' })).toThrow('Lilypad SDK not configured');
+    });
+
+    it('should handle annotate span not found error gracefully', async () => {
+      mockClient.projects.functions.spans.listPaginated.mockResolvedValue({ items: [] });
+
+      // Mock the error handler
+      const { handleBackgroundError } = await import('./utils/error-handler');
+      vi.mocked(handleBackgroundError);
+
+      traceInstance.annotate({ label: 'pass', reasoning: 'Test' });
+
+      // Wait for the getSpanUuid promise to resolve
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(handleBackgroundError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Cannot annotate: span not found for function func-uuid-123',
+        }),
+        expect.objectContaining({ functionUuid: 'func-uuid-123', method: 'annotate' }),
+      );
+      expect(mockClient.ee.projects.annotations.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('AsyncTrace class', () => {
@@ -817,6 +904,85 @@ describe('trace', () => {
       mockClient.ee.projects.annotations.create.mockRejectedValue(new Error('API Error'));
 
       await expect(asyncTraceInstance.assign('error@example.com')).rejects.toThrow('API Error');
+    });
+
+    it('should annotate async trace with evaluation data', async () => {
+      await asyncTraceInstance.annotate({
+        label: 'pass',
+        reasoning: 'Async test passed',
+        type: 'manual',
+        data: { accuracy: 0.98, latency: 150 },
+      });
+
+      expect(mockClient.ee.projects.annotations.create).toHaveBeenCalledWith('test-project-id', [
+        {
+          label: 'pass',
+          reasoning: 'Async test passed',
+          type: 'manual',
+          data: { accuracy: 0.98, latency: 150 },
+          function_uuid: 'async-func-uuid',
+          project_uuid: 'test-project-id',
+          span_uuid: 'async-span-uuid',
+        },
+      ]);
+    });
+
+    it('should throw error when no annotations provided to async annotate', async () => {
+      await expect(asyncTraceInstance.annotate()).rejects.toThrow(
+        'At least one annotation must be provided',
+      );
+    });
+
+    it('should handle async annotate SDK not configured error', async () => {
+      vi.mocked(getSettings).mockReturnValue(null);
+
+      const newAsyncTrace = new AsyncTrace(100, 'span-id', 'func-uuid');
+
+      await expect(newAsyncTrace.annotate({ label: 'fail' })).rejects.toThrow(
+        'Lilypad SDK not configured',
+      );
+    });
+
+    it('should handle async annotate span not found error', async () => {
+      mockClient.projects.functions.spans.listPaginated.mockResolvedValue({ items: [] });
+
+      await expect(
+        asyncTraceInstance.annotate({
+          label: 'pass',
+          reasoning: 'Test annotation',
+          data: { test: true },
+        }),
+      ).rejects.toThrow('Cannot annotate: span not found for function async-func-uuid');
+    });
+
+    it('should handle multiple annotations in async trace', async () => {
+      const annotations = [
+        { label: 'pass' as const, reasoning: 'First check passed' },
+        { label: 'fail' as const, reasoning: 'Second check failed', type: 'verified' as const },
+        { data: { custom: 'metadata' }, type: 'edited' as const },
+      ];
+
+      await asyncTraceInstance.annotate(...annotations);
+
+      expect(mockClient.ee.projects.annotations.create).toHaveBeenCalledWith(
+        'test-project-id',
+        annotations.map((ann) => ({
+          ...ann,
+          function_uuid: 'async-func-uuid',
+          project_uuid: 'test-project-id',
+          span_uuid: 'async-span-uuid',
+        })),
+      );
+    });
+
+    it('should handle API errors in async annotate', async () => {
+      mockClient.ee.projects.annotations.create.mockRejectedValue(
+        new Error('Annotation API Error'),
+      );
+
+      await expect(
+        asyncTraceInstance.annotate({ label: 'pass', reasoning: 'Test' }),
+      ).rejects.toThrow('Annotation API Error');
     });
   });
 });

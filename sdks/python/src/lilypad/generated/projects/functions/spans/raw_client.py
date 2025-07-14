@@ -91,7 +91,7 @@ class RawSpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -106,7 +106,7 @@ class RawSpansClient:
 
         function_uuid : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         limit : typing.Optional[int]
 
@@ -234,7 +234,7 @@ class AsyncRawSpansClient:
         project_uuid: str,
         function_uuid: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         limit: typing.Optional[int] = None,
         offset: typing.Optional[int] = None,
         order: typing.Optional[Order] = None,
@@ -249,7 +249,7 @@ class AsyncRawSpansClient:
 
         function_uuid : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         limit : typing.Optional[int]
 

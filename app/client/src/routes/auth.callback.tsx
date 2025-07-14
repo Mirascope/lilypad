@@ -35,7 +35,7 @@ interface State {
   provider?: string;
 }
 
-const CallbackPage = () => {
+export const CallbackPage = () => {
   const auth = useAuth();
   const navigate = useNavigate();
   const { code, state } = Route.useSearch();

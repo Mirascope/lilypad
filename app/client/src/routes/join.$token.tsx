@@ -21,7 +21,7 @@ export const Route = createFileRoute("/join/$token")({
   component: () => <JoinPage />,
 });
 
-const JoinPage = () => {
+export const JoinPage = () => {
   const { token } = useParams({ from: Route.id });
   const {
     data: organizationInvite,

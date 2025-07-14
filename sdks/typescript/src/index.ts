@@ -20,7 +20,14 @@ export { wrapOpenAI } from './wrap-openai';
 export { trace, Trace, AsyncTrace, getCurrentSpan, logToCurrentSpan, wrapWithTrace } from './trace';
 export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
-export type { TraceOptions } from './trace';
+export type { TraceOptions, Annotation, Label, EvaluationType } from './trace';
+export {
+  isValidAnnotation,
+  validateAnnotation,
+  createValidAnnotation,
+  isValidLabel,
+  isValidEvaluationType,
+} from './utils/annotation-validator';
 
 const lilypad = {
   configure,
