@@ -1,9 +1,17 @@
 import * as crypto from 'crypto';
 import { logger } from './logger';
+import { formatCode } from './code-formatter';
 
 export interface DependencyInfo {
   version: string;
   extras?: string[];
+}
+
+export interface ImportInfo {
+  module: string;
+  names?: string[];
+  isDefault?: boolean;
+  isNamespace?: boolean;
 }
 
 export interface ClosureData {
@@ -16,7 +24,7 @@ export interface ClosureData {
 }
 
 // Type for any callable function - using unknown is safer than any
-type AnyFunction = (...args: unknown[]) => unknown;
+export type AnyFunction = (...args: unknown[]) => unknown;
 
 /**
  * Get the qualified name of a function
@@ -79,7 +87,9 @@ export class Closure implements ClosureData {
     isVersioned: boolean = false,
   ): Closure {
     const name = getQualifiedName(fn);
-    const code = fn.toString();
+    const rawCode = fn.toString();
+    // Format code for better readability when versioned
+    const code = isVersioned ? formatCode(rawCode) : rawCode;
 
     // Debug log
     logger.debug(`[Closure.fromFunction] Creating closure for function ${name}:`, {

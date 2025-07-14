@@ -455,6 +455,63 @@ interface Annotation {
 }
 ```
 
+## Function Versioning
+
+The TypeScript SDK supports automatic function versioning, allowing you to track code changes and manage different versions of your functions.
+
+### Basic Usage
+
+```typescript
+class DataService {
+  @trace({ versioning: 'automatic' })
+  async processData(input: string): Promise<string> {
+    // Function implementation
+    return input.toUpperCase();
+  }
+}
+
+const service = new DataService();
+
+// Execute normally
+const result = await service.processData('hello');
+
+// Access versioning methods
+const versions = await service.processData.versions(); // List all versions
+const v1 = service.processData.version(1); // Get specific version
+await service.processData.deploy(1); // Deploy a version
+const remote = await service.processData.remote('input'); // Execute deployed version
+```
+
+### Versioning Methods
+
+Every versioned function gets these methods:
+
+- `fn.version(n)` - Execute a specific version
+- `fn.versions()` - List all available versions
+- `fn.deploy(n)` - Deploy a specific version
+- `fn.remote(...args)` - Execute the deployed version
+
+### Important Notes
+
+- **Decorators only work on class methods** in TypeScript
+- For standalone functions, use `wrapWithTrace()` with versioning option
+- Function code is automatically captured and hashed for versioning
+- Versions are tracked in the Lilypad backend
+
+### Example with Wrap Mode
+
+```typescript
+@trace({ versioning: 'automatic', mode: 'wrap' })
+async analyzeData(data: any): Promise<{ score: number }> {
+  return { score: Math.random() };
+}
+
+// Returns AsyncTrace with versioning methods
+const result = await service.analyzeData(data);
+console.log(result.response); // { score: 0.85 }
+await result.tag('analyzed');
+```
+
 ## Shutdown
 
 The SDK automatically handles graceful shutdown on process termination (SIGTERM, SIGINT, and normal exit) to ensure all spans are flushed. You can also manually trigger shutdown:

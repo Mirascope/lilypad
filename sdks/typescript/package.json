@@ -72,10 +72,9 @@
     "example:comprehensive:auto": "tsx --require ./dist/register.js examples/comprehensive.ts",
     "example:streaming": "bun run examples/streaming.ts",
     "example:trace-wrap": "bun run examples/trace-wrap-mode.ts",
-    "example:versioning": "bun run examples/test-versioning.ts",
-    "example:versioning:basic": "bun run examples/versioning-basic.ts",
-    "example:versioning:decorator": "bun run examples/versioning-decorator.ts",
-    "example:versioning:comparison": "bun run examples/versioning-comparison.ts"
+    "example:trace": "bun run examples/test-trace-decorator.ts",
+    "example:trace-features": "bun run examples/test-trace-features.ts",
+    "example:trace-openai": "bun --require ./dist/register.js examples/test-trace-decorator.ts"
   },
   "keywords": [
     "lilypad",

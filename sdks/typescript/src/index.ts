@@ -23,6 +23,16 @@ export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
 export type { TraceOptions } from './trace';
 
+export { createVersionedFunction, isVersionedFunction } from './versioning/versioned-function';
+export type {
+  VersionedFunction,
+  AsyncVersionedFunction,
+  VersionedFunctionMethods,
+  FunctionVersion,
+  VersionedTrace,
+  AsyncVersionedTrace,
+} from './types/versioning';
+
 const lilypad = {
   configure,
   shutdown,
