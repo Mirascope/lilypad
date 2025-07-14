@@ -20,6 +20,7 @@ generate-sdk-python:
 
 generate-sdk-typescript:
 	bun run fern generate --group typescript-sdk --local && rm -fr typescript/lilypad/generated/.git
+	cd typescript && bun run prettier --write lilypad/generated --log-level=error || true
 
 clean:
 	rm -rf python/src/lilypad/.git || true

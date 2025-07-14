@@ -48,6 +48,9 @@ help:
 	@echo "  test-sdk-python   - Run Python SDK tests only"
 	@echo "  test-sdk-typescript - Run TypeScript SDK tests only"
 	@echo "  test-coverage-sdk - Run all SDK tests with coverage report"
+	@echo "  build-sdk-typescript - Build TypeScript SDK"
+	@echo "  watch-sdk-typescript - Build TypeScript SDK in watch mode"
+	@echo "  check-sdk-typescript - Run lint, typecheck, and test for TypeScript SDK"
 	@echo "  test-coverage-sdk-python - Run Python SDK tests with coverage report"
 	@echo "  test-coverage-sdk-typescript - Run TypeScript SDK tests with coverage report"
 	@echo "  lint              - Run all linters"
@@ -159,7 +162,7 @@ test-sdk-python:
 	+$(MAKE) -C sdks/python test
 
 test-sdk-typescript:
-	+$(MAKE) -C sdks/typescript test || true
+	+$(MAKE) -C sdks/typescript test
 
 test-coverage-sdk: test-coverage-sdk-python test-coverage-sdk-typescript
 
@@ -167,7 +170,7 @@ test-coverage-sdk-python:
 	+$(MAKE) -C sdks/python test-coverage
 
 test-coverage-sdk-typescript:
-	+$(MAKE) -C sdks/typescript test-coverage || true
+	+$(MAKE) -C sdks/typescript test-coverage
 
 test-watch:
 	+$(MAKE) -C app test-watch
@@ -184,7 +187,7 @@ lint-sdk-python:
 	+$(MAKE) -C sdks/python lint
 
 lint-sdk-typescript:
-	+$(MAKE) -C sdks/typescript lint || true
+	+$(MAKE) -C sdks/typescript lint
 
 lint-client:
 	+$(MAKE) -C app/client lint
@@ -201,7 +204,7 @@ typecheck-sdk-python:
 	+$(MAKE) -C sdks/python typecheck
 
 typecheck-sdk-typescript:
-	+$(MAKE) -C sdks/typescript typecheck || true
+	+$(MAKE) -C sdks/typescript typecheck
 
 typecheck-client:
 	+$(MAKE) -C app/client typecheck
@@ -218,7 +221,7 @@ format-sdk-python:
 	+$(MAKE) -C sdks/python format
 
 format-sdk-typescript:
-	+$(MAKE) -C sdks/typescript format || true
+	+$(MAKE) -C sdks/typescript format
 
 # Auto-fix
 fix: fix-app fix-sdk
@@ -232,7 +235,17 @@ fix-sdk-python:
 	+$(MAKE) -C sdks/python fix
 
 fix-sdk-typescript:
-	+$(MAKE) -C sdks/typescript fix || true
+	+$(MAKE) -C sdks/typescript fix
+
+# TypeScript SDK specific commands
+build-sdk-typescript:
+	+$(MAKE) -C sdks/typescript build
+
+watch-sdk-typescript:
+	+$(MAKE) -C sdks/typescript dev
+
+check-sdk-typescript: lint-sdk-typescript typecheck-sdk-typescript test-sdk-typescript
+	@echo "TypeScript SDK checks completed"
 
 # Code generation
 # Note: Order matters - OpenAPI must be generated before SDKs
@@ -261,7 +274,7 @@ clean:
 	+$(MAKE) -C app clean
 	+$(MAKE) -C app/client clean
 	+$(MAKE) -C sdks/python clean
-	+$(MAKE) -C sdks/typescript clean || true
+	+$(MAKE) -C sdks/typescript clean
 	+$(MAKE) -C sdks clean
 
 clean-all: clean

@@ -1,0 +1,94 @@
+{
+  "name": "@lilypad/typescript-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Lilypad - LLM observability and monitoring",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "tsup && npm run copy-esm-loaders",
+    "copy-esm-loaders": "cp src/register-esm-loader.mjs dist/ && cp src/esm-hooks.mjs dist/",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "fix": "eslint . --ext .ts,.tsx --fix && prettier --write .",
+    "clean": "rm -rf dist coverage .turbo",
+    "prepublishOnly": "bun run build",
+    "example:basic": "bun run examples/basic.ts",
+    "example:auto": "bun --require ./dist/register.js examples/basic-auto.ts",
+    "example:auto:node": "node --require ./dist/register.js ./dist-examples/basic-auto.js",
+    "example:basic-llm": "bun --require ./dist/register.js examples/basic-auto-llm.ts",
+    "example:streaming-llm": "bun --require ./dist/register.js examples/streaming-auto-llm.ts",
+    "example:configure-llm": "bun run examples/configure-auto-llm.ts"
+  },
+  "keywords": [
+    "lilypad",
+    "llm",
+    "observability",
+    "monitoring",
+    "opentelemetry",
+    "tracing",
+    "openai"
+  ],
+  "author": "Mirascope",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mirascope/lilypad.git",
+    "directory": "sdks/typescript"
+  },
+  "bugs": {
+    "url": "https://github.com/Mirascope/lilypad/issues"
+  },
+  "homepage": "https://github.com/Mirascope/lilypad#readme",
+  "dependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/resources": "^1.19.0",
+    "@opentelemetry/sdk-node": "^0.46.0",
+    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "@opentelemetry/sdk-trace-node": "^1.19.0",
+    "@opentelemetry/semantic-conventions": "^1.34.0",
+    "js-base64": "^3.7.7",
+    "qs": "^6.14.0"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.4",
+    "@types/qs": "^6.14.0",
+    "@types/readable-stream": "^4.0.21",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "openai": "^4.0.0",
+    "prettier": "^3.0.0",
+    "readable-stream": "^4.7.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
