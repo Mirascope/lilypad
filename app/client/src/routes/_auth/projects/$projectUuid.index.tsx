@@ -48,7 +48,7 @@ function RouteComponent() {
   return <ProjectDashboard />;
 }
 
-const ProjectDashboard = () => {
+export const ProjectDashboard = () => {
   const timeFrame = TimeFrame.LIFETIME;
   const { projectUuid } = useParams({ from: Route.id });
   const { data: project } = useSuspenseQuery(projectQueryOptions(projectUuid));

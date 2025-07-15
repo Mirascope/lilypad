@@ -8,9 +8,19 @@ import { defineConfig, loadEnv } from "vite";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
-    plugins: [TanStackRouterVite(), react(), tailwindcss()],
+    plugins: [
+      TanStackRouterVite({
+        routeFileIgnorePattern: "\\.(test|spec)\\.(ts|tsx)$",
+      }),
+      ,
+      react(),
+      tailwindcss(),
+    ],
     build: {
       outDir: env["VITE_OUT_DIR"] || "../lilypad/server/static",
+      rollupOptions: {
+        external: ["bun:test"],
+      },
     },
     server: {
       host: true,
