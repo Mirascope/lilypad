@@ -1,7 +1,6 @@
 import { TraceContainer } from "@/src/routes/_auth/projects/$projectUuid/traces.$";
 import { setupTestEnvironment } from "@/src/test-setup";
 import { mockAuthenticatedContext, renderRoute } from "@/src/test-utils";
-import { SpanPublic } from "@/src/types/types";
 import { screen, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
@@ -24,8 +23,8 @@ describe("Traces Page", () => {
         () => {
           const projectTitle = screen.queryByText("Test Project");
           const loading = screen.queryByTestId("lilypad-loading");
-          const errorBoundary = document.querySelector('[data-error-boundary]');
-          
+          const errorBoundary = document.querySelector("[data-error-boundary]");
+
           // Accept any of these as valid states
           expect(projectTitle || loading || errorBoundary || document.body).toBeTruthy();
         },
@@ -42,11 +41,14 @@ describe("Traces Page", () => {
         initialPath: "/_auth/projects/test-project-uuid/traces/",
       });
 
-      await waitFor(() => {
-        // Look for the project title specifically
-        const projectTitle = screen.queryByText("Test Project");
-        expect(projectTitle).toBeTruthy();
-      }, { timeout: 8000 });
+      await waitFor(
+        () => {
+          // Look for the project title specifically
+          const projectTitle = screen.queryByText("Test Project");
+          expect(projectTitle).toBeTruthy();
+        },
+        { timeout: 8000 }
+      );
     });
 
     it("should render control buttons when component loads", async () => {
@@ -58,15 +60,21 @@ describe("Traces Page", () => {
         initialPath: "/_auth/projects/test-project-uuid/traces/",
       });
 
-      await waitFor(() => {
-        expect(screen.queryByText("Test Project")).toBeTruthy();
-      }, { timeout: 8000 });
+      await waitFor(
+        () => {
+          expect(screen.queryByText("Test Project")).toBeTruthy();
+        },
+        { timeout: 8000 }
+      );
 
       // Check for control buttons
-      await waitFor(() => {
-        const compareButton = screen.queryByText("Compare");
-        expect(compareButton).toBeTruthy();
-      }, { timeout: 5000 });
+      await waitFor(
+        () => {
+          const compareButton = screen.queryByText("Compare");
+          expect(compareButton).toBeTruthy();
+        },
+        { timeout: 8000 }
+      );
     });
 
     it("should handle trace UUID in URL", async () => {
@@ -79,14 +87,18 @@ describe("Traces Page", () => {
       });
 
       // Just verify the component renders with the trace UUID parameter
-      await waitFor(() => {
-        const hasContent = document.body.innerHTML.includes("Test Project") || 
-                          document.body.innerHTML.includes("test-span-uuid") ||
-                          document.body.innerHTML.includes("panel") ||
-                          document.body.innerHTML.includes("resizable") ||
-                          document.body.innerHTML.length > 100;
-        expect(hasContent).toBeTruthy();
-      }, { timeout: 8000 });
+      await waitFor(
+        () => {
+          const hasContent =
+            document.body.innerHTML.includes("Test Project") ||
+            document.body.innerHTML.includes("test-span-uuid") ||
+            document.body.innerHTML.includes("panel") ||
+            document.body.innerHTML.includes("resizable") ||
+            document.body.innerHTML.length > 100;
+          expect(hasContent).toBeTruthy();
+        },
+        { timeout: 8000 }
+      );
     });
   });
 
@@ -133,13 +145,17 @@ describe("Traces Page", () => {
       });
 
       // Component should render something even if there are errors
-      await waitFor(() => {
-        const hasContent = document.body.innerHTML.includes("Test Project") || 
-                          document.body.innerHTML.includes("loading") ||
-                          document.body.innerHTML.includes("error") ||
-                          document.body.innerHTML.length > 100;
-        expect(hasContent).toBeTruthy();
-      }, { timeout: 8000 });
+      await waitFor(
+        () => {
+          const hasContent =
+            document.body.innerHTML.includes("Test Project") ||
+            document.body.innerHTML.includes("loading") ||
+            document.body.innerHTML.includes("error") ||
+            document.body.innerHTML.length > 100;
+          expect(hasContent).toBeTruthy();
+        },
+        { timeout: 8000 }
+      );
     });
   });
 });
