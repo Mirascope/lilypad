@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import logging
 import importlib.util
+import time
 from typing import Any, Literal
 from secrets import token_bytes
 from contextlib import contextmanager
 from collections.abc import Sequence, Generator
 
+import httpx
 from opentelemetry import trace, propagate
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
@@ -65,6 +67,9 @@ class _JSONSpanExporter(SpanExporter):
         self.client = get_sync_client(api_key=self.settings.api_key)
         self.log = logging.getLogger(__name__)
         self._logged_trace_ids = set()  # Track which traces we've already logged
+        self._last_error_time = 0.0
+        self._error_suppression_duration = 300.0  # 5 minutes
+        self._connection_error_count = 0
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Convert spans to a list of JSON serializable dictionaries and send them."""
@@ -77,11 +82,26 @@ class _JSONSpanExporter(SpanExporter):
             response = self.client.projects.traces.create(
                 project_uuid=self.settings.project_id, request_options={"additional_body_parameters": span_data}
             )  # pyright: ignore[reportArgumentType]
+            self._connection_error_count = 0
         except LilypadException as exc:
             self.log.debug("Server responded with error: %s", exc)
             return SpanExportResult.FAILURE
-        except Exception as exc:  # pragma: no cover
-            self.log.error("Unexpected error sending spans: %s", exc)  # pragma: no cover
+        except (httpx.NetworkError, OSError) as exc:
+            current_time = time.time()
+            self._connection_error_count += 1
+            
+            if self._connection_error_count == 1 or (current_time - self._last_error_time) > self._error_suppression_duration:
+                self.log.error(
+                    "Network error sending spans to Lilypad server: %s. "
+                    "LLM calls will continue to work. "
+                    "Further connection errors will be suppressed for %d minutes.",
+                    exc,
+                    int(self._error_suppression_duration / 60)
+                )
+                self._last_error_time = current_time
+            else:
+                self.log.debug("Suppressed connection error: %s", exc)  # pragma: no cover
+            
             return SpanExportResult.FAILURE  # pragma: no cover
 
         self.log.debug(f"Spans {response.trace_status}: {response.span_count} spans")
@@ -100,7 +120,7 @@ class _JSONSpanExporter(SpanExporter):
                 if len(new_trace_ids) == 1:  # pragma: no cover
                     self.log.info(  # pragma: no cover
                         f"View trace at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces/{new_trace_ids[0]}"  # pragma: no cover
-                    )  # pragma: no cover
+                    )
                 else:  # pragma: no cover
                     self.log.info(  # pragma: no cover
                         f"View {len(new_trace_ids)} new traces at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces"
