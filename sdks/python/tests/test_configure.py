@@ -3,6 +3,7 @@
 import logging
 from unittest.mock import Mock, patch
 import pytest
+import httpx
 from opentelemetry import trace
 from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
 
@@ -175,7 +176,7 @@ def test_export_connection_error_suppression(mock_get_settings, mock_get_client,
     
     # Mock client to raise connection error
     mock_client = Mock()
-    mock_client.projects.traces.create.side_effect = Exception("[Errno -2] Name or service not known")
+    mock_client.projects.traces.create.side_effect = httpx.ConnectError("[Errno -2] Name or service not known")
     mock_get_client.return_value = mock_client
 
     # Create minimal mock span
@@ -207,7 +208,7 @@ def test_export_connection_error_suppression(mock_get_settings, mock_get_client,
         result1 = exporter.export([create_mock_span()])
         assert result1.name == "FAILURE"
         assert mock_error.call_count == 1
-        assert "Error sending spans to Lilypad server" in mock_error.call_args[0][0]
+        assert "Network error sending spans to Lilypad server" in mock_error.call_args[0][0]
         assert "LLM calls will continue to work" in mock_error.call_args[0][0]
         
         # Second error within suppression window - should only log debug
@@ -237,7 +238,7 @@ def test_export_connection_error_reset_on_success(mock_get_settings, mock_get_cl
     mock_response = Mock(trace_status="queued", span_count=1, trace_ids=["trace-1"])
     mock_client = Mock()
     mock_client.projects.traces.create.side_effect = [
-        Exception("[Errno -2] Name or service not known"),
+        OSError(-2, "Name or service not known"),
         mock_response  # Success
     ]
     mock_get_client.return_value = mock_client
@@ -402,7 +403,7 @@ def test_configure_auto_llm(mock_trace, mock_find_spec):
         patch("lilypad._opentelemetry.OpenAIInstrumentor") as mock_openai,
         patch("lilypad._opentelemetry.AnthropicInstrumentor") as mock_anthropic,
         patch("lilypad._opentelemetry.AzureInstrumentor") as mock_azure,
-        patch("lilypad._opentelemetry.GoogleGenAIInstrumentor") as mock_google,
+        patch("lilypad._opentelemetry.GoogleGenAIInstrumentor", create=True) as mock_google,
         patch("lilypad._opentelemetry.BedrockInstrumentor") as mock_bedrock,
         patch("lilypad._opentelemetry.MistralInstrumentor", create=True) as mock_mistral,
         patch("lilypad._opentelemetry.OutlinesInstrumentor") as mock_outlines,

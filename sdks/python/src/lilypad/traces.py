@@ -37,6 +37,7 @@ from ._utils import (
     create_mirascope_middleware,
 )
 from .sandbox import SandboxRunner, SubprocessSandboxRunner
+import httpx
 from .exceptions import RemoteFunctionError, LilypadException
 from ._utils.json import to_text, json_dumps, fast_jsonable
 from ._utils.client import get_sync_client, get_async_client
@@ -952,7 +953,7 @@ def trace(
                     if versioning == "automatic":
                         try:
                             function = await get_or_create_function_async()
-                        except (OSError, ConnectionError) as exc:
+                        except (httpx.NetworkError, OSError) as exc:
                             logger.error(
                                 "Failed to connect to Lilypad server for versioning: %s. "
                                 "Continuing without versioning. LLM calls will still work.",
@@ -1163,7 +1164,7 @@ def trace(
                     if versioning == "automatic":
                         try:
                             function = get_or_create_function_sync()
-                        except (OSError, ConnectionError) as exc:
+                        except (httpx.NetworkError, OSError) as exc:
                             logger.error(
                                 "Failed to connect to Lilypad server for versioning: %s. "
                                 "Continuing without versioning. LLM calls will still work.",

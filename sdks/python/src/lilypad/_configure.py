@@ -10,6 +10,7 @@ from secrets import token_bytes
 from contextlib import contextmanager
 from collections.abc import Sequence, Generator
 
+import httpx
 from opentelemetry import trace, propagate
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
@@ -85,18 +86,18 @@ class _JSONSpanExporter(SpanExporter):
         except LilypadException as exc:
             self.log.debug("Server responded with error: %s", exc)
             return SpanExportResult.FAILURE
-        except Exception as exc:  # pragma: no cover
+        except (httpx.NetworkError, OSError) as exc:
             current_time = time.time()
             self._connection_error_count += 1
             
             if self._connection_error_count == 1 or (current_time - self._last_error_time) > self._error_suppression_duration:
                 self.log.error(
-                    "Error sending spans to Lilypad server: %s. "
+                    "Network error sending spans to Lilypad server: %s. "
                     "LLM calls will continue to work. "
                     "Further connection errors will be suppressed for %d minutes.",
                     exc,
                     int(self._error_suppression_duration / 60)
-                )  # pragma: no cover
+                )
                 self._last_error_time = current_time
             else:
                 self.log.debug("Suppressed connection error: %s", exc)  # pragma: no cover
@@ -119,7 +120,7 @@ class _JSONSpanExporter(SpanExporter):
                 if len(new_trace_ids) == 1:  # pragma: no cover
                     self.log.info(  # pragma: no cover
                         f"View trace at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces/{new_trace_ids[0]}"  # pragma: no cover
-                    )  # pragma: no cover
+                    )
                 else:  # pragma: no cover
                     self.log.info(  # pragma: no cover
                         f"View {len(new_trace_ids)} new traces at: {self.settings.remote_client_url}/projects/{self.settings.project_id}/traces"
