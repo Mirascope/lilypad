@@ -1,6 +1,6 @@
 [project]
 name = "lilypad"
-version = "0.5.1"
+version = "0.10.2"
 description = "Spin up your data flywheel in one line of code."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -191,16 +191,17 @@ venvPath = "."
 venv = ".venv"
 
 [tool.codespell]
-skip = [".git", "*.lock", "./client/pnpm-lock.yaml", "./docs/pnpm-lock.yaml", "./client/bun.lock"]
+skip = [
+    ".git",
+    "*.lock",
+    "./client/pnpm-lock.yaml",
+    "./docs/pnpm-lock.yaml",
+    "./client/bun.lock",
+]
 
 [tool.coverage.run]
 source = ["lilypad", "ee"]
-omit = [
-    "*/tests/*",
-    "*/test_*.py",
-    "*/__pycache__/*",
-    "*/site-packages/*",
-]
+omit = ["*/tests/*", "*/test_*.py", "*/__pycache__/*", "*/site-packages/*"]
 
 [tool.coverage.report]
 exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
