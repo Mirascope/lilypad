@@ -4,11 +4,14 @@ Copyright (c) 2025 Mirascope, Inc. All rights reserved.
 
 ## License Grant
 
-This software and associated documentation files (the "Software") are made available in source code form for evaluation and development purposes only. By accessing, viewing, or using this Software, you agree to be bound by the terms of this license.
+This software and associated documentation files (the "Software") are made available in
+source code form for evaluation and development purposes only. By accessing, viewing, or
+using this Software, you agree to be bound by the terms of this license.
 
 ## Source Code Availability
 
-While the source code is publicly viewable, this does **NOT** grant you any rights beyond those explicitly stated in this license.
+While the source code is publicly viewable, this does **NOT** grant you any rights
+beyond those explicitly stated in this license.
 
 ## Restrictions
 
@@ -33,27 +36,38 @@ You may:
 
 ## Enterprise Licensing
 
-Commercial use, production deployment, self-hosting, and distribution rights are available exclusively through Mirascope's Enterprise License Program. Contact support@mirascope.com for licensing information.
+Commercial use, production deployment, self-hosting, and distribution rights are
+available exclusively through Mirascope's Enterprise License Program. Contact
+support@mirascope.com for licensing information.
 
 ## Termination
 
-This license is effective until terminated. Mirascope may terminate this license at any time without notice. Upon termination, you must immediately cease all use of the Software and destroy all copies.
+This license is effective until terminated. Mirascope may terminate this license at any
+time without notice. Upon termination, you must immediately cease all use of the
+Software and destroy all copies.
 
 ## Warranty Disclaimer
 
-THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT.
 
 ## Limitation of Liability
 
-IN NO EVENT SHALL MIRASCOPE BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+IN NO EVENT SHALL MIRASCOPE BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
+THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Governing Law
 
-This license shall be governed by and construed in accordance with the laws of the State of Delaware, without regard to its conflict of laws principles.
+This license shall be governed by and construed in accordance with the laws of the State
+of Delaware, without regard to its conflict of laws principles.
 
 ## Jurisdiction
 
-Any disputes arising under this license shall be subject to the exclusive jurisdiction of the state and federal courts located in the State of Delaware. You consent to the personal jurisdiction of such courts and waive any objection to venue in such courts.
+Any disputes arising under this license shall be subject to the exclusive jurisdiction
+of the state and federal courts located in the State of Delaware. You consent to the
+personal jurisdiction of such courts and waive any objection to venue in such courts.
 
 ## Contact
 
@@ -61,4 +75,5 @@ For inquiries: support@mirascope.com
 
 ---
 
-*This license may be updated or replaced with a final license agreement. Continued use of the Software constitutes acceptance of any such updates.*
+*This license may be updated or replaced with a final license agreement.*
+*Continued use of the Software constitutes acceptance of any such updates.*
