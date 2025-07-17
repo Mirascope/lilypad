@@ -1,21 +1,29 @@
 # All targets
-.PHONY: help setup generate-sdk clean update-deps
+.PHONY: help setup generate-sdk generate-sdk-python generate-sdk-typescript clean update-deps
 
 help:
 	@echo "Available targets:"
-	@echo "  setup        - Install dependencies"
-	@echo "  generate-sdk - Generate Python SDK from OpenAPI"
-	@echo "  clean        - Clean generated artifacts"
-	@echo "  update-deps  - Update Bun dependencies"
+	@echo "  setup                - Install dependencies"
+	@echo "  generate-sdk         - Generate all SDKs (Python and TypeScript) from OpenAPI"
+	@echo "  generate-sdk-python  - Generate Python SDK from OpenAPI"
+	@echo "  generate-sdk-typescript - Generate TypeScript SDK from OpenAPI"
+	@echo "  clean                - Clean generated artifacts"
+	@echo "  update-deps          - Update Bun dependencies"
 
 setup:
 	bun install
 
-generate-sdk:
+generate-sdk: generate-sdk-python generate-sdk-typescript
+
+generate-sdk-python:
 	bun run fern generate --group python-sdk --local && rm -fr python/src/lilypad/.git
+
+generate-sdk-typescript:
+	bun run fern generate --group typescript-sdk --local && rm -fr typescript/lilypad/generated/.git
 
 clean:
 	rm -rf python/src/lilypad/.git || true
+	rm -rf typescript/lilypad/generated/.git || true
 
 update-deps:
 	bun update --latest
