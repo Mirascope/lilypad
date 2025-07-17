@@ -1,0 +1,36 @@
+name: lint
+run-name: ${{ github.actor }} is linting the package
+
+# When updating, please coordinate with the `lint:ci` command in root `package.json`,
+# so that `bun run lint:ci` will accurately forecast GitHub Lint CI status.
+
+on:
+  push:
+    branches: [v1]
+  pull_request:
+    branches: [v1]
+
+jobs:
+  codespell:
+    name: Spell Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: codespell-project/actions-codespell@v2
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install package dependencies
+        run: bun install
+
+      - name: Run lint
+        run: bun run lint

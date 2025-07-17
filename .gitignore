@@ -1,3 +1,11 @@
+# TypeScript
+node_modules
+count.txt
+.tanstack
+.wrangler
+tsconfig.tsbuildinfo
+docker/data
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -20,6 +28,8 @@ node_modules/
 .eslintcache
 
 # dotenv environment variables file
+.dev.vars*
+*.local
 .env
 .env.local
 .env.development.local
@@ -34,3 +44,7 @@ out/
 # Temporary folders
 tmp/
 temp/
+
+# Example Environment Files
+!.example.dev.vars
+!.example.env.local
