@@ -1,7 +1,7 @@
 import { JoinPage } from "@/src/routes/join.$token";
 import { renderRoute, mockAuthContext } from "@/src/test-utils";
 import { setupTestEnvironment } from "@/src/test-setup";
-import { screen, waitFor } from "@testing-library/react";
+import { waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("JoinPage", () => {
