@@ -1,2 +1,0 @@
-lilypad-sdk[openai,anthropic,azure,bedrock,google,mistral]==0.1.0a14
-mirascope[anthropic,azure,bedrock,cohere,google,groq,litellm,mistral,openai,xai]==1.22.2

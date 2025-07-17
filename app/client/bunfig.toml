@@ -1,8 +1,0 @@
-[test]
-# Test configuration for bun test
-preload = ["./happydom.ts", "./testing-library.ts"]
-timeout = 10000
-root = "."
-
-# Coverage configuration
-coverage = true
