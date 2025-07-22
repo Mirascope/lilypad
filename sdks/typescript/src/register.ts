@@ -11,14 +11,16 @@ import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 
 import { logger, setGlobalLogLevel } from './utils/logger';
 import { setSettings } from './utils/settings';
+import type { LogLevel } from './types';
 import { getOrCreateContextManager } from './utils/shared-context';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 
 // Enable debug logging based on environment variable
 const logLevel = process.env.LILYPAD_LOG_LEVEL || 'info';
-if (logLevel && ['debug', 'info', 'warn', 'error'].includes(logLevel)) {
-  setGlobalLogLevel(logLevel as 'debug' | 'info' | 'warn' | 'error'); // ここを変更
+const validLogLevels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+if (validLogLevels.includes(logLevel as LogLevel)) {
+  logger.setLevel(logLevel as LogLevel);
 }
 
 // Check environment variables

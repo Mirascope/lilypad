@@ -15,18 +15,20 @@ configure({
 
 // Example 1: Synchronous function with wrap mode
 class DataProcessor {
-  @trace({ mode: 'wrap', tags: ['production', 'data-processing'] })
-  processData(input: string): string {
-    // Simulate some data processing
-    const processed = input.toUpperCase().replace(/\s+/g, '_');
-    return `PROCESSED_${processed}`;
-  }
+  processData = trace({ mode: 'wrap', tags: ['production', 'data-processing'] })(
+    function processData(input: string): string {
+      // Simulate some data processing
+      const processed = input.toUpperCase().replace(/\s+/g, '_');
+      return `PROCESSED_${processed}`;
+    },
+  );
 }
 
 // Example 2: Asynchronous function with wrap mode
 class AIService {
-  @trace({ mode: 'wrap', name: 'ai_inference' })
-  async generateResponse(prompt: string): Promise<{ text: string; confidence: number }> {
+  generateResponse = trace({ mode: 'wrap', name: 'ai_inference' })(async function generateResponse(
+    prompt: string,
+  ): Promise<{ text: string; confidence: number }> {
     // Simulate AI processing
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -34,18 +36,17 @@ class AIService {
       text: `Response to: ${prompt}`,
       confidence: 0.95,
     };
-  }
+  });
 }
 
 // Example 3: Error handling with wrap mode
 class ValidationService {
-  @trace({ mode: 'wrap' })
-  validateInput(data: any): boolean {
+  validateInput = trace({ mode: 'wrap' })(function validateInput(data: any): boolean {
     if (!data || typeof data !== 'object') {
       throw new Error('Invalid input: expected object');
     }
     return true;
-  }
+  });
 }
 
 async function runExamples() {
@@ -95,23 +96,24 @@ async function runExamples() {
   console.log('\n4. Complex return types:');
 
   class ReportGenerator {
-    @trace({ mode: 'wrap', name: 'generate_monthly_report' })
-    async generateReport(month: string): Promise<{
-      summary: string;
-      data: number[];
-      metadata: Record<string, any>;
-    }> {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+    generateReport = trace({ mode: 'wrap', name: 'generate_monthly_report' })(
+      async function generateReport(month: string): Promise<{
+        summary: string;
+        data: number[];
+        metadata: Record<string, any>;
+      }> {
+        await new Promise((resolve) => setTimeout(resolve, 50));
 
-      return {
-        summary: `Report for ${month}`,
-        data: [100, 200, 150, 300],
-        metadata: {
-          generated_at: new Date().toISOString(),
-          version: '1.0',
-        },
-      };
-    }
+        return {
+          summary: `Report for ${month}`,
+          data: [100, 200, 150, 300],
+          metadata: {
+            generated_at: new Date().toISOString(),
+            version: '1.0',
+          },
+        };
+      },
+    );
   }
 
   const reportGen = new ReportGenerator();
