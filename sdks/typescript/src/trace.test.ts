@@ -159,9 +159,9 @@ describe('trace', () => {
     it('should work with synchronous functions', async () => {
       const testFn = (arg1: string, arg2: number) => `${arg1}-${arg2}`;
       const tracedFn = trace(testFn);
-      
+
       const result = await tracedFn('test', 123);
-      
+
       expect(result).toBe('test-123');
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         'testFn',
@@ -188,10 +188,10 @@ describe('trace', () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
         return value.toUpperCase();
       };
-      
+
       const tracedFn = trace(testFn, { name: 'custom-name' });
       const result = await tracedFn('hello');
-      
+
       expect(result).toBe('HELLO');
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         'custom-name',
@@ -205,9 +205,9 @@ describe('trace', () => {
       const failingFn = async () => {
         throw testError;
       };
-      
+
       const tracedFn = trace(failingFn);
-      
+
       await expect(tracedFn()).rejects.toThrow('Test error');
       expect(mockSpan.recordException).toHaveBeenCalledWith(testError);
       expect(mockSpan.setStatus).toHaveBeenCalledWith({
@@ -219,15 +219,15 @@ describe('trace', () => {
 
     it('should handle custom options', async () => {
       const fnWithOptions = () => 'result';
-      
+
       const tracedFn = trace(fnWithOptions, {
         name: 'custom-trace',
         tags: ['tag1', 'tag2'],
         attributes: { custom: 'attribute' },
       });
-      
+
       await tracedFn();
-      
+
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         'custom-trace',
         expect.objectContaining({
@@ -242,12 +242,12 @@ describe('trace', () => {
 
     it('should work without settings configured', async () => {
       vi.mocked(getSettings).mockReturnValue(null);
-      
+
       const testFn = () => 'no-trace';
       const tracedFn = trace(testFn);
-      
+
       const result = await tracedFn();
-      
+
       expect(result).toBe('no-trace');
       expect(tracedFn).toBe(testFn); // Should return original function when not configured
     });
@@ -255,9 +255,9 @@ describe('trace', () => {
     it('should return Trace wrapper in wrap mode', async () => {
       const wrappedFn = () => 'wrapped-result';
       const tracedFn = trace(wrappedFn, { mode: 'wrap' });
-      
+
       const result = await tracedFn();
-      
+
       expect(result).toBeInstanceOf(Trace);
       expect((result as any).response).toBe('wrapped-result');
     });
@@ -265,9 +265,9 @@ describe('trace', () => {
     it('should return AsyncTrace wrapper for async functions in wrap mode', async () => {
       const asyncWrappedFn = async () => 'async-wrapped-result';
       const tracedFn = trace(asyncWrappedFn, { mode: 'wrap' });
-      
+
       const result = await tracedFn();
-      
+
       expect(result).toBeInstanceOf(AsyncTrace);
       expect((result as any).response).toBe('async-wrapped-result');
     });
@@ -275,9 +275,9 @@ describe('trace', () => {
     it('should handle string options as name', async () => {
       const namedFn = () => 'result';
       const tracedFn = trace(namedFn, 'string-name');
-      
+
       await tracedFn();
-      
+
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         'string-name',
         expect.any(Object),
@@ -287,9 +287,9 @@ describe('trace', () => {
 
     it('should handle anonymous functions', async () => {
       const anonymousFn = trace(() => 'anonymous result');
-      
+
       const result = await anonymousFn();
-      
+
       expect(result).toBe('anonymous result');
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         'anonymous',
@@ -444,7 +444,7 @@ describe('trace', () => {
 
       const syncFn = (value: string) => `processed: ${value}`;
       const tracedFn = trace(syncFn, { mode: 'wrap' });
-      
+
       const result = await tracedFn('test');
 
       expect(result).toBeInstanceOf(Trace);
@@ -473,7 +473,7 @@ describe('trace', () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
         return value * 2;
       };
-      
+
       const tracedFn = trace(asyncFn, { mode: 'wrap' });
       const result = await tracedFn(21);
 

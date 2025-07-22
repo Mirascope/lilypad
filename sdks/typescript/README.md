@@ -32,8 +32,7 @@ const client = new OpenAI({
 });
 
 class QuestionService {
-  answerQuestion = trace(
-    async (question: string): Promise<string | null> => {
+  answerQuestion = trace(async (question: string): Promise<string | null> => {
     const convertedQuestion = question.toLowerCase().trim();
 
     // This OpenAI call is automatically traced thanks to auto_llm
@@ -42,9 +41,8 @@ class QuestionService {
       messages: [{ role: 'user', content: `Answer this question: ${convertedQuestion}` }],
     });
 
-      return response.choices[0].message.content;
-    }
-  );
+    return response.choices[0].message.content;
+  });
 }
 
 // Usage
@@ -279,16 +277,14 @@ import { trace } from '@lilypad/typescript-sdk';
 
 class DataService {
   // Trace function always returns a Promise
-  processData = trace(
-    (input: string) => input.toUpperCase()
-  );
+  processData = trace((input: string) => input.toUpperCase());
 
   fetchData = trace(
     async (id: string): Promise<any> => {
       const response = await fetch(`/api/data/${id}`);
       return response.json();
     },
-    { name: 'custom-span-name' }
+    { name: 'custom-span-name' },
   );
 }
 
@@ -312,7 +308,7 @@ class DataService {
     async (input: string): Promise<string> => {
       return input.toUpperCase();
     },
-    { name: 'processData' }
+    { name: 'processData' },
   );
 
   fetchData = trace(
@@ -320,7 +316,7 @@ class DataService {
       const response = await fetch(`/api/data/${id}`);
       return response.json();
     },
-    { name: 'fetchData', tags: ['api', 'fetch'] }
+    { name: 'fetchData', tags: ['api', 'fetch'] },
   );
 }
 ```
@@ -340,7 +336,7 @@ class AnalyticsService {
       // Your analysis logic
       return { score: 0.85, category: 'positive' };
     },
-    { mode: 'wrap' }
+    { mode: 'wrap' },
   );
 }
 
@@ -369,7 +365,7 @@ class MLService {
       // Async ML inference
       return { prediction: 'category_a', confidence: 0.92 };
     },
-    { mode: 'wrap', tags: ['ml', 'inference'] }
+    { mode: 'wrap', tags: ['ml', 'inference'] },
   );
 }
 

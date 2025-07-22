@@ -16,16 +16,14 @@ import OpenAI from 'openai';
 class AIService {
   constructor(private client: OpenAI) {}
 
-  generateText = trace()(
-    async (prompt: string): Promise<string | null> => {
-      const response = await this.client.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 100,
-      });
-      return response.choices[0].message.content;
-    }
-  );
+  generateText = trace()(async (prompt: string): Promise<string | null> => {
+    const response = await this.client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 100,
+    });
+    return response.choices[0].message.content;
+  });
 
   analyzeText = trace({ mode: 'wrap', tags: ['analysis', 'complex'] })(
     async (text: string): Promise<any> => {
@@ -37,7 +35,7 @@ class AIService {
         ],
       });
       return response.choices[0].message.content;
-    }
+    },
   );
 }
 

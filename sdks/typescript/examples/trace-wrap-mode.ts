@@ -20,35 +20,33 @@ class DataProcessor {
       // Simulate some data processing
       const processed = input.toUpperCase().replace(/\s+/g, '_');
       return `PROCESSED_${processed}`;
-    }
+    },
   );
 }
 
 // Example 2: Asynchronous function with wrap mode
 class AIService {
-  generateResponse = trace({ mode: 'wrap', name: 'ai_inference' })(
-    async function generateResponse(prompt: string): Promise<{ text: string; confidence: number }> {
-      // Simulate AI processing
-      await new Promise((resolve) => setTimeout(resolve, 100));
+  generateResponse = trace({ mode: 'wrap', name: 'ai_inference' })(async function generateResponse(
+    prompt: string,
+  ): Promise<{ text: string; confidence: number }> {
+    // Simulate AI processing
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-      return {
-        text: `Response to: ${prompt}`,
-        confidence: 0.95,
-      };
-    }
-  );
+    return {
+      text: `Response to: ${prompt}`,
+      confidence: 0.95,
+    };
+  });
 }
 
 // Example 3: Error handling with wrap mode
 class ValidationService {
-  validateInput = trace({ mode: 'wrap' })(
-    function validateInput(data: any): boolean {
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid input: expected object');
-      }
-      return true;
+  validateInput = trace({ mode: 'wrap' })(function validateInput(data: any): boolean {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid input: expected object');
     }
-  );
+    return true;
+  });
 }
 
 async function runExamples() {
@@ -114,7 +112,7 @@ async function runExamples() {
             version: '1.0',
           },
         };
-      }
+      },
     );
   }
 
