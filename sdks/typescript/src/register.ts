@@ -9,7 +9,7 @@ import { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 
-import { logger, setGlobalLogLevel } from './utils/logger';
+import { logger } from './utils/logger';
 import { setSettings } from './utils/settings';
 import type { LogLevel } from './types';
 import { getOrCreateContextManager } from './utils/shared-context';

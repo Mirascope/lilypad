@@ -23,15 +23,7 @@ export type { LilypadConfig, LogLevel } from './types';
 export type { Session } from './session';
 export type { TraceOptions } from './trace';
 
-export { createVersionedFunction, isVersionedFunction } from './versioning/versioned-function';
-export type {
-  VersionedFunction,
-  AsyncVersionedFunction,
-  VersionedFunctionMethods,
-  FunctionVersion,
-  VersionedTrace,
-  AsyncVersionedTrace,
-} from './types/versioning';
+// Versioning-related exports removed - TypeScript extraction happens at build time
 
 const lilypad = {
   configure,

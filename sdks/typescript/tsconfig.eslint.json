@@ -5,7 +5,8 @@
     "src/**/*.tsx",
     "examples/**/*.ts",
     "examples/**/*.tsx",
-    "test/**/*.ts"
+    "test/**/*.ts",
+    "scripts/**/*.ts"
   ],
   "exclude": ["dist", "node_modules", "coverage", "lilypad/generated/**/*"]
 }

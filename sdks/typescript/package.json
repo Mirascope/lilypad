@@ -41,20 +41,39 @@
     "./dist/register-esm-loader.mjs": {
       "import": "./dist/register-esm-loader.mjs",
       "default": "./dist/register-esm-loader.mjs"
+    },
+    "./webpack": {
+      "types": "./dist/build-plugins/webpack-plugin.d.ts",
+      "require": "./dist/build-plugins/webpack-plugin.js",
+      "default": "./dist/build-plugins/webpack-plugin.js"
+    },
+    "./vite": {
+      "types": "./dist/build-plugins/vite-plugin.d.ts",
+      "import": "./dist/build-plugins/vite-plugin.mjs",
+      "default": "./dist/build-plugins/vite-plugin.mjs"
+    },
+    "./extractor": {
+      "types": "./dist/versioning/typescript-extractor.d.ts",
+      "import": "./dist/versioning/typescript-extractor.mjs",
+      "require": "./dist/versioning/typescript-extractor.js",
+      "default": "./dist/versioning/typescript-extractor.js"
     }
   },
   "files": [
     "dist",
     "README.md",
-    "package.json"
+    "package.json",
+    "versioning-metadata.json"
   ],
   "scripts": {
-    "build": "npm run build:dual && npm run copy-esm-loaders",
+    "build": "npm run extract-metadata && npm run build:dual && npm run copy-esm-loaders && npm run copy-metadata",
     "build:dual": "npm run build:legacy && npm run build:modern && npm run build:default",
     "build:legacy": "tsup --config tsup.legacy.config.ts",
     "build:modern": "tsup --config tsup.modern.config.ts",
     "build:default": "tsup",
+    "extract-metadata": "tsx scripts/extract-versioning-metadata.ts",
     "copy-esm-loaders": "cp src/register-esm-loader.mjs dist/ && cp src/esm-hooks.mjs dist/ && cp src/register-esm-loader.mjs dist/legacy/ && cp src/esm-hooks.mjs dist/legacy/ && cp src/register-esm-loader.mjs dist/modern/ && cp src/esm-hooks.mjs dist/modern/",
+    "copy-metadata": "cp dist/versioning-metadata.json dist/legacy/ 2>/dev/null || true && cp dist/versioning-metadata.json dist/modern/ 2>/dev/null || true",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -126,15 +145,19 @@
     "@types/node": "^20.19.4",
     "@types/qs": "^6.14.0",
     "@types/readable-stream": "^4.0.21",
+    "@types/webpack": "^5.28.5",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitest/coverage-v8": "^1.0.0",
+    "chokidar": "^3.5.3",
+    "commander": "^11.0.0",
     "eslint": "^8.0.0",
     "eslint-config-prettier": "^9.0.0",
     "openai": "^4.0.0",
     "prettier": "^3.0.0",
     "readable-stream": "^4.7.0",
     "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.0.0",
     "vitest": "^1.0.0"
   },
@@ -143,5 +166,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "bin": {
+    "lilypad-extract": "./dist/cli/lilypad-extract.js"
   }
 }

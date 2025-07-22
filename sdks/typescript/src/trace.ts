@@ -12,19 +12,14 @@ import { getSettings } from './utils/settings';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { LilypadClient as _LilypadClient } from '../lilypad/generated/Client';
 import { safeStringify } from './utils/json';
-import { getCachedClosure, Closure, type AnyFunction } from './utils/closure';
+import { getCachedClosure, Closure } from './utils/closure';
 import { getProvider } from './configure';
 import { getPooledClient } from './utils/client-pool';
 import { handleBackgroundError, ensureError } from './utils/error-handler';
 import { logger } from './utils/logger';
 import type { AnnotationCreate, FunctionCreate } from '../lilypad/generated/api/types';
 import type { SpanAttributesValue } from './types/span';
-import type {
-  VersionedTrace,
-  AsyncVersionedTrace,
-  VersionedFunctionMethods,
-} from './types/versioning';
-import { createVersionedFunction } from './versioning/versioned-function';
+// Removed versioning imports - no longer needed
 import { BASE_URL } from './constants';
 
 /**
@@ -96,7 +91,12 @@ async function getOrCreateFunction(
   functionName?: string, // New parameter
 ): Promise<string | null> {
   try {
-    const { hash, code, name, signature, dependencies } = getCachedClosure(fn);
+    const { hash, code, name, signature, dependencies } = getCachedClosure(
+      fn,
+      undefined,
+      isVersioned,
+      functionName,
+    );
 
     // Check cache first
     const cached = functionUuidCache.get(hash);
@@ -126,13 +126,21 @@ async function getOrCreateFunction(
       project_uuid: projectId,
       code,
       hash,
-      name,
+      name: functionName || name, // Use provided functionName or extracted name
       signature,
       arg_types: {},
       dependencies,
-      is_versioned: false,
+      is_versioned: isVersioned,
       prompt_template: '',
     };
+
+    // Debug log the code being sent
+    logger.debug(`[getOrCreateFunction] Creating function ${name} with code:`, {
+      codeLength: code.length,
+      codePreview: code.substring(0, 300),
+      isTypeScript: code.includes(': ') || code.includes('Promise<'),
+      hash,
+    });
 
     const created = await client.projects.functions.create(projectId, createData);
     functionUuidCache.set(hash, created.uuid);
@@ -346,28 +354,28 @@ export class AsyncTrace<T> extends TraceBase<T> {
   }
 }
 
-// Overload signatures for wrapWithTrace
-export function wrapWithTrace<T extends (...args: any[]) => any>(fn: T, name?: string): T;
-export function wrapWithTrace<T extends (...args: any[]) => any>(
+// Overload signatures for trace
+export function trace<T extends (...args: any[]) => any>(fn: T, name?: string): T;
+export function trace<T extends (...args: any[]) => any>(
   fn: T,
   options: { versioning?: null; mode?: null } & Omit<TraceOptions, 'versioning' | 'mode'>,
 ): T;
-export function wrapWithTrace<T extends (...args: any[]) => any>(
+export function trace<T extends (...args: any[]) => any>(
   fn: T,
   options: { versioning: 'automatic'; mode?: null } & Omit<TraceOptions, 'versioning' | 'mode'>,
-): T & VersionedFunctionMethods<T>;
-export function wrapWithTrace<T extends (...args: any[]) => any>(
+): T;
+export function trace<T extends (...args: any[]) => any>(
   fn: T,
   options: { versioning?: null; mode: 'wrap' } & Omit<TraceOptions, 'versioning' | 'mode'>,
 ): T extends (...args: any[]) => Promise<infer R>
   ? (...args: Parameters<T>) => Promise<AsyncTrace<R>>
   : (...args: Parameters<T>) => Trace<ReturnType<T>>;
-export function wrapWithTrace<T extends (...args: any[]) => any>(
+export function trace<T extends (...args: any[]) => any>(
   fn: T,
   options: { versioning: 'automatic'; mode: 'wrap' } & Omit<TraceOptions, 'versioning' | 'mode'>,
 ): T extends (...args: any[]) => Promise<infer R>
-  ? ((...args: Parameters<T>) => Promise<AsyncVersionedTrace<R>>) & VersionedFunctionMethods<T>
-  : ((...args: Parameters<T>) => VersionedTrace<ReturnType<T>>) & VersionedFunctionMethods<T>;
+  ? (...args: Parameters<T>) => Promise<AsyncTrace<R>>
+  : (...args: Parameters<T>) => Trace<ReturnType<T>>;
 
 /**
  * Trace a function with OpenTelemetry (higher-order function)
@@ -398,16 +406,14 @@ export function trace<T extends (...args: any[]) => any>(
   const opts: TraceOptions = typeof options === 'string' ? { name: options } : options || {};
   const spanName = opts.name || fn.name || 'anonymous';
 
-  const settings = getSettings();
-  if (!settings) {
-    logger.warn('Lilypad SDK not configured. Function will execute without tracing.');
-    return fn;
-  }
+  const tracedFunction = function (this: any, ...args: Parameters<T>): any {
+    // Check settings at execution time, not at definition time
+    const settings = getSettings();
+    if (!settings) {
+      logger.warn('Lilypad SDK not configured. Function will execute without tracing.');
+      return fn.apply(this, args);
+    }
 
-  const isAsync =
-    fn.constructor.name === 'AsyncFunction' || fn.constructor.name === 'AsyncGeneratorFunction';
-
-  const tracedFunction = async function (...args: Parameters<T>): Promise<ReturnType<T>> {
     const tracer = otelTrace.getTracer('lilypad');
 
     return tracer.startActiveSpan(
@@ -441,7 +447,7 @@ export function trace<T extends (...args: any[]) => any>(
             span.setAttribute('lilypad.is_async', true); // Always true for async functions
 
             // Add function metadata
-            const closure = Closure.fromFunction(fn);
+            const closure = Closure.fromFunction(fn, undefined, isVersioned, spanName);
             span.setAttribute('lilypad.function.code', closure.code);
             span.setAttribute('lilypad.function.signature', closure.signature);
             span.setAttribute('lilypad.metadata', '[]'); // Empty metadata for now
@@ -501,6 +507,9 @@ export function trace<T extends (...args: any[]) => any>(
           // Handle wrap mode
           if (opts.mode === 'wrap') {
             const spanId = span.spanContext().spanId;
+            const isAsync =
+              fn.constructor.name === 'AsyncFunction' ||
+              fn.constructor.name === 'AsyncGeneratorFunction';
             return isAsync
               ? new AsyncTrace(result, spanId, functionUuid)
               : new Trace(result, spanId, functionUuid);
@@ -522,60 +531,8 @@ export function trace<T extends (...args: any[]) => any>(
     );
   } as T;
 
-  // If versioning is enabled, wrap with versioning capabilities
-  if (opts.versioning === 'automatic') {
-    // For versioned functions, we need to get or create the function first
-    // This will be done asynchronously when the function is first called
-
-    // For versioned functions, we need to ensure the function UUID is available
-    // Create a wrapper that handles async function UUID retrieval
-    let functionUuid: string | null = null;
-    let functionUuidPromise: Promise<string | null> | null = null;
-
-    // Helper to get or create function UUID
-    const ensureFunctionUuid = async () => {
-      if (functionUuid) return functionUuid;
-
-      if (!functionUuidPromise) {
-        functionUuidPromise = getOrCreateFunction(
-          fn,
-          settings.projectId,
-          settings.apiKey,
-          settings.baseUrl!,
-          true, // isVersioned
-          spanName,
-        );
-      }
-
-      functionUuid = await functionUuidPromise;
-      return functionUuid;
-    };
-
-    // Create versioned wrapper
-    const versionedFn = createVersionedFunction(
-      tracedFunction as T,
-      spanName,
-      settings.projectId,
-      '', // UUID will be set dynamically
-    );
-
-    // Override the versions method to use the dynamic UUID
-    const originalVersions = versionedFn.versions;
-    versionedFn.versions = async function () {
-      await ensureFunctionUuid();
-      return originalVersions.call(this);
-    };
-
-    // Override the deploy method to use the dynamic UUID
-    const originalDeploy = versionedFn.deploy;
-    versionedFn.deploy = async function (version: number) {
-      await ensureFunctionUuid();
-      return originalDeploy.call(this, version);
-    };
-
-    return versionedFn;
-  }
-
+  // If versioning is enabled, just return the traced function
+  // The TypeScript code extraction happens at build time
   return tracedFunction;
 }
 

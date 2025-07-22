@@ -1,0 +1,5 @@
+node_modules/
+dist/
+lilypad-metadata.json
+*.log
+.env
