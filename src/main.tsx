@@ -1,12 +1,12 @@
 import '@/src/styles/globals.css';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider, createRouter } from '@tanstack/react-router';
-import { QueryClientProvider } from '@tanstack/react-query';
 
-import { routeTree } from '@/src/routeTree.gen';
-import reportWebVitals from '@/src/reportWebVitals';
 import { queryClient } from '@/src/api';
+import reportWebVitals from '@/src/reportWebVitals';
+import { routeTree } from '@/src/routeTree.gen';
 
 const router = createRouter({
   routeTree,

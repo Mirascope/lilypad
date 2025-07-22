@@ -17,9 +17,10 @@ app.use('*', async (c, next) => {
         'https://mirascope.com',
         'https://www.mirascope.com',
         'https://lilypad.mirascope.com',
+        'https://v1.lilypad.mirascope.com',
       ];
 
-      if (c.env.ENVIRONMENT === 'development') {
+      if (c.env.ENVIRONMENT === 'local') {
         if (
           !origin ||
           origin.includes('localhost') ||

@@ -1,10 +1,10 @@
-import { eq, lt } from 'drizzle-orm';
 import {
-  sessions,
   DEFAULT_SESSION_DURATION,
+  sessions,
   type NewSession,
 } from '@/db/schema';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { getDeletedRowCount, type Database } from '@/db/utils';
+import { eq, lt } from 'drizzle-orm';
 
 function generateSessionId(): string {
   const array = new Uint8Array(32);
@@ -19,7 +19,7 @@ export function sessionIsExpired(session: { expiresAt: Date }): boolean {
 }
 
 export async function createSession(
-  db: PostgresJsDatabase,
+  db: Database,
   userId: number
 ): Promise<string | null> {
   try {
@@ -42,7 +42,7 @@ export async function createSession(
 }
 
 export async function deleteSession(
-  db: PostgresJsDatabase,
+  db: Database,
   sessionId: string
 ): Promise<void> {
   try {
@@ -53,7 +53,7 @@ export async function deleteSession(
 }
 
 export async function deleteUserSessions(
-  db: PostgresJsDatabase,
+  db: Database,
   userId: number
 ): Promise<void> {
   try {
@@ -63,14 +63,12 @@ export async function deleteUserSessions(
   }
 }
 
-export async function deleteExpiredSessions(
-  db: PostgresJsDatabase
-): Promise<number> {
+export async function deleteExpiredSessions(db: Database): Promise<number> {
   try {
     const result = await db
       .delete(sessions)
       .where(lt(sessions.expiresAt, new Date()));
-    return result.count || 0;
+    return getDeletedRowCount(result);
   } catch (error) {
     console.error('Error deleting expired sessions:', error);
     return 0;
@@ -78,7 +76,7 @@ export async function deleteExpiredSessions(
 }
 
 export async function sessionIsValid(
-  db: PostgresJsDatabase,
+  db: Database,
   sessionId: string
 ): Promise<boolean> {
   try {

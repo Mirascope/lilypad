@@ -1,11 +1,10 @@
-import type { MiddlewareHandler } from 'hono';
 import { sessionIsValid } from '@/db/operations';
-import { eq } from 'drizzle-orm';
-import { sessions } from '@/db/schema';
-import { users } from '@/db/schema/users';
+import { sessions, users } from '@/db/schema';
 import type { User } from '@/db/schema/users';
+import type { Database } from '@/db/utils';
 import type { Environment } from '@/worker/environment';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { eq } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
 
 function extractSessionId(request: Request): string | null {
   const cookieHeader = request.headers.get('Cookie');
@@ -26,7 +25,7 @@ function extractSessionId(request: Request): string | null {
 
 export const authSessionMiddleware: MiddlewareHandler<{
   Bindings: Environment;
-  Variables: { user: User; db: PostgresJsDatabase };
+  Variables: { user: User; db: Database };
 }> = async (c, next) => {
   const sessionId = extractSessionId(c.req.raw);
 

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { useAuth } from '@/src/auth';
+import type { ReactNode } from 'react';
 import { LoginPage } from './login-page';
 
 export function Protected({ children }: { children: ReactNode }) {

@@ -1,0 +1,70 @@
+name: Deploy PR Preview
+
+on:
+  pull_request:
+    branches: [v1]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Neon Branch
+        id: create-branch
+        uses: neondatabase/create-branch-action@v5
+        with:
+          username: ${{ vars.NEON_USERNAME }}
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          parent: development
+          branch_name: preview/pr-${{ github.event.number }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run database migrations
+        run: bun run db:migrate
+        env:
+          DATABASE_URL: ${{ steps.create-branch.outputs.db_url }}
+
+      - name: Build
+        run: bun run build:development
+
+      - name: Deploy to Cloudflare Workers
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >
+            versions upload
+            --tag pr-${{ github.event.number }}
+            --preview-alias pr-${{ github.event.number }}
+            --var SITE_URL:"https://pr-${{ github.event.number }}-lilypad-development.mirascope.workers.dev"
+            --var DATABASE_URL:"${{ steps.create-branch.outputs.db_url }}"
+
+      - name: Comment PR with preview URL
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          message: |
+            ## 🚀 Preview Deployment
+
+            Your changes have been deployed to a preview environment:
+
+            **Preview URL:** https://pr-${{ github.event.number }}-lilypad-development.mirascope.workers.dev
+
+            **Database Branch:** `preview/pr-${{ github.event.number }}`
+
+            ---
+
+            *Last updated: ${{ github.event.pull_request.updated_at }} (Commit: ${{ github.sha }})*
+          comment-tag: execution

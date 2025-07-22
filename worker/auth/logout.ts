@@ -1,11 +1,11 @@
-import type { Environment } from '@/worker/environment';
 import { deleteSession } from '@/db/operations';
-import { getSessionFromCookie } from './utils';
+import type { Database } from '@/db/utils';
+import type { Environment } from '@/worker/environment';
 import type { Context } from 'hono';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { getSessionFromCookie } from './utils';
 
 export async function handleLogout(
-  c: Context<{ Bindings: Environment; Variables: { db: PostgresJsDatabase } }>
+  c: Context<{ Bindings: Environment; Variables: { db: Database } }>
 ): Promise<Response> {
   try {
     const sessionId = getSessionFromCookie(c.req.raw);

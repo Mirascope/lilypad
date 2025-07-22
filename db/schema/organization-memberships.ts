@@ -1,14 +1,14 @@
+import { relations } from 'drizzle-orm';
 import {
+  integer,
+  pgEnum,
   pgTable,
   serial,
-  integer,
   timestamp,
-  pgEnum,
   unique,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
-import { users } from './users';
 import { organizations } from './organizations';
+import { users } from './users';
 
 export const roleEnum = pgEnum('role', [
   'OWNER',
