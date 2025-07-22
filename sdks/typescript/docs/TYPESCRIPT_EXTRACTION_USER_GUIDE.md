@@ -9,6 +9,8 @@ When you use versioned functions with Lilypad, the SDK needs to capture your fun
 - Your original TypeScript code (with types) is shown in the Lilypad UI
 - Better readability and debugging
 - Preserves type annotations, generics, and interfaces
+- Automatically captures all dependencies (functions, types, constants) used by your traced functions
+- Creates self-contained code blocks that include everything needed to run independently
 
 ## Quick Start
 
@@ -245,6 +247,130 @@ if (metadataLoader.hasMetadata()) {
 3. **Watch Mode**: Use `--watch` during development for instant updates
 4. **Optimize Patterns**: Only scan directories with versioned functions
 
+## Dependency Extraction
+
+The TypeScript SDK now captures not just your function code, but all its dependencies, creating self-contained code blocks similar to Python's Closure functionality.
+
+### What Gets Captured?
+
+When you trace a function with `versioning: 'automatic'`, the SDK automatically captures:
+
+1. **The main function** - Your traced function with all TypeScript types
+2. **Called functions** - Any functions called within your traced function
+3. **Type definitions** - Interfaces, type aliases, and enums used
+4. **Constants and variables** - Any external values referenced
+5. **Import dependencies** - Follows relative imports to capture external functions
+
+### Example: Complete Dependency Capture
+
+```typescript
+// types.ts
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface User {
+  name: string;
+  premium: boolean;
+}
+
+// helpers.ts
+export const TAX_RATE = 0.08;
+export const PREMIUM_DISCOUNT = 0.15;
+
+export function calculateDiscount(user: User): number {
+  return user.premium ? PREMIUM_DISCOUNT : 0;
+}
+
+export function formatCurrency(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+// main.ts
+import { trace } from '@lilypad/typescript-sdk';
+import { Product, User } from './types';
+import { TAX_RATE, calculateDiscount, formatCurrency } from './helpers';
+
+function calculateTax(subtotal: number): number {
+  return subtotal * TAX_RATE;
+}
+
+// This traced function uses multiple dependencies
+const processCheckout = trace(
+  function (user: User, products: Product[]): string {
+    const subtotal = products.reduce((sum, p) => sum + p.price, 0);
+    const discount = calculateDiscount(user);
+    const discountAmount = subtotal * discount;
+    const afterDiscount = subtotal - discountAmount;
+    const tax = calculateTax(afterDiscount);
+    const total = afterDiscount + tax;
+
+    return `Total: ${formatCurrency(total)}`;
+  },
+  { versioning: 'automatic' },
+);
+```
+
+### What Appears in Lilypad UI
+
+The captured self-contained code includes everything:
+
+```typescript
+// External imports
+// (none in this case - all code is captured)
+
+// Type dependencies
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
+
+interface User {
+  name: string;
+  premium: boolean;
+}
+
+// Variable and class dependencies
+const TAX_RATE = 0.08;
+const PREMIUM_DISCOUNT = 0.15;
+
+// Function dependencies
+function calculateDiscount(user: User): number {
+  return user.premium ? PREMIUM_DISCOUNT : 0;
+}
+
+function formatCurrency(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
+
+function calculateTax(subtotal: number): number {
+  return subtotal * TAX_RATE;
+}
+
+// Main function
+function(user: User, products: Product[]): string {
+  const subtotal = products.reduce((sum, p) => sum + p.price, 0);
+  const discount = calculateDiscount(user);
+  const discountAmount = subtotal * discount;
+  const afterDiscount = subtotal - discountAmount;
+  const tax = calculateTax(afterDiscount);
+  const total = afterDiscount + tax;
+
+  return `Total: ${formatCurrency(total)}`;
+}
+```
+
+### Benefits
+
+1. **Complete Context**: See all the code needed to understand the function
+2. **Self-Contained**: The captured code can run independently
+3. **Cross-File Dependencies**: Automatically follows imports from other files
+4. **Type Safety**: All TypeScript types are preserved
+5. **No Manual Work**: Everything is captured automatically
+
 ## Example Project Structure
 
 ```
@@ -254,7 +380,7 @@ my-app/
 │   ├── api/
 │   │   └── handlers.ts      # Contains versioned functions
 │   └── utils/
-│       └── helpers.ts
+│       └── helpers.ts       # Dependencies get captured too!
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts           # With lilypadPlugin

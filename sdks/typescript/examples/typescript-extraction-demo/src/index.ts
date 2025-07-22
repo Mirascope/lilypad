@@ -3,8 +3,9 @@
  *
  * This example demonstrates:
  * 1. TypeScript code extraction at build time
- * 2. Automatic OpenAI instrumentation with auto_llm
- * 3. Versioned functions with TypeScript types preserved
+ * 2. Dependency extraction (functions, types, constants)
+ * 3. Automatic OpenAI instrumentation with auto_llm
+ * 4. Versioned functions with TypeScript types preserved
  */
 
 // Load environment variables
@@ -25,6 +26,38 @@ lilypad.configure({
 
 // Import utilities that don't have traced functions
 import { displayExtractedCode } from './utils/display';
+
+// Dependencies that will be captured automatically
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+}
+
+interface User {
+  name: string;
+  age: number;
+  premium: boolean;
+}
+
+const TAX_RATE = 0.08;
+const PREMIUM_DISCOUNT = 0.15;
+const SENIOR_DISCOUNT = 0.1;
+
+// Helper functions that will be captured as dependencies
+function formatUser(user: User): string {
+  return `${user.name} (${user.age} years old)`;
+}
+
+function calculateDiscountRate(user: User): number {
+  if (user.age >= 65) return SENIOR_DISCOUNT;
+  if (user.premium) return PREMIUM_DISCOUNT;
+  return 0;
+}
+
+function formatCurrency(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
 
 // Import trace after configuration
 import { trace } from '@lilypad/typescript-sdk';
@@ -56,6 +89,36 @@ const answerQuestion = trace(
     versioning: 'automatic',
     name: 'answerQuestion',
     tags: ['openai', 'qa'],
+  },
+);
+
+// Function with multiple dependencies (demonstrates dependency extraction)
+const calculateTotal = trace(
+  function (products: Product[], user: User) {
+    console.log(`Processing order for: ${formatUser(user)}`);
+
+    let subtotal = 0;
+    for (const product of products) {
+      const discount = calculateDiscountRate(user);
+      const discountedPrice = product.price * (1 - discount);
+      subtotal += discountedPrice;
+      console.log(
+        `- ${product.name}: ${formatCurrency(discountedPrice)} (${(discount * 100).toFixed(0)}% off)`,
+      );
+    }
+
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+
+    console.log(`Subtotal: ${formatCurrency(subtotal)}`);
+    console.log(`Tax: ${formatCurrency(tax)}`);
+    console.log(`Total: ${formatCurrency(total)}`);
+
+    return total;
+  },
+  {
+    versioning: 'automatic',
+    name: 'calculateTotal',
   },
 );
 
@@ -127,8 +190,30 @@ async function main() {
   });
   console.log('✅ Order processed:', order.orderId);
 
-  // 3. Test OpenAI functions (if API key is available)
-  console.log('\n3️⃣  Testing OpenAI integration...\n');
+  // 3. Test dependency extraction function
+  console.log('\n3️⃣  Testing dependency extraction...\n');
+
+  const products: Product[] = [
+    { id: '1', name: 'TypeScript Book', price: 45.99 },
+    { id: '2', name: 'Code Editor License', price: 79.99 },
+    { id: '3', name: 'Coffee Mug', price: 12.99 },
+  ];
+
+  const youngUser: User = { name: 'Alice', age: 16, premium: false };
+  const premiumUser: User = { name: 'Bob', age: 35, premium: true };
+  const seniorUser: User = { name: 'Carol', age: 68, premium: false };
+
+  console.log('=== Young User ===');
+  await calculateTotal(products, youngUser);
+
+  console.log('\n=== Premium User ===');
+  await calculateTotal(products, premiumUser);
+
+  console.log('\n=== Senior User ===');
+  await calculateTotal(products, seniorUser);
+
+  // 4. Test OpenAI functions (if API key is available)
+  console.log('\n4️⃣  Testing OpenAI integration...\n');
 
   if (process.env.OPENAI_API_KEY) {
     try {
@@ -150,11 +235,12 @@ async function main() {
     console.log('   Set OPENAI_API_KEY to test OpenAI integration');
   }
 
-  // 4. TypeScript extraction is done at build time
-  console.log('\n4️⃣  TypeScript extraction status...\n');
+  // 5. TypeScript extraction is done at build time
+  console.log('\n5️⃣  TypeScript extraction status...\n');
 
   const functions = [
     { name: 'calculateDiscount', fn: calculateDiscount },
+    { name: 'calculateTotal', fn: calculateTotal },
     { name: 'answerQuestion', fn: answerQuestion },
     { name: 'analyzeOrderSentiment', fn: analyzeOrderSentiment },
   ];
@@ -173,9 +259,16 @@ async function main() {
   console.log('\n✅ Demo complete!');
   console.log('\n📝 Key features demonstrated:');
   console.log('   • TypeScript code extraction at build time');
+  console.log('   • Dependency extraction (functions, types, constants)');
+  console.log('   • Self-contained code blocks with all dependencies');
   console.log('   • Automatic versioning with type preservation');
   console.log('   • OpenAI instrumentation with auto_llm');
   console.log('   • Multiple function types (sync, async, generic)');
+  console.log('\n💡 The calculateTotal function demonstrates dependency extraction:');
+  console.log('   • Captures formatUser and calculateDiscountRate functions');
+  console.log('   • Captures Product and User interfaces');
+  console.log('   • Captures TAX_RATE, PREMIUM_DISCOUNT, SENIOR_DISCOUNT constants');
+  console.log('   • All dependencies are included in the self-contained code!');
 }
 
 // Run the demo

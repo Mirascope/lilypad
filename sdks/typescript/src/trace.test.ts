@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as otel from '@opentelemetry/api';
-import { trace, getCurrentSpan, logToCurrentSpan, Trace, AsyncTrace } from './trace';
-import { getSettings } from './utils/settings';
-import { getCachedClosure } from './utils/closure';
 
-// Mock dependencies
+// Mock dependencies - must be before imports
 vi.mock('./utils/settings');
 vi.mock('./utils/closure');
 vi.mock('./utils/logger', () => ({
@@ -18,6 +14,7 @@ vi.mock('./utils/logger', () => ({
 vi.mock('./configure', () => ({
   getProvider: vi.fn(),
 }));
+
 vi.mock('./utils/client-pool', () => ({
   getPooledClient: vi.fn(),
 }));
@@ -52,6 +49,11 @@ vi.mock('../lilypad/generated/Client', () => ({
     },
   })),
 }));
+
+import * as otel from '@opentelemetry/api';
+import { trace, getCurrentSpan, logToCurrentSpan, Trace, AsyncTrace } from './trace';
+import { getSettings } from './utils/settings';
+import { getCachedClosure } from './utils/closure';
 
 describe('trace', () => {
   const mockSpan = {
@@ -249,7 +251,8 @@ describe('trace', () => {
       const result = await tracedFn();
 
       expect(result).toBe('no-trace');
-      expect(tracedFn).toBe(testFn); // Should return original function when not configured
+      expect(tracedFn).not.toBe(testFn); // Returns wrapped function that checks settings at runtime
+      expect(mockTracer.startActiveSpan).not.toHaveBeenCalled(); // No tracing when not configured
     });
 
     it('should return Trace wrapper in wrap mode', async () => {

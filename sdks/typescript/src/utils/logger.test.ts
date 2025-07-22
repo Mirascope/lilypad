@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Logger } from './logger';
 
 describe('Logger', () => {
@@ -11,11 +11,15 @@ describe('Logger', () => {
 
   beforeEach(() => {
     logger = new Logger();
-    consoleLogSpy = vi.spyOn(console, 'log');
-    consoleInfoSpy = vi.spyOn(console, 'info');
-    consoleWarnSpy = vi.spyOn(console, 'warn');
-    consoleErrorSpy = vi.spyOn(console, 'error');
-    consoleDebugSpy = vi.spyOn(console, 'debug');
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('log levels', () => {

@@ -86,12 +86,14 @@ describe('StreamWrapper', () => {
       const stream = createMockStream(items, true); // Will throw in the middle
       const wrapper = new StreamWrapper(stream, mockSpan);
 
-      await expect(async () => {
+      const consumeStream = async () => {
         const collected = [];
         for await (const item of wrapper) {
           collected.push(item);
         }
-      }).rejects.toThrow('Stream error');
+      };
+
+      await expect(consumeStream()).rejects.toThrow('Stream error');
 
       expect(mockSpan.recordException).toHaveBeenCalled();
       expect(mockSpan.setAttributes).toHaveBeenCalledWith({

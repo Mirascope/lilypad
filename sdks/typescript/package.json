@@ -59,6 +59,9 @@
       "default": "./dist/versioning/typescript-extractor.js"
     }
   },
+  "bin": {
+    "lilypad-extract": "./dist/cli/lilypad-extract.js"
+  },
   "files": [
     "dist",
     "README.md",
@@ -156,6 +159,7 @@
     "openai": "^4.0.0",
     "prettier": "^3.0.0",
     "readable-stream": "^4.7.0",
+    "ts-morph": "^26.0.0",
     "tsup": "^8.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.0.0",
@@ -166,8 +170,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bin": {
-    "lilypad-extract": "./dist/cli/lilypad-extract.js"
   }
 }

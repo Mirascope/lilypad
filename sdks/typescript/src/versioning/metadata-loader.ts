@@ -154,14 +154,16 @@ export function getTypeScriptSource(hash: string, name?: string): string | null 
   // Try by hash first
   const byHash = metadataLoader.getByHash(hash);
   if (byHash) {
-    return byHash.sourceCode;
+    // Prefer self-contained code if available
+    return byHash.selfContainedCode || byHash.sourceCode;
   }
 
   // Fall back to name if provided
   if (name) {
     const byName = metadataLoader.getByName(name);
     if (byName) {
-      return byName.sourceCode;
+      // Prefer self-contained code if available
+      return byName.selfContainedCode || byName.sourceCode;
     }
   }
 

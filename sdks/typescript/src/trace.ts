@@ -538,6 +538,5 @@ export function trace<T extends (...args: any[]) => any>(
 
 /**
  * Backward compatibility alias for trace function
- * @deprecated Use trace() instead
  */
 export const wrapWithTrace = trace;

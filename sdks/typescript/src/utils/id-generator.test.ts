@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CryptoIdGenerator } from './id-generator';
-import { INVALID_SPANID, INVALID_TRACEID } from '@opentelemetry/api';
-import { randomBytes } from 'crypto';
 
 vi.mock('crypto', () => ({
   randomBytes: vi.fn(),
 }));
+
+import { CryptoIdGenerator } from './id-generator';
+import { INVALID_SPANID, INVALID_TRACEID } from '@opentelemetry/api';
+import { randomBytes } from 'crypto';
 
 describe('CryptoIdGenerator', () => {
   const generator = new CryptoIdGenerator();

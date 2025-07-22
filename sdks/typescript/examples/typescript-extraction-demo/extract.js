@@ -1,52 +1,70 @@
 /**
  * Simple extraction script for the demo
- * This runs the TypeScript extractor directly without compilation
+ * This runs the TypeScript extractor as a build step
  */
 
+// Since TypeScriptExtractor uses ts-morph which is a dev dependency,
+// we'll use tsx to run the TypeScript version directly
 const { execSync } = require('child_process');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 
 console.log('🔍 Extracting TypeScript code...');
 
 try {
-  // Run the TypeScript extractor using tsx
-  const command = `cd ../.. && tsx scripts/extract-versioning-metadata.ts`;
-  execSync(command, { stdio: 'inherit' });
+  // Create a temporary TypeScript extraction script
+  const extractScript = `
+import { TypeScriptExtractor } from '../../src/versioning/typescript-extractor';
+import fs from 'fs';
+import path from 'path';
 
-  // Copy the generated metadata to our demo directory
-  const sourceMetadata = path.join(__dirname, '../../dist/versioning-metadata.json');
-  const targetMetadata = path.join(__dirname, 'lilypad-metadata.json');
+const extractor = new TypeScriptExtractor(
+  '${__dirname}',
+  'tsconfig.json',
+  ['src/**/*.ts']
+);
 
-  if (fs.existsSync(sourceMetadata)) {
-    const metadata = JSON.parse(fs.readFileSync(sourceMetadata, 'utf-8'));
+console.log('Extracting from directory:', '${__dirname}');
+console.log('Include patterns:', ['src/**/*.ts']);
 
-    // Filter only functions from this demo
-    const demoFunctions = {};
-    Object.entries(metadata.functions).forEach(([hash, func]) => {
-      if (func.filePath.includes('typescript-extraction-demo')) {
-        demoFunctions[hash] = func;
-      }
-    });
+try {
+  const metadata = extractor.extract();
+  console.log('Extraction completed, found functions:', Object.keys(metadata.functions || {}));
+} catch (error) {
+  console.error('Extraction error:', error);
+  throw error;
+}
 
-    const demoMetadata = {
-      ...metadata,
-      functions: demoFunctions,
-    };
+const metadata = extractor.extract();
+const outputPath = path.join('${__dirname}', 'lilypad-metadata.json');
+fs.writeFileSync(outputPath, JSON.stringify(metadata, null, 2));
 
-    fs.writeFileSync(targetMetadata, JSON.stringify(demoMetadata, null, 2));
+console.log(\`✅ Extracted \${Object.keys(metadata.functions).length} versioned functions\`);
+if (Object.keys(metadata.functions).length > 0) {
+  console.log('\\n📋 Functions:');
+  Object.values(metadata.functions).forEach((fn: any) => {
+    console.log(\`   - \${fn.name} (\${fn.filePath}:\${fn.startLine})\`);
+  });
+}
+`;
 
-    const functionCount = Object.keys(demoFunctions).length;
-    console.log(`✅ Extracted ${functionCount} versioned functions from this demo`);
+  // Write temporary script
+  const tempScriptPath = path.join(__dirname, '_extract_temp.ts');
+  fs.writeFileSync(tempScriptPath, extractScript);
 
-    if (functionCount > 0) {
-      console.log('\n📋 Functions:');
-      Object.values(demoFunctions).forEach((fn) => {
-        console.log(`   - ${fn.name} (${fn.filePath}:${fn.startLine})`);
-      });
-    }
-  } else {
-    throw new Error('Metadata file not generated');
+  // Run with tsx from the SDK root directory
+  execSync(
+    `cd /Users/koudai/PycharmProjects/lilypad/sdks/typescript && npx tsx ${tempScriptPath}`,
+    { stdio: 'inherit' },
+  );
+
+  // Clean up
+  fs.unlinkSync(tempScriptPath);
+
+  // Verify metadata was created
+  const metadataPath = path.join(__dirname, 'lilypad-metadata.json');
+  if (!fs.existsSync(metadataPath)) {
+    throw new Error('Metadata file was not created');
   }
 } catch (error) {
   console.error('❌ Error:', error.message);

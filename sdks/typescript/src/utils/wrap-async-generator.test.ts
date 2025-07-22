@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { wrapAsyncGenerator, isAsyncIterable, isAsyncIterator } from './wrap-async-generator';
-import { SpanStatusCode } from '@opentelemetry/api';
-import { logger } from './logger';
 
-// Mock the logger
+// Mock the logger - must be before imports
 vi.mock('./logger', () => ({
   logger: {
     debug: vi.fn(),
@@ -11,6 +8,10 @@ vi.mock('./logger', () => ({
     error: vi.fn(),
   },
 }));
+
+import { wrapAsyncGenerator, isAsyncIterable, isAsyncIterator } from './wrap-async-generator';
+import { SpanStatusCode } from '@opentelemetry/api';
+import { logger } from './logger';
 
 describe('wrap-async-generator', () => {
   const mockSpan = {

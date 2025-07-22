@@ -108,8 +108,8 @@ describe('configure', () => {
         expect.objectContaining({
           apiKey: 'test-api-key',
           projectId: '123e4567-e89b-12d3-a456-426614174000',
-          baseUrl: 'https://api.app.lilypad.so/v0',
-          remoteClientUrl: 'https://app.lilypad.so',
+          baseUrl: 'https://lilypad-api.mirascope.com/v0',
+          remoteClientUrl: 'https://lilypad.mirascope.com',
           logLevel: 'info',
           serviceName: 'lilypad-node-app',
           autoLlm: false,
