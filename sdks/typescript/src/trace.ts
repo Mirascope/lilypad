@@ -86,10 +86,10 @@ async function getOrCreateFunction(
   baseUrl: string,
 ): Promise<string | null> {
   try {
-    const closure = getCachedClosure(fn);
+    const { hash, code, name, signature, dependencies } = getCachedClosure(fn);
 
     // Check cache first
-    const cached = functionUuidCache.get(closure.hash);
+    const cached = functionUuidCache.get(hash);
     if (cached) return cached;
 
     const client = getPooledClient({
@@ -101,9 +101,9 @@ async function getOrCreateFunction(
 
     // Try to get existing function
     try {
-      const existing = await client.projects.functions.getByHash(projectId, closure.hash);
-      functionUuidCache.set(closure.hash, existing.uuid);
-      return existing.uuid;
+      const { uuid } = await client.projects.functions.getByHash(projectId, hash);
+      functionUuidCache.set(hash, uuid);
+      return uuid;
     } catch (error) {
       const err = ensureError(error);
       if ('statusCode' in err && (err as any).statusCode !== 404) {
@@ -114,18 +114,18 @@ async function getOrCreateFunction(
     // Create new function
     const createData: FunctionCreate = {
       project_uuid: projectId,
-      code: closure.code,
-      hash: closure.hash,
-      name: closure.name,
-      signature: closure.signature,
+      code,
+      hash,
+      name,
+      signature,
       arg_types: {},
-      dependencies: closure.dependencies,
+      dependencies,
       is_versioned: false,
       prompt_template: '',
     };
 
     const created = await client.projects.functions.create(projectId, createData);
-    functionUuidCache.set(closure.hash, created.uuid);
+    functionUuidCache.set(hash, created.uuid);
     return created.uuid;
   } catch (error) {
     logger.error('Failed to get or create function:', ensureError(error));

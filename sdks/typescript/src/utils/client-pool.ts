@@ -3,16 +3,16 @@
  */
 
 import { LilypadClient } from '../../lilypad/generated/Client';
-import type { LilypadSettings } from './settings';
+import type { LilypadConfig } from '../types';
 
 class ClientPool {
   private clients = new Map<string, LilypadClient>();
 
-  private getKey(settings: LilypadSettings): string {
+  private getKey(settings: LilypadConfig): string {
     return `${settings.apiKey}:${settings.baseUrl || 'https://api.getlilypad.com'}`;
   }
 
-  get(settings: LilypadSettings): LilypadClient {
+  get(settings: LilypadConfig): LilypadClient {
     const key = this.getKey(settings);
     let client = this.clients.get(key);
 
@@ -38,7 +38,7 @@ const clientPool = new ClientPool();
 /**
  * Get a pooled LilypadClient instance
  */
-export function getPooledClient(settings: LilypadSettings): LilypadClient {
+export function getPooledClient(settings: LilypadConfig): LilypadClient {
   return clientPool.get(settings);
 }
 
