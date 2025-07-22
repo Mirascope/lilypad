@@ -16,11 +16,12 @@ import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentati
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
+import { BASE_URL } from './constants';
 
 // Check if we should auto-configure
 const apiKey = process.env.LILYPAD_API_KEY;
 const projectId = process.env.LILYPAD_PROJECT_ID;
-const baseUrl = process.env.LILYPAD_BASE_URL || 'https://api.app.lilypad.so/v0';
+const baseUrl = process.env.LILYPAD_BASE_URL || BASE_URL;
 const serviceName = process.env.LILYPAD_SERVICE_NAME || 'lilypad-node-app';
 const autoLLM = process.env.LILYPAD_AUTO_LLM !== 'false'; // Default to true
 

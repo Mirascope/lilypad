@@ -123,7 +123,7 @@ npx tsx --require ./dist/register.js examples/[example-name].ts
 After running an example, look for output like:
 
 ```
-[Lilypad] View trace: https://app.lilypad.so/projects/xxx/traces/yyy
+[Lilypad] View trace: https://lilypad.mirascope.com/projects/xxx/traces/yyy
 ```
 
 Click the link to view your trace in the Lilypad dashboard.

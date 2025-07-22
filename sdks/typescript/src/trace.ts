@@ -19,6 +19,7 @@ import { handleBackgroundError, ensureError } from './utils/error-handler';
 import { logger } from './utils/logger';
 import type { AnnotationCreate, FunctionCreate } from '../lilypad/generated/api/types';
 import type { SpanAttributesValue } from './types/span';
+import { BASE_URL } from './constants';
 
 /**
  * Options for the trace function
@@ -410,7 +411,7 @@ export function trace<T extends (...args: any[]) => any>(
               fn,
               settings.projectId,
               settings.apiKey,
-              settings.baseUrl || 'https://api.getlilypad.com',
+              settings.baseUrl || BASE_URL,
             );
             if (uuid) {
               functionUuid = uuid;
@@ -422,7 +423,7 @@ export function trace<T extends (...args: any[]) => any>(
               fn,
               settings.projectId,
               settings.apiKey,
-              settings.baseUrl || 'https://api.getlilypad.com',
+              settings.baseUrl || BASE_URL,
             )
               .then((uuid) => {
                 if (uuid) {
