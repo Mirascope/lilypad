@@ -4,12 +4,13 @@
 
 import { LilypadClient } from '../../lilypad/generated/Client';
 import type { LilypadConfig } from '../types';
+import { BASE_URL } from '../constants';
 
 class ClientPool {
   private clients = new Map<string, LilypadClient>();
 
-  private getKey(settings: LilypadSettings): string {
-    return `${settings.apiKey}:${settings.baseUrl}`;
+  private getKey(settings: LilypadConfig): string {
+    return `${settings.apiKey}:${settings.baseUrl || BASE_URL}`;
   }
 
   get(settings: LilypadConfig): LilypadClient {
@@ -18,7 +19,7 @@ class ClientPool {
 
     if (!client) {
       client = new LilypadClient({
-        environment: () => settings.baseUrl!,
+        environment: () => settings.baseUrl || BASE_URL,
         apiKey: () => settings.apiKey,
       });
       this.clients.set(key, client);

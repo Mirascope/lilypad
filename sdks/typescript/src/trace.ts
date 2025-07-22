@@ -25,6 +25,7 @@ import type {
   VersionedFunctionMethods,
 } from './types/versioning';
 import { createVersionedFunction } from './versioning/versioned-function';
+import { BASE_URL } from './constants';
 
 /**
  * Options for the trace function
@@ -459,7 +460,7 @@ export function trace<T extends (...args: any[]) => any>(
               fn,
               settings.projectId,
               settings.apiKey,
-              settings.baseUrl!,
+              settings.baseUrl || BASE_URL,
               isVersioned,
               spanName, // Pass spanName as functionName
             );
@@ -473,7 +474,7 @@ export function trace<T extends (...args: any[]) => any>(
               fn,
               settings.projectId,
               settings.apiKey,
-              settings.baseUrl!,
+              settings.baseUrl || BASE_URL,
               isVersioned,
               spanName, // Pass spanName as functionName
             )
