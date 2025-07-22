@@ -32,8 +32,8 @@ const client = new OpenAI({
 });
 
 class QuestionService {
-  @trace()
-  async answerQuestion(question: string): Promise<string | null> {
+  answerQuestion = trace(
+    async (question: string): Promise<string | null> => {
     const convertedQuestion = question.toLowerCase().trim();
 
     // This OpenAI call is automatically traced thanks to auto_llm
@@ -42,8 +42,9 @@ class QuestionService {
       messages: [{ role: 'user', content: `Answer this question: ${convertedQuestion}` }],
     });
 
-    return response.choices[0].message.content;
-  }
+      return response.choices[0].message.content;
+    }
+  );
 }
 
 // Usage
@@ -55,7 +56,7 @@ console.log(response);
 This example demonstrates:
 
 - **Auto-instrumentation**: OpenAI calls are automatically traced with `auto_llm: true`
-- **Custom tracing**: Your own functions can be traced with the `@trace()` decorator
+- **Custom tracing**: Your own functions can be traced with the `trace()` function
 - **Complete visibility**: Both your business logic and LLM calls are captured in the same trace
 
 #### Running with Node.js/tsx (Recommended for Auto-instrumentation)
@@ -80,7 +81,7 @@ npx tsx --require @lilypad/typescript-sdk/dist/register.js examples/auto-instrum
 npm run example:auto-simple:node
 ```
 
-**Note**: If you encounter decorator issues with tsx, use the `wrapWithTrace` function instead of the `@trace()` decorator, as shown in `examples/auto-instrumentation-simple-node.ts`.
+**Note**: The SDK uses the `trace()` function for tracing. You can also use the alias `wrapWithTrace` for backward compatibility.
 
 This approach ensures OpenAI calls are automatically instrumented without manual wrapping.
 
@@ -267,28 +268,9 @@ Both standard and streaming responses are fully traced with:
 - Timing information
 - Error tracking
 
-## Trace Decorator
+## Trace Function
 
-The Lilypad SDK provides a `@trace` decorator for instrumenting your own functions with distributed tracing.
-
-### Dual Decorator Support
-
-The SDK supports both legacy decorators (`experimentalDecorators: true`) and Stage-3 decorators, with automatic runtime detection:
-
-- **Node.js with TypeScript**: Uses legacy decorators by default
-- **Bun**: Uses Stage-3 decorators natively
-- **Explicit imports**: Force a specific version with `/legacy` or `/modern` paths
-
-```typescript
-// Auto-detect (recommended)
-import { trace } from '@lilypad/typescript-sdk';
-
-// Force legacy decorators
-import { trace } from '@lilypad/typescript-sdk/legacy';
-
-// Force Stage-3 decorators
-import { trace } from '@lilypad/typescript-sdk/modern';
-```
+The Lilypad SDK provides a `trace` function for instrumenting your functions with distributed tracing.
 
 ### Basic Usage
 
@@ -296,87 +278,54 @@ import { trace } from '@lilypad/typescript-sdk/modern';
 import { trace } from '@lilypad/typescript-sdk';
 
 class DataService {
-  // Note: @trace decorator always returns a Promise, even for sync methods
-  @trace()
-  processData(input: string): Promise<string> {
-    return input.toUpperCase();
-  }
-
-  @trace({ name: 'custom-span-name' })
-  async fetchData(id: string): Promise<any> {
-    const response = await fetch(`/api/data/${id}`);
-    return response.json();
-  }
-}
-
-// Usage
-const service = new DataService();
-// Even though processData looks synchronous, it returns a Promise
-const result = await service.processData('hello'); // Returns: "HELLO"
-```
-
-**Important**: The `@trace` decorator always wraps methods to return a Promise for tracing purposes. If you need truly synchronous behavior, use the `wrapWithTrace` function instead.
-
-### TSX Compatibility
-
-#### Option 1: Using @trace with Custom Config (Recommended)
-
-To use `@trace` decorators with tsx, use the custom TypeScript configuration:
-
-```bash
-# Run with custom tsconfig that enables decorators
-npx tsx --tsconfig tsconfig.tsx.json your-file.ts
-
-# With auto-instrumentation
-npx tsx --tsconfig tsconfig.tsx.json --require ./dist/register.js your-file.ts
-```
-
-Example:
-
-```typescript
-import { trace } from '@lilypad/typescript-sdk';
-
-class Service {
-  @trace()
-  async processData(input: string): Promise<string> {
-    return input.toUpperCase();
-  }
-
-  @trace({ mode: 'wrap', tags: ['important'] })
-  async analyzeData(data: any): Promise<any> {
-    // Returns a Trace object for annotations
-    return { analysis: 'complete' };
-  }
-}
-```
-
-#### Option 2: Using wrapWithTrace (Alternative)
-
-If you encounter issues with decorators, use `wrapWithTrace` instead:
-
-```typescript
-import { wrapWithTrace } from '@lilypad/typescript-sdk';
-
-class DataService {
-  // Use wrapWithTrace for tsx compatibility
-  processData = wrapWithTrace(
-    async (input: string): Promise<string> => {
-      return input.toUpperCase();
-    },
-    { name: 'processData' },
+  // Trace function always returns a Promise
+  processData = trace(
+    (input: string) => input.toUpperCase()
   );
 
-  fetchData = wrapWithTrace(
+  fetchData = trace(
     async (id: string): Promise<any> => {
       const response = await fetch(`/api/data/${id}`);
       return response.json();
     },
-    { name: 'fetchData', tags: ['api', 'fetch'] },
+    { name: 'custom-span-name' }
+  );
+}
+
+// Usage
+const service = new DataService();
+// The trace function returns a Promise
+const result = await service.processData('hello'); // Returns: "HELLO"
+```
+
+**Important**: The `trace` function always returns a Promise to support tracing. This is consistent with OpenTelemetry's async nature.
+
+### Using with TypeScript/tsx
+
+The trace function works seamlessly with all TypeScript environments:
+
+```typescript
+import { trace } from '@lilypad/typescript-sdk';
+
+class DataService {
+  processData = trace(
+    async (input: string): Promise<string> => {
+      return input.toUpperCase();
+    },
+    { name: 'processData' }
+  );
+
+  fetchData = trace(
+    async (id: string): Promise<any> => {
+      const response = await fetch(`/api/data/${id}`);
+      return response.json();
+    },
+    { name: 'fetchData', tags: ['api', 'fetch'] }
   );
 }
 ```
 
-This approach works with both Bun and tsx without configuration issues.
+This approach works with all JavaScript runtimes including Node.js, Bun, tsx, and Deno.
 
 ### Wrap Mode
 
@@ -386,11 +335,13 @@ The `mode: 'wrap'` option returns a `Trace` object instead of the raw result, en
 import { trace, Trace, AsyncTrace } from '@lilypad/typescript-sdk';
 
 class AnalyticsService {
-  @trace({ mode: 'wrap' })
-  analyzeData(data: any): { score: number; category: string } {
-    // Your analysis logic
-    return { score: 0.85, category: 'positive' };
-  }
+  analyzeData = trace(
+    (data: any): { score: number; category: string } => {
+      // Your analysis logic
+      return { score: 0.85, category: 'positive' };
+    },
+    { mode: 'wrap' }
+  );
 }
 
 // Usage
@@ -413,11 +364,13 @@ For async functions, wrap mode returns an `AsyncTrace` object:
 
 ```typescript
 class MLService {
-  @trace({ mode: 'wrap', tags: ['ml', 'inference'] })
-  async predict(input: any): Promise<{ prediction: string; confidence: number }> {
-    // Async ML inference
-    return { prediction: 'category_a', confidence: 0.92 };
-  }
+  predict = trace(
+    async (input: any): Promise<{ prediction: string; confidence: number }> => {
+      // Async ML inference
+      return { prediction: 'category_a', confidence: 0.92 };
+    },
+    { mode: 'wrap', tags: ['ml', 'inference'] }
+  );
 }
 
 const mlService = new MLService();
@@ -529,23 +482,11 @@ npx tsx --require ./dist/register.js examples/auto-instrumentation-require-only.
 # Alternative with wrapWithTrace function (avoids decorator issues)
 npm run example:auto-simple:node
 
-# Example with @trace decorators
+# Example with trace function
+bun run example:comprehensive
 
-# Option 1: Use Bun (native decorator support)
-npm run example:auto-decorator:bun
-
-# Option 2: Compile with tsc then run with Node.js (recommended for --require)
-npm run example:auto-decorator:compile  # Compile TypeScript
-npm run example:auto-decorator:compiled  # Run compiled JS with --require
-
-# Option 3: Try tsx with explicit tsconfig (may have issues)
-npm run example:auto-decorator:node
-
-# Trace decorator with wrap mode
+# Trace function with wrap mode
 bun run example:trace-wrap
-
-# Dual decorator support example
-bun run example:dual-decorator
 
 # Or run directly with environment variables
 OPENAI_API_KEY=your-key LILYPAD_API_KEY=your-key LILYPAD_PROJECT_ID=your-project-id bun run examples/auto-instrumentation-with-trace.ts
