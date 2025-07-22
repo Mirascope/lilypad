@@ -233,5 +233,5 @@ export const generateReport = trace(
       standardDeviation: Math.round(standardDeviation * 100) / 100,
     };
   },
-  { versioning: 'automatic', tags: ['analytics', 'reporting'] },
+  { versioning: 'automatic', name: 'generateReport', tags: ['analytics', 'reporting'] },
 );
