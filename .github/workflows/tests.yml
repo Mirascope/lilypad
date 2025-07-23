@@ -8,12 +8,14 @@ on:
       - update-typescript-sdk
       - LILYPAD-205
       - LILYPAD-207
+      - LILYPAD-208
   pull_request:
     branches:
       - main
       - update-typescript-sdk
       - LILYPAD-205
       - LILYPAD-207
+      - LILYPAD-208
 
 jobs:
   tests:
