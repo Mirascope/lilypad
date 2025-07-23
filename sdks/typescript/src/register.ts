@@ -11,22 +11,25 @@ import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 
 import { logger } from './utils/logger';
 import { setSettings } from './utils/settings';
+import type { LogLevel } from './types';
 import { getOrCreateContextManager } from './utils/shared-context';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
+import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
 
 // Enable debug logging based on environment variable
 const logLevel = process.env.LILYPAD_LOG_LEVEL || 'info';
-if (logLevel && ['debug', 'info', 'warn', 'error'].includes(logLevel)) {
-  logger.setLevel(logLevel as 'debug' | 'info' | 'warn' | 'error');
+const validLogLevels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+if (validLogLevels.includes(logLevel as LogLevel)) {
+  logger.setLevel(logLevel as LogLevel);
 }
 
 // Check environment variables
 const apiKey = process.env.LILYPAD_API_KEY;
 const projectId = process.env.LILYPAD_PROJECT_ID || 'default';
-const baseUrl = process.env.LILYPAD_BASE_URL || 'https://api.app.lilypad.so/v0';
+const baseUrl = process.env.LILYPAD_BASE_URL || BASE_URL;
 const serviceName = process.env.LILYPAD_SERVICE_NAME || 'lilypad-node-app';
-const remoteClientUrl = process.env.LILYPAD_REMOTE_CLIENT_URL || 'https://app.lilypad.so';
+const remoteClientUrl = process.env.LILYPAD_REMOTE_CLIENT_URL || REMOTE_CLIENT_URL;
 
 logger.info('[Register] Environment check:', {
   hasApiKey: !!apiKey,
@@ -45,7 +48,7 @@ if (!apiKey) {
   setSettings({
     apiKey,
     projectId,
-    baseUrl: baseUrl || 'https://api.app.lilypad.so/v0',
+    baseUrl: baseUrl || BASE_URL,
     serviceName: serviceName || 'lilypad-node-app',
   });
 

@@ -36,7 +36,7 @@ npx tsx examples/basic.ts
 
 Complete example demonstrating all major features:
 
-- @trace decorator (Bun) and wrapWithTrace (tsx)
+- trace() function for method instrumentation
 - OpenAI integration
 - Wrap mode with annotations
 - Both decorator and functional approaches
@@ -86,12 +86,12 @@ Bun has native support for TypeScript and decorators:
 bun run examples/[example-name].ts
 ```
 
-### Option 2: Using tsx with Decorators
+### Option 2: Using tsx
 
-For decorator support in tsx, use the custom tsconfig:
+For running with tsx:
 
 ```bash
-npx tsx --tsconfig tsconfig.tsx.json examples/[example-name].ts
+npx tsx examples/[example-name].ts
 ```
 
 ### Option 3: With Auto-instrumentation
@@ -105,7 +105,7 @@ npx tsx --require ./dist/register.js examples/[example-name].ts
 ## Key Features Demonstrated
 
 1. **Basic Tracing**: Manual span creation and metadata tracking
-2. **Decorators**: Using @trace decorator for method instrumentation
+2. **Function Tracing**: Using trace() function for method instrumentation
 3. **Wrap Mode**: Getting trace objects for post-execution operations
 4. **Auto-instrumentation**: Automatic OpenAI call tracing with --require
 5. **Streaming**: Handling streaming responses with proper cleanup
@@ -113,7 +113,7 @@ npx tsx --require ./dist/register.js examples/[example-name].ts
 
 ## Troubleshooting
 
-1. **Decorator errors with tsx**: Use `--tsconfig tsconfig.tsx.json` or switch to `wrapWithTrace`
+1. **TypeScript errors**: Ensure you've built the SDK with `bun run build` first
 2. **OpenAI not traced**: Use `--require ./dist/register.js` for auto-instrumentation
 3. **Module not found**: Run `bun run build` first
 4. **No traces appearing**: Check environment variables and wait for batch export
@@ -123,7 +123,7 @@ npx tsx --require ./dist/register.js examples/[example-name].ts
 After running an example, look for output like:
 
 ```
-[Lilypad] View trace: https://app.lilypad.so/projects/xxx/traces/yyy
+[Lilypad] View trace: https://lilypad.mirascope.com/projects/xxx/traces/yyy
 ```
 
 Click the link to view your trace in the Lilypad dashboard.

@@ -155,44 +155,22 @@ describe('trace', () => {
     });
   });
 
-  describe('trace decorator', () => {
-    it('should error when descriptor is undefined', () => {
-      expect(() => {
-        trace()(undefined as any, 'method', undefined);
-      }).toThrow('trace decorator descriptor is undefined');
-    });
+  describe('trace function', () => {
+    it('should work with synchronous functions', async () => {
+      const testFn = (arg1: string, arg2: number) => `${arg1}-${arg2}`;
+      const tracedFn = trace(testFn);
 
-    it('should error when applied to non-function', () => {
-      const descriptor = { value: 'not-a-function' };
-      expect(() => {
-        trace()(undefined as any, 'method', descriptor);
-      }).toThrow('trace decorator can only be applied to methods');
-    });
-
-    it('should wrap a synchronous method and create span', async () => {
-      class TestClass {
-        testMethod(arg1: string, arg2: number) {
-          return `${arg1}-${arg2}`;
-        }
-      }
-
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'testMethod')!;
-      const tracedDescriptor = trace()(TestClass.prototype, 'testMethod', descriptor);
-      TestClass.prototype.testMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      const result = await instance.testMethod('test', 123);
+      const result = await tracedFn('test', 123);
 
       expect(result).toBe('test-123');
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
-        'TestClass.testMethod',
+        'testFn',
         expect.objectContaining({
           kind: otel.SpanKind.INTERNAL,
           attributes: expect.objectContaining({
             'lilypad.type': 'trace',
             'lilypad.project_uuid': 'test-project-id',
-            'code.function': 'testMethod',
-            'code.namespace': 'TestClass',
+            'code.function': 'testFn',
           }),
         }),
         expect.any(Function),
@@ -205,24 +183,14 @@ describe('trace', () => {
       expect(mockSpan.end).toHaveBeenCalled();
     });
 
-    it('should handle async methods', async () => {
-      class TestClass {
-        async testMethod(value: string) {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          return value.toUpperCase();
-        }
-      }
+    it('should work with async functions', async () => {
+      const testFn = async (value: string) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return value.toUpperCase();
+      };
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'testMethod')!;
-      const tracedDescriptor = trace({ name: 'custom-name' })(
-        TestClass.prototype,
-        'testMethod',
-        descriptor,
-      );
-      TestClass.prototype.testMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      const result = await instance.testMethod('hello');
+      const tracedFn = trace(testFn, { name: 'custom-name' });
+      const result = await tracedFn('hello');
 
       expect(result).toBe('HELLO');
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
@@ -234,20 +202,13 @@ describe('trace', () => {
 
     it('should handle errors and record exception', async () => {
       const testError = new Error('Test error');
+      const failingFn = async () => {
+        throw testError;
+      };
 
-      class TestClass {
-        async failingMethod() {
-          throw testError;
-        }
-      }
+      const tracedFn = trace(failingFn);
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'failingMethod')!;
-      const tracedDescriptor = trace()(TestClass.prototype, 'failingMethod', descriptor);
-      TestClass.prototype.failingMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-
-      await expect(instance.failingMethod()).rejects.toThrow('Test error');
+      await expect(tracedFn()).rejects.toThrow('Test error');
       expect(mockSpan.recordException).toHaveBeenCalledWith(testError);
       expect(mockSpan.setStatus).toHaveBeenCalledWith({
         code: otel.SpanStatusCode.ERROR,
@@ -257,22 +218,15 @@ describe('trace', () => {
     });
 
     it('should handle custom options', async () => {
-      class TestClass {
-        methodWithOptions() {
-          return 'result';
-        }
-      }
+      const fnWithOptions = () => 'result';
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'methodWithOptions')!;
-      const tracedDescriptor = trace({
+      const tracedFn = trace(fnWithOptions, {
         name: 'custom-trace',
         tags: ['tag1', 'tag2'],
         attributes: { custom: 'attribute' },
-      })(TestClass.prototype, 'methodWithOptions', descriptor);
-      TestClass.prototype.methodWithOptions = tracedDescriptor.value;
+      });
 
-      const instance = new TestClass();
-      await instance.methodWithOptions();
+      await tracedFn();
 
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         'custom-trace',
@@ -289,83 +243,56 @@ describe('trace', () => {
     it('should work without settings configured', async () => {
       vi.mocked(getSettings).mockReturnValue(null);
 
-      class TestClass {
-        testMethod() {
-          return 'no-trace';
-        }
-      }
+      const testFn = () => 'no-trace';
+      const tracedFn = trace(testFn);
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'testMethod')!;
-      const tracedDescriptor = trace()(TestClass.prototype, 'testMethod', descriptor);
-      TestClass.prototype.testMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      const result = await instance.testMethod();
+      const result = await tracedFn();
 
       expect(result).toBe('no-trace');
-      expect(mockTracer.startActiveSpan).not.toHaveBeenCalled();
+      expect(tracedFn).toBe(testFn); // Should return original function when not configured
     });
 
     it('should return Trace wrapper in wrap mode', async () => {
-      class TestClass {
-        wrappedMethod() {
-          return 'wrapped-result';
-        }
-      }
+      const wrappedFn = () => 'wrapped-result';
+      const tracedFn = trace(wrappedFn, { mode: 'wrap' });
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'wrappedMethod')!;
-      const tracedDescriptor = trace({ mode: 'wrap' })(
-        TestClass.prototype,
-        'wrappedMethod',
-        descriptor,
-      );
-      TestClass.prototype.wrappedMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      const result = await instance.wrappedMethod();
+      const result = await tracedFn();
 
       expect(result).toBeInstanceOf(Trace);
       expect((result as any).response).toBe('wrapped-result');
     });
 
-    it('should return AsyncTrace wrapper for async methods in wrap mode', async () => {
-      class TestClass {
-        async wrappedMethod() {
-          return 'async-wrapped-result';
-        }
-      }
+    it('should return AsyncTrace wrapper for async functions in wrap mode', async () => {
+      const asyncWrappedFn = async () => 'async-wrapped-result';
+      const tracedFn = trace(asyncWrappedFn, { mode: 'wrap' });
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'wrappedMethod')!;
-      const tracedDescriptor = trace({ mode: 'wrap' })(
-        TestClass.prototype,
-        'wrappedMethod',
-        descriptor,
-      );
-      TestClass.prototype.wrappedMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      const result = await instance.wrappedMethod();
+      const result = await tracedFn();
 
       expect(result).toBeInstanceOf(AsyncTrace);
       expect((result as any).response).toBe('async-wrapped-result');
     });
 
     it('should handle string options as name', async () => {
-      class TestClass {
-        namedMethod() {
-          return 'result';
-        }
-      }
+      const namedFn = () => 'result';
+      const tracedFn = trace(namedFn, 'string-name');
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'namedMethod')!;
-      const tracedDescriptor = trace('string-name')(TestClass.prototype, 'namedMethod', descriptor);
-      TestClass.prototype.namedMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      await instance.namedMethod();
+      await tracedFn();
 
       expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
         'string-name',
+        expect.any(Object),
+        expect.any(Function),
+      );
+    });
+
+    it('should handle anonymous functions', async () => {
+      const anonymousFn = trace(() => 'anonymous result');
+
+      const result = await anonymousFn();
+
+      expect(result).toBe('anonymous result');
+      expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
+        'anonymous',
         expect.any(Object),
         expect.any(Function),
       );
@@ -476,21 +403,12 @@ describe('trace', () => {
       const { getPooledClient } = await import('./utils/client-pool');
       vi.mocked(getPooledClient).mockReturnValue(mockClient as any);
 
-      class TestClass {
-        cachedMethod() {
-          return 'cached';
-        }
-      }
-
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'cachedMethod')!;
-      const tracedDescriptor = trace()(TestClass.prototype, 'cachedMethod', descriptor);
-      TestClass.prototype.cachedMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
+      const cachedFn = () => 'cached';
+      const tracedFn = trace(cachedFn);
 
       // Call twice - this should trigger function creation
-      await instance.cachedMethod();
-      await instance.cachedMethod();
+      await tracedFn();
+      await tracedFn();
 
       // Wait for background operations to complete
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -513,7 +431,7 @@ describe('trace', () => {
       vi.mocked(logger.debug).mockImplementation(() => {});
     });
 
-    it('should return Trace object for sync method with wrap mode', async () => {
+    it('should return Trace object for sync function with wrap mode', async () => {
       const mockClient = {
         projects: {
           functions: {
@@ -528,22 +446,10 @@ describe('trace', () => {
       const { getPooledClient } = await import('./utils/client-pool');
       vi.mocked(getPooledClient).mockReturnValue(mockClient as any);
 
-      class TestClass {
-        syncMethod(value: string) {
-          return `processed: ${value}`;
-        }
-      }
+      const syncFn = (value: string) => `processed: ${value}`;
+      const tracedFn = trace(syncFn, { mode: 'wrap' });
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'syncMethod')!;
-      const tracedDescriptor = trace({ mode: 'wrap' })(
-        TestClass.prototype,
-        'syncMethod',
-        descriptor,
-      );
-      TestClass.prototype.syncMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      const result = await instance.syncMethod('test');
+      const result = await tracedFn('test');
 
       expect(result).toBeInstanceOf(Trace);
       expect(result.response).toBe('processed: test');
@@ -551,7 +457,7 @@ describe('trace', () => {
       // but we can verify the object has the expected structure
     });
 
-    it('should return AsyncTrace object for async method with wrap mode', async () => {
+    it('should return AsyncTrace object for async function with wrap mode', async () => {
       const mockClient = {
         projects: {
           functions: {
@@ -567,23 +473,13 @@ describe('trace', () => {
       const { getPooledClient } = await import('./utils/client-pool');
       vi.mocked(getPooledClient).mockReturnValue(mockClient as any);
 
-      class TestClass {
-        async asyncMethod(value: number) {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          return value * 2;
-        }
-      }
+      const asyncFn = async (value: number) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return value * 2;
+      };
 
-      const descriptor = Object.getOwnPropertyDescriptor(TestClass.prototype, 'asyncMethod')!;
-      const tracedDescriptor = trace({ mode: 'wrap' })(
-        TestClass.prototype,
-        'asyncMethod',
-        descriptor,
-      );
-      TestClass.prototype.asyncMethod = tracedDescriptor.value;
-
-      const instance = new TestClass();
-      const result = await instance.asyncMethod(21);
+      const tracedFn = trace(asyncFn, { mode: 'wrap' });
+      const result = await tracedFn(21);
 
       expect(result).toBeInstanceOf(AsyncTrace);
       expect(result.response).toBe(42);

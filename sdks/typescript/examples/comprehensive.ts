@@ -3,7 +3,7 @@
  *
  * Features covered:
  * - Basic configuration
- * - @trace decorator (Bun) / wrapWithTrace (tsx)
+ * - trace() higher-order function / wrapWithTrace
  * - OpenAI integration
  * - Wrap mode with annotations
  * - Auto-instrumentation with --require flag
@@ -12,31 +12,31 @@
 import lilypad, { trace, wrapWithTrace } from '@lilypad/typescript-sdk';
 import OpenAI from 'openai';
 
-// Example 1: Using @trace decorator (works with Bun and tsx --tsconfig tsconfig.tsx.json)
+// Example 1: Using trace higher-order function (works everywhere)
 class AIService {
   constructor(private client: OpenAI) {}
 
-  @trace()
-  async generateText(prompt: string): Promise<string | null> {
+  generateText = trace()(async (prompt: string): Promise<string | null> => {
     const response = await this.client.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 100,
     });
     return response.choices[0].message.content;
-  }
+  });
 
-  @trace({ mode: 'wrap', tags: ['analysis', 'complex'] })
-  async analyzeText(text: string): Promise<any> {
-    const response = await this.client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are a text analyzer.' },
-        { role: 'user', content: `Analyze this text: ${text}` },
-      ],
-    });
-    return response.choices[0].message.content;
-  }
+  analyzeText = trace({ mode: 'wrap', tags: ['analysis', 'complex'] })(
+    async (text: string): Promise<any> => {
+      const response = await this.client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are a text analyzer.' },
+          { role: 'user', content: `Analyze this text: ${text}` },
+        ],
+      });
+      return response.choices[0].message.content;
+    },
+  );
 }
 
 // Example 2: Using wrapWithTrace (works everywhere, including tsx)

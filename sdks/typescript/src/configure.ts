@@ -11,6 +11,7 @@ import { getOrCreateContextManager } from './utils/shared-context';
 import { CryptoIdGenerator } from './utils/id-generator';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { LilypadClient } from '../lilypad/generated';
+import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
 
 // Tracer provider instance for proper shutdown
 let _provider: NodeTracerProvider | null = null;
@@ -76,9 +77,9 @@ export async function configure(config: LilypadConfig): Promise<void> {
       process.env.LILYPAD_BASE_URL ||
       (process.env.LILYPAD_REMOTE_API_URL
         ? `${process.env.LILYPAD_REMOTE_API_URL}/v0`
-        : config.baseUrl || 'https://api.app.lilypad.so/v0'),
+        : config.baseUrl || BASE_URL),
     remoteClientUrl:
-      process.env.LILYPAD_REMOTE_CLIENT_URL || config.remoteClientUrl || 'https://app.lilypad.so',
+      process.env.LILYPAD_REMOTE_CLIENT_URL || config.remoteClientUrl || REMOTE_CLIENT_URL,
     logLevel: 'info',
     serviceName: 'lilypad-node-app',
     autoLlm: false,
