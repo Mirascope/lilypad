@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock dependencies - must be before imports
-vi.mock('./utils/settings');
-vi.mock('./utils/closure');
+// Mock modules before imports
+vi.mock('./utils/settings', () => ({
+  getSettings: vi.fn(),
+}));
+
+vi.mock('./utils/closure', () => ({
+  getCachedClosure: vi.fn(),
+}));
+
 vi.mock('./utils/logger', () => ({
   logger: {
     debug: vi.fn(),
@@ -11,6 +17,7 @@ vi.mock('./utils/logger', () => ({
     error: vi.fn(),
   },
 }));
+
 vi.mock('./configure', () => ({
   getProvider: vi.fn(),
 }));
@@ -18,14 +25,15 @@ vi.mock('./configure', () => ({
 vi.mock('./utils/client-pool', () => ({
   getPooledClient: vi.fn(),
 }));
+
 vi.mock('./utils/error-handler', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./utils/error-handler')>();
   return {
     ...actual,
     handleBackgroundError: vi.fn(),
-    // Use the actual implementation of ensureError
   };
 });
+
 vi.mock('../lilypad/generated/Client', () => ({
   LilypadClient: vi.fn().mockImplementation(() => ({
     projects: {
@@ -50,10 +58,25 @@ vi.mock('../lilypad/generated/Client', () => ({
   })),
 }));
 
+// Import after mocking
 import * as otel from '@opentelemetry/api';
 import { trace, getCurrentSpan, logToCurrentSpan, Trace, AsyncTrace } from './trace';
 import { getSettings } from './utils/settings';
 import { getCachedClosure } from './utils/closure';
+import { logger } from './utils/logger';
+import { getProvider } from './configure';
+import { getPooledClient } from './utils/client-pool';
+import { handleBackgroundError } from './utils/error-handler';
+import { LilypadClient } from '../lilypad/generated/Client';
+
+// Get mocked functions
+const mockSettings = vi.mocked(getSettings);
+const mockClosure = vi.mocked(getCachedClosure);
+const mockLogger = vi.mocked(logger);
+const mockProvider = vi.mocked(getProvider);
+const mockPooledClient = vi.mocked(getPooledClient);
+const mockBackgroundError = vi.mocked(handleBackgroundError);
+const mockLilypadClient = vi.mocked(LilypadClient);
 
 describe('trace', () => {
   const mockSpan = {
@@ -77,14 +100,14 @@ describe('trace', () => {
     vi.spyOn(otel.trace, 'getTracer').mockReturnValue(mockTracer as any);
     vi.spyOn(otel.trace, 'getActiveSpan').mockReturnValue(undefined);
 
-    vi.mocked(getSettings).mockReturnValue({
+    mockSettings.mockReturnValue({
       apiKey: 'test-api-key',
       projectId: 'test-project-id',
       baseUrl: 'https://api.test.com',
       serviceName: 'test-service',
     });
 
-    vi.mocked(getCachedClosure).mockReturnValue({
+    mockClosure.mockReturnValue({
       name: 'testFunction',
       signature: 'function testFunction()',
       code: 'function testFunction() { return "test"; }',
