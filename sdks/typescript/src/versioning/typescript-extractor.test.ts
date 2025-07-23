@@ -1,144 +1,94 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as ts from 'typescript';
-import * as fs from 'fs';
-import * as path from 'path';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { TypeScriptExtractor } from './typescript-extractor';
 
-// Move mocks before imports
-vi.mock('fs');
-vi.mock('typescript', () => {
-  const mocked = {
-    readConfigFile: vi.fn(),
-    parseJsonConfigFileContent: vi.fn(),
-    createProgram: vi.fn(),
-    createSourceFile: vi.fn((fileName: string, content: string, _target: any) => {
-      // Simple mock implementation
-      const statements: any[] = [];
-      return {
-        fileName,
-        statements,
-        getText: () => content,
-        getFullText: () => content,
-      };
-    }),
-    ScriptTarget: {
-      ES2020: 7,
-    },
-    ModuleKind: {
-      CommonJS: 1,
-    },
-    sys: {
-      readFile: vi.fn(),
-    },
-    isCallExpression: (node: any) => node.kind === 'CallExpression',
-    isIdentifier: (node: any) => node.kind === 'Identifier',
-    isPropertyAccessExpression: (node: any) => node.kind === 'PropertyAccess',
-    isStringLiteral: (node: any) => node.kind === 'StringLiteral',
-    isObjectLiteralExpression: (node: any) => node.kind === 'ObjectLiteral',
-    isPropertyAssignment: (node: any) => node.kind === 'PropertyAssignment',
-    isVariableDeclaration: (node: any) => node.kind === 'VariableDeclaration',
-    isArrowFunction: (node: any) => node.kind === 'ArrowFunction',
-    isFunctionExpression: (node: any) => node.kind === 'FunctionExpression',
-    forEachChild: (node: any, cb: any) => {
-      if (node.children) {
-        node.children.forEach(cb);
-      }
-    },
-  };
-  return {
-    ...mocked,
-    default: mocked,
-  };
-});
-
-describe.skip('TypeScriptExtractor', () => {
+describe('TypeScriptExtractor', () => {
   let extractor: TypeScriptExtractor;
-  const mockRootDir = '/test/project';
-  const mockTsConfigPath = 'tsconfig.json';
+  let tempDir: string;
+  let tsConfigPath: string;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Create a temporary directory for each test
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lilypad-extractor-test-'));
+    tsConfigPath = path.join(tempDir, 'tsconfig.json');
 
-    // Mock fs.existsSync
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-
-    // Mock ts.readConfigFile
-    vi.mocked(ts.readConfigFile).mockReturnValue({
-      config: {
-        compilerOptions: {
-          target: 'es2020',
-          module: 'commonjs',
-        },
-        include: ['src/**/*.ts'],
+    // Create a basic tsconfig.json
+    const tsConfig = {
+      compilerOptions: {
+        target: 'es2020',
+        module: 'commonjs',
+        lib: ['es2020'],
+        strict: true,
+        rootDir: '.',
+        outDir: './dist',
       },
-    });
+      include: ['./**/*.ts'],
+      exclude: ['node_modules', 'dist'],
+    };
+    fs.writeFileSync(tsConfigPath, JSON.stringify(tsConfig, null, 2));
+  });
 
-    // Mock ts.parseJsonConfigFileContent
-    vi.mocked(ts.parseJsonConfigFileContent).mockReturnValue({
-      options: {
-        target: ts.ScriptTarget.ES2020,
-        module: ts.ModuleKind.CommonJS,
-      },
-      fileNames: ['/test/project/src/index.ts'],
-      errors: [],
-    } as unknown as ts.ParsedCommandLine);
+  afterEach(() => {
+    // Clean up temp directory
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
   describe('constructor', () => {
     it('should initialize with valid tsconfig', () => {
       expect(() => {
-        extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
+        extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
       }).not.toThrow();
     });
 
-    it('should throw error if tsconfig does not exist', () => {
-      vi.mocked(fs.existsSync).mockReturnValue(false);
+    it('should handle tsconfig read errors gracefully', () => {
+      // Create an invalid tsconfig
+      fs.writeFileSync(tsConfigPath, 'invalid json');
 
+      // Should not throw, but handle the error
       expect(() => {
-        extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
-      }).toThrow(`tsconfig.json not found at ${path.join(mockRootDir, mockTsConfigPath)}`);
+        extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
+      }).not.toThrow();
     });
   });
 
   describe('extract', () => {
-    beforeEach(() => {
-      // Create a mock source file
-      const mockSourceFile = {
-        fileName: '/test/project/src/index.ts',
-        statements: [],
-      } as unknown as ts.SourceFile;
-
-      // Mock ts.createProgram
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
-
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
-    });
-
     it('should extract metadata from source files', () => {
+      // Copy fixture file to temp dir
+      const fixtureContent = fs.readFileSync(
+        path.join(__dirname, '../../tests/fixtures/simple-function.ts'),
+        'utf-8',
+      );
+      fs.writeFileSync(path.join(tempDir, 'simple-function.ts'), fixtureContent);
+
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
       const metadata = extractor.extract();
 
-      expect(metadata).toEqual({
+      expect(metadata).toMatchObject({
         version: '1.0.0',
         buildTime: expect.any(String),
-        functions: {},
+        functions: expect.any(Object),
       });
+
+      const functions = Object.values(metadata.functions);
+      expect(functions).toHaveLength(1);
+      expect(functions[0].name).toBe('greetUser');
     });
 
     it('should skip node_modules files', () => {
-      const mockSourceFile = {
-        fileName: '/test/project/node_modules/some-lib/index.ts',
-        statements: [],
-      } as unknown as ts.SourceFile;
+      // Create a node_modules directory
+      const nodeModulesDir = path.join(tempDir, 'node_modules', 'some-lib');
+      fs.mkdirSync(nodeModulesDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(nodeModulesDir, 'index.ts'),
+        `import { trace } from '@lilypad/typescript-sdk';
+        export const libFunc = trace((x: number) => x * 2, { versioning: 'automatic' });`,
+      );
 
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
-
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
       const metadata = extractor.extract();
 
       expect(metadata.functions).toEqual({});
@@ -146,60 +96,18 @@ describe.skip('TypeScriptExtractor', () => {
   });
 
   describe('extractFunction', () => {
-    let mockSourceFile: ts.SourceFile;
-
-    beforeEach(() => {
-      mockSourceFile = ts.createSourceFile(
-        'test.ts',
-        `
+    it('should extract function name from options', () => {
+      const sourceCode = `
         import { trace } from '@lilypad/typescript-sdk';
         
         const myFunc = trace(
           async (x: number) => x * 2,
           { versioning: 'automatic', name: 'myFunc' }
         );
-        `,
-        ts.ScriptTarget.ES2020,
-        true,
-      );
+      `;
+      fs.writeFileSync(path.join(tempDir, 'test.ts'), sourceCode);
 
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
-
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
-    });
-
-    it('should extract function name from options', () => {
-      const metadata = extractor.extract();
-      const functions = Object.values(metadata.functions);
-
-      expect(functions).toHaveLength(1);
-      expect(functions[0].name).toBe('myFunc');
-    });
-
-    it('should extract function name from variable declaration if not in options', () => {
-      mockSourceFile = ts.createSourceFile(
-        'test.ts',
-        `
-        import { trace } from '@lilypad/typescript-sdk';
-        
-        const myFunc = trace(
-          async (x: number) => x * 2,
-          { versioning: 'automatic' }
-        );
-        `,
-        ts.ScriptTarget.ES2020,
-        true,
-      );
-
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
-
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
       const metadata = extractor.extract();
       const functions = Object.values(metadata.functions);
 
@@ -208,29 +116,18 @@ describe.skip('TypeScriptExtractor', () => {
     });
 
     it('should use "anonymous" if no name can be determined', () => {
-      mockSourceFile = ts.createSourceFile(
-        'test.ts',
-        `
-        import { trace } from '@lilypad/typescript-sdk';
-        
-        trace(
-          async (x: number) => x * 2,
-          { versioning: 'automatic' }
-        );
-        `,
-        ts.ScriptTarget.ES2020,
-        true,
+      // Copy anonymous function fixture
+      const fixtureContent = fs.readFileSync(
+        path.join(__dirname, '../../tests/fixtures/anonymous-function.ts'),
+        'utf-8',
       );
+      fs.writeFileSync(path.join(tempDir, 'anonymous.ts'), fixtureContent);
 
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
-
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
       const metadata = extractor.extract();
       const functions = Object.values(metadata.functions);
 
+      // Should only extract the one with automatic versioning
       expect(functions).toHaveLength(1);
       expect(functions[0].name).toBe('anonymous');
     });
@@ -238,23 +135,18 @@ describe.skip('TypeScriptExtractor', () => {
 
   describe('isVersionedFunction', () => {
     it('should detect versioned functions with automatic versioning', () => {
-      const mockSourceFile = ts.createSourceFile(
-        'test.ts',
-        `
+      const sourceCode = `
+        import { trace } from '@lilypad/typescript-sdk';
+        
+        const fn = (x: number) => x;
+        
         trace(fn, { versioning: 'automatic' });
         trace(fn, { versioning: null });
         trace(fn);
-        `,
-        ts.ScriptTarget.ES2020,
-        true,
-      );
+      `;
+      fs.writeFileSync(path.join(tempDir, 'versioning-test.ts'), sourceCode);
 
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
-
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
       const metadata = extractor.extract();
 
       // Only the first one should be extracted
@@ -262,65 +154,67 @@ describe.skip('TypeScriptExtractor', () => {
     });
   });
 
-  describe('findCorrespondingFunction', () => {
-    it('should find function by content matching', () => {
-      const sourceCode = `
-      const fn1 = (x: number) => x * 2;
-      const fn2 = (x: number) => x * 3;
-      `;
-
-      const mockSourceFile = ts.createSourceFile(
-        'test.ts',
-        sourceCode,
-        ts.ScriptTarget.ES2020,
-        true,
+  describe('complex extraction scenarios', () => {
+    it('should extract functions with dependencies', () => {
+      // Copy complex function fixture
+      const fixtureContent = fs.readFileSync(
+        path.join(__dirname, '../../tests/fixtures/complex-function.ts'),
+        'utf-8',
       );
+      fs.writeFileSync(path.join(tempDir, 'complex.ts'), fixtureContent);
 
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
+      const metadata = extractor.extract();
+      const functions = Object.values(metadata.functions);
 
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
-
-      // Access private method through any
-      const findFunc = (extractor as any).findCorrespondingFunction.bind(extractor);
-
-      const targetCode = '(x: number) => x * 3';
-      const result = findFunc(mockSourceFile, targetCode, 0, 100);
-
-      expect(result).toBeDefined();
-      expect(result?.getText()).toContain('x * 3');
+      expect(functions).toHaveLength(1);
+      expect(functions[0].name).toBe('calculatePrice');
+      expect(functions[0].sourceCode).toContain('calculateDiscount');
+      expect(functions[0].sourceCode).toContain('applyDiscount');
     });
 
-    it('should use similarity scoring for fuzzy matching', () => {
-      const sourceCode = `
-      const fn = (x: number) => {
-        return x * 2;
-      };
-      `;
-
-      const mockSourceFile = ts.createSourceFile(
-        'test.ts',
-        sourceCode,
-        ts.ScriptTarget.ES2020,
-        true,
+    it('should handle multiple files', () => {
+      // Create multiple test files
+      fs.writeFileSync(
+        path.join(tempDir, 'file1.ts'),
+        `import { trace } from '@lilypad/typescript-sdk';
+         export const func1 = trace((x: number) => x + 1, { versioning: 'automatic', name: 'func1' });`,
       );
 
-      const mockProgram = {
-        getSourceFiles: vi.fn().mockReturnValue([mockSourceFile]),
-      };
-      vi.mocked(ts.createProgram).mockReturnValue(mockProgram as unknown as ts.Program);
+      fs.writeFileSync(
+        path.join(tempDir, 'file2.ts'),
+        `import { trace } from '@lilypad/typescript-sdk';
+         export const func2 = trace((x: number) => x + 2, { versioning: 'automatic', name: 'func2' });`,
+      );
 
-      extractor = new TypeScriptExtractor(mockRootDir, mockTsConfigPath);
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
+      const metadata = extractor.extract();
+      const functions = Object.values(metadata.functions);
 
-      const findFunc = (extractor as any).findCorrespondingFunction.bind(extractor);
+      expect(functions).toHaveLength(2);
+      const names = functions.map((f) => f.name).sort();
+      expect(names).toEqual(['func1', 'func2']);
+    });
+  });
 
-      // Slightly different formatting
-      const targetCode = '(x:number)=>{return x*2;}';
-      const result = findFunc(mockSourceFile, targetCode, 0, 100);
+  describe('saveMetadata', () => {
+    it('should save metadata to file', () => {
+      const sourceCode = `
+        import { trace } from '@lilypad/typescript-sdk';
+        export const testFunc = trace((x: number) => x * 2, { versioning: 'automatic' });
+      `;
+      fs.writeFileSync(path.join(tempDir, 'test.ts'), sourceCode);
 
-      expect(result).toBeDefined();
+      extractor = new TypeScriptExtractor(tempDir, 'tsconfig.json', ['./**/*.ts']);
+      const outputPath = path.join(tempDir, 'output', 'metadata.json');
+
+      extractor.saveMetadata(outputPath);
+
+      expect(fs.existsSync(outputPath)).toBe(true);
+      const savedMetadata = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+      expect(savedMetadata.version).toBe('1.0.0');
+      expect(savedMetadata.buildTime).toBeDefined();
+      expect(Object.keys(savedMetadata.functions)).toHaveLength(1);
     });
   });
 });

@@ -26,20 +26,27 @@ export function normalizeFunction(code: string): NormalizedFunction {
 
     // Extract function signature
     let signature = 'function()';
-    let normalizedCode = code;
+    const normalizedCode = normalizeWhitespace(code);
+    let found = false;
 
     walk.simple(ast, {
       FunctionDeclaration(node: any) {
-        signature = extractSignature(node);
-        normalizedCode = normalizeNode(node);
+        if (!found) {
+          signature = extractSignature(node);
+          found = true;
+        }
       },
       FunctionExpression(node: any) {
-        signature = extractSignature(node);
-        normalizedCode = normalizeNode(node);
+        if (!found) {
+          signature = extractSignature(node);
+          found = true;
+        }
       },
       ArrowFunctionExpression(node: any) {
-        signature = extractArrowSignature(node);
-        normalizedCode = normalizeNode(node);
+        if (!found) {
+          signature = extractArrowSignature(node);
+          found = true;
+        }
       },
     });
 
@@ -125,16 +132,6 @@ function extractSimpleSignature(code: string): string {
   if (arrowMatch) return arrowMatch[0];
 
   return 'function()';
-}
-
-/**
- * Normalize AST node to string
- */
-function normalizeNode(node: any): string {
-  // For now, just normalize whitespace
-  // In a full implementation, this would rename variables consistently
-  const code = node.toString();
-  return normalizeWhitespace(code);
 }
 
 /**

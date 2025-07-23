@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { wrapOpenAI } from './wrap-openai';
-import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
 
-// Mock modules
+// Mock modules before imports
 vi.mock('@opentelemetry/api', () => ({
   trace: {
     getTracer: vi.fn(),
@@ -31,10 +29,23 @@ vi.mock('./utils/stream-wrapper', () => ({
   isAsyncIterable: vi.fn(),
 }));
 
-// Import mocked modules
-import { trace, context } from '@opentelemetry/api';
+vi.mock('./utils/error-handler', () => ({
+  ensureError: vi.fn(),
+}));
+
+// Import after mocking
+import { wrapOpenAI } from './wrap-openai';
+import { trace, context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import { logger } from './utils/logger';
 import { isAsyncIterable } from './utils/stream-wrapper';
+import { ensureError } from './utils/error-handler';
+
+// Get mocked functions
+const mockedTrace = vi.mocked(trace);
+const mockedContext = vi.mocked(context);
+const mockedLogger = vi.mocked(logger);
+const mockedIsAsyncIterable = vi.mocked(isAsyncIterable);
+const mockedEnsureError = vi.mocked(ensureError);
 
 describe('wrapOpenAI', () => {
   let mockSpan: any;
@@ -60,11 +71,18 @@ describe('wrapOpenAI', () => {
       startSpan: vi.fn().mockReturnValue(mockSpan),
     };
 
-    // Mock API functions
-    vi.mocked(trace.getTracer).mockReturnValue(mockTracer);
-    vi.mocked(trace.setSpan).mockImplementation((ctx, span) => ({ ...ctx, span }));
-    vi.mocked(context.active).mockReturnValue({});
-    vi.mocked(context.with).mockImplementation((ctx, fn) => fn());
+    // Set up mock implementations
+    mockedTrace.getTracer.mockReturnValue(mockTracer);
+    mockedTrace.setSpan.mockImplementation((ctx, span) => ({ ...ctx, span }));
+    mockedContext.active.mockReturnValue({});
+    mockedContext.with.mockImplementation((ctx, fn) => fn());
+    mockedIsAsyncIterable.mockImplementation((value) => {
+      return value != null && typeof value === 'object' && Symbol.asyncIterator in value;
+    });
+    mockedEnsureError.mockImplementation((error) => {
+      if (error instanceof Error) return error;
+      return new Error(String(error));
+    });
 
     // Mock original create method
     mockOriginalCreate = vi.fn();
@@ -92,7 +110,7 @@ describe('wrapOpenAI', () => {
     it('should log debug message when wrapping', () => {
       wrapOpenAI(OpenAIClass);
 
-      expect(logger.debug).toHaveBeenCalledWith('[wrapOpenAI] Wrapping OpenAI instance');
+      expect(mockedLogger.debug).toHaveBeenCalledWith('[wrapOpenAI] Wrapping OpenAI instance');
     });
 
     it('should handle missing chat.completions.create gracefully', () => {
@@ -262,7 +280,7 @@ describe('wrapOpenAI', () => {
       };
 
       mockOriginalCreate.mockResolvedValue(mockStream);
-      vi.mocked(isAsyncIterable).mockReturnValue(true);
+      mockedIsAsyncIterable.mockReturnValue(true);
 
       const result = await instance.chat.completions.create({ model: 'gpt-4', stream: true });
 
@@ -303,7 +321,7 @@ describe('wrapOpenAI', () => {
       };
 
       mockOriginalCreate.mockResolvedValue(mockStream);
-      vi.mocked(isAsyncIterable).mockReturnValue(true);
+      mockedIsAsyncIterable.mockReturnValue(true);
 
       const result = await instance.chat.completions.create({ model: 'gpt-4', stream: true });
 
@@ -346,6 +364,344 @@ describe('wrapOpenAI', () => {
       await instance.chat.completions.create(params, options);
 
       expect(mockOriginalCreate).toHaveBeenCalledWith(params, options);
+    });
+  });
+
+  describe('isCompletionResponse type guard', () => {
+    it('should handle non-completion responses', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      // Return something that doesn't match ChatCompletionResponse structure
+      mockOriginalCreate.mockResolvedValue(null);
+
+      await instance.chat.completions.create({ model: 'gpt-4' });
+
+      // Should not try to record response
+      expect(mockSpan.addEvent).not.toHaveBeenCalledWith('gen_ai.choice', expect.any(Object));
+    });
+
+    it('should handle response without choices array', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      mockOriginalCreate.mockResolvedValue({ choices: null });
+
+      await instance.chat.completions.create({ model: 'gpt-4' });
+
+      expect(mockSpan.addEvent).not.toHaveBeenCalledWith('gen_ai.choice', expect.any(Object));
+    });
+  });
+
+  describe('instance wrapping', () => {
+    it('should wrap an existing OpenAI instance', () => {
+      const instance = new OpenAIClass();
+      const originalCreate = instance.chat.completions.create;
+
+      const wrappedInstance = wrapOpenAI(instance);
+
+      expect(wrappedInstance).toBe(instance); // Modified in-place
+      expect(instance.chat.completions.create).not.toBe(originalCreate);
+      expect(instance.chat.completions.create).toBeDefined();
+    });
+
+    it('should handle instance without chat property', () => {
+      const instance = {};
+      const wrappedInstance = wrapOpenAI(instance);
+
+      expect(wrappedInstance).toBe(instance);
+      // Should not throw
+    });
+
+    it('should handle instance without completions property', () => {
+      const instance = { chat: {} };
+      const wrappedInstance = wrapOpenAI(instance);
+
+      expect(wrappedInstance).toBe(instance);
+      // Should not throw
+    });
+
+    it('should handle instance without create method', () => {
+      const instance = { chat: { completions: {} } };
+      const wrappedInstance = wrapOpenAI(instance);
+
+      expect(wrappedInstance).toBe(instance);
+      // Should not throw
+    });
+  });
+
+  describe('recordResponse helper', () => {
+    it('should handle empty response', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      mockOriginalCreate.mockResolvedValue({});
+
+      await instance.chat.completions.create({ model: 'gpt-4' });
+
+      // Should not throw, but also shouldn't record anything
+      expect(mockSpan.addEvent).not.toHaveBeenCalledWith('gen_ai.choice', expect.any(Object));
+    });
+
+    it('should handle choices with missing message', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const response = {
+        choices: [
+          { finish_reason: 'stop' }, // No message property
+        ],
+      };
+
+      mockOriginalCreate.mockResolvedValue(response);
+
+      await instance.chat.completions.create({ model: 'gpt-4' });
+
+      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
+        'gen_ai.system': 'openai',
+        index: 0,
+        finish_reason: 'stop',
+        message: JSON.stringify({ role: 'assistant' }), // Default role, no content
+      });
+    });
+
+    it('should handle choices with null finish_reason', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const response = {
+        choices: [
+          {
+            message: { role: 'assistant', content: 'Hello' },
+            finish_reason: null,
+          },
+        ],
+      };
+
+      mockOriginalCreate.mockResolvedValue(response);
+
+      await instance.chat.completions.create({ model: 'gpt-4' });
+
+      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
+        'gen_ai.system': 'openai',
+        index: 0,
+        finish_reason: 'error', // Default when null
+        message: JSON.stringify({ role: 'assistant', content: 'Hello' }),
+      });
+
+      // Should not set finish_reasons attribute when all are null
+      expect(mockSpan.setAttribute).not.toHaveBeenCalledWith(
+        'gen_ai.response.finish_reasons',
+        expect.any(Array),
+      );
+    });
+
+    it('should record server.address attribute', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const response = {
+        choices: [{ message: { content: 'test' } }],
+      };
+
+      mockOriginalCreate.mockResolvedValue(response);
+
+      await instance.chat.completions.create({ model: 'gpt-4' });
+
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith('server.address', 'api.openai.com');
+    });
+
+    it('should filter out falsy finish reasons', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const response = {
+        choices: [
+          { finish_reason: 'stop' },
+          { finish_reason: null },
+          { finish_reason: '' },
+          { finish_reason: 'length' },
+        ],
+      };
+
+      mockOriginalCreate.mockResolvedValue(response);
+
+      await instance.chat.completions.create({ model: 'gpt-4' });
+
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith('gen_ai.response.finish_reasons', [
+        'stop',
+        'length',
+      ]);
+    });
+  });
+
+  describe('wrapStream helper', () => {
+    it('should handle stream with usage in chunks', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: 'Hello' } }],
+            usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 },
+          };
+          yield {
+            choices: [{ delta: { content: ' world' }, finish_reason: 'stop' }],
+            usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 },
+          };
+        },
+      };
+
+      mockOriginalCreate.mockResolvedValue(mockStream);
+      mockedIsAsyncIterable.mockReturnValue(true);
+
+      const result = await instance.chat.completions.create({ model: 'gpt-4', stream: true });
+
+      const chunks = [];
+      for await (const chunk of result) {
+        chunks.push(chunk);
+      }
+
+      expect(mockSpan.setAttributes).toHaveBeenCalledWith({
+        'gen_ai.usage.input_tokens': 5,
+        'gen_ai.usage.output_tokens': 10,
+        'gen_ai.usage.total_tokens': 15,
+      });
+    });
+
+    it('should handle stream with non-string content', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield {
+            choices: [{ delta: { content: 123 } }], // Non-string content
+          };
+        },
+      };
+
+      mockOriginalCreate.mockResolvedValue(mockStream);
+      mockedIsAsyncIterable.mockReturnValue(true);
+
+      const result = await instance.chat.completions.create({ model: 'gpt-4', stream: true });
+
+      const chunks = [];
+      for await (const chunk of result) {
+        chunks.push(chunk);
+      }
+
+      // Should handle non-string content gracefully
+      expect(chunks).toHaveLength(1);
+    });
+
+    it('should handle stream with malformed chunks', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield null;
+          yield undefined;
+          yield {};
+          yield { choices: null };
+          yield { choices: [] };
+          yield { choices: [null] };
+          yield { choices: [{ delta: { content: 'Valid' } }] };
+        },
+      };
+
+      mockOriginalCreate.mockResolvedValue(mockStream);
+      mockedIsAsyncIterable.mockReturnValue(true);
+
+      const result = await instance.chat.completions.create({ model: 'gpt-4', stream: true });
+
+      const chunks = [];
+      for await (const chunk of result) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toHaveLength(7);
+      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
+        'gen_ai.system': 'openai',
+        index: 0,
+        finish_reason: 'error',
+        message: JSON.stringify({ role: 'assistant', content: 'Valid' }),
+      });
+    });
+
+    it('should ensure error is Error instance', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const nonErrorValue = 'string error';
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield { choices: [{ delta: { content: 'Hello' } }] };
+          throw nonErrorValue;
+        },
+      };
+
+      mockOriginalCreate.mockResolvedValue(mockStream);
+      mockedIsAsyncIterable.mockReturnValue(true);
+
+      const result = await instance.chat.completions.create({ model: 'gpt-4', stream: true });
+
+      await expect(async () => {
+        for await (const _chunk of result) {
+          // Process chunk
+        }
+      }).rejects.toThrow('string error');
+
+      expect(mockedEnsureError).toHaveBeenCalledWith(nonErrorValue);
+      expect(mockSpan.recordException).toHaveBeenCalledWith(expect.any(Error));
+      expect(mockSpan.setStatus).toHaveBeenCalledWith({
+        code: SpanStatusCode.ERROR,
+        message: 'string error',
+      });
+    });
+
+    it('should set usage to default object if undefined', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const mockStream = {
+        async *[Symbol.asyncIterator]() {
+          yield { choices: [{ delta: { content: 'test' }, finish_reason: 'stop' }] };
+        },
+      };
+
+      mockOriginalCreate.mockResolvedValue(mockStream);
+      mockedIsAsyncIterable.mockReturnValue(true);
+
+      const result = await instance.chat.completions.create({ model: 'gpt-4', stream: true });
+
+      for await (const _chunk of result) {
+        // Consume stream
+      }
+
+      // Should use default usage values
+      expect(mockSpan.setAttributes).toHaveBeenCalledWith({
+        'gen_ai.usage.input_tokens': 0,
+        'gen_ai.usage.output_tokens': 0,
+        'gen_ai.usage.total_tokens': 0,
+      });
+    });
+  });
+
+  describe('error handling with ensureError', () => {
+    it('should handle non-Error exceptions in non-streaming mode', async () => {
+      const WrappedOpenAI = wrapOpenAI(OpenAIClass);
+      const instance = new WrappedOpenAI();
+
+      const nonErrorValue = { message: 'object error', code: 'ERR_001' };
+      mockOriginalCreate.mockRejectedValue(nonErrorValue);
+
+      await expect(instance.chat.completions.create({ model: 'gpt-4' })).rejects.toThrow();
+
+      expect(mockedEnsureError).toHaveBeenCalledWith(nonErrorValue);
+      expect(mockSpan.recordException).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 });

@@ -259,8 +259,11 @@ export function wrapOpenAI<T extends new (...args: any[]) => OpenAILike>(constru
 export function wrapOpenAI<T extends object>(openaiInstance: T): T {
   logger.debug('[wrapOpenAI] Wrapping OpenAI instance');
 
-  // Check if it's an instance or a class
-  const isInstance = typeof openaiInstance === 'object' && 'chat' in openaiInstance;
+  // Check if it's a constructor function (class)
+  const isConstructor = typeof openaiInstance === 'function';
+
+  // Check if it's an instance (object that's not a function)
+  const isInstance = typeof openaiInstance === 'object' && openaiInstance !== null;
 
   if (isInstance) {
     // Type assertion to access chat property
@@ -271,6 +274,12 @@ export function wrapOpenAI<T extends object>(openaiInstance: T): T {
       instance.chat.completions.create = wrapChatCompletionsCreate(originalCreate);
     }
     return openaiInstance; // Modified in-place
+  }
+
+  if (!isConstructor) {
+    // If it's neither an instance nor a constructor, just return it
+    logger.debug('[wrapOpenAI] Object is neither an instance nor a constructor, returning as-is');
+    return openaiInstance;
   }
 
   // Otherwise, assume it's a class and create a wrapper

@@ -6,6 +6,7 @@
     "examples/**/*.ts",
     "examples/**/*.tsx",
     "test/**/*.ts",
+    "tests/**/*.ts",
     "scripts/**/*.ts"
   ],
   "exclude": ["dist", "node_modules", "coverage", "lilypad/generated/**/*"]

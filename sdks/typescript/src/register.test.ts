@@ -49,54 +49,7 @@ describe('register', () => {
     }
   });
 
-  it.skip('should set logger level from environment variable (not implemented)', async () => {
-    // This functionality is not implemented in the current version
-    // The logger doesn't automatically read from LILYPAD_LOG_LEVEL
-    process.env.LILYPAD_LOG_LEVEL = 'debug';
-    const { logger } = await import('./utils/logger');
-
-    await import('./register');
-
-    expect(logger.setLevel).toHaveBeenCalledWith('debug');
-  });
-
-  it.skip('should use default log level when env var not set (not implemented)', async () => {
-    // This functionality is not implemented in the current version
-    // The logger doesn't automatically read from environment variables
-    delete process.env.LILYPAD_LOG_LEVEL;
-    const { logger } = await import('./utils/logger');
-
-    await import('./register');
-
-    expect(logger.setLevel).toHaveBeenCalledWith('info');
-  });
-
-  it.skip('should log register loaded message (async initialization)', async () => {
-    const { logger } = await import('./utils/logger');
-
-    // Set API key to enable instrumentation
-    process.env.LILYPAD_API_KEY = 'test-api-key';
-
-    await import('./register');
-
-    // The async initialization means we need to wait a bit
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Check that the instrumentation loaded message was logged
-    const calls = (logger.info as any).mock.calls;
-    const hasInstrumentationLoadedLog = calls.some(
-      (call: any[]) => call[0] && call[0].includes('OpenAI auto-instrumentation loaded'),
-    );
-    expect(hasInstrumentationLoadedLog).toBe(true);
-  });
-
   describe('instrumentation registration', () => {
-    it.skip('should register OpenAI instrumentation with InstrumentationBase', async () => {
-      // The new implementation uses @opentelemetry/instrumentation registerInstrumentations
-      // which automatically handles module loading hooks. Manual patching of Module.prototype.require
-      // is no longer needed. This functionality is tested through integration tests.
-    });
-
     it('should initialize with proper configuration', async () => {
       const { logger } = await import('./utils/logger');
 
@@ -116,35 +69,6 @@ describe('register', () => {
   });
 
   describe('dynamic import patching', () => {
-    it.skip('should patch dynamic import for Node.js 14+ (not implemented)', async () => {
-      // Current implementation doesn't patch dynamic imports
-      // This test is skipped as the feature is not implemented
-
-      // Mock Node.js version
-      const originalVersions = process.versions;
-      Object.defineProperty(process, 'versions', {
-        value: { ...originalVersions, node: '14.8.0' },
-        configurable: true,
-      });
-
-      // Clear and reimport to trigger version check
-      vi.resetModules();
-
-      const originalGlobalImport = (globalThis as any).import;
-
-      await import('./register');
-
-      // Check that import has been overridden
-      expect((globalThis as any).import).not.toBe(originalGlobalImport);
-      expect(typeof (globalThis as any).import).toBe('function');
-
-      // Restore
-      Object.defineProperty(process, 'versions', {
-        value: originalVersions,
-        configurable: true,
-      });
-    });
-
     it('should not patch dynamic import for Node.js < 14', async () => {
       // Mock Node.js version
       const originalVersions = process.versions;
@@ -163,45 +87,6 @@ describe('register', () => {
 
       // Import should not have changed
       expect((globalThis as any).import).toBe(currentImport);
-
-      // Restore
-      Object.defineProperty(process, 'versions', {
-        value: originalVersions,
-        configurable: true,
-      });
-    });
-
-    it.skip('should intercept openai dynamic imports (not implemented)', async () => {
-      // Current implementation doesn't patch dynamic imports
-      // This test is skipped as the feature is not implemented
-
-      const { logger } = await import('./utils/logger');
-
-      // Mock Node.js 14+
-      const originalVersions = process.versions;
-      Object.defineProperty(process, 'versions', {
-        value: { ...originalVersions, node: '14.8.0' },
-        configurable: true,
-      });
-
-      // Mock the original import to return a mock OpenAI
-      const mockOpenAI = vi.fn();
-      const mockImport = vi.fn().mockResolvedValue(mockOpenAI);
-      (globalThis as any).import = mockImport;
-
-      // Clear and reimport register
-      vi.resetModules();
-      await import('./register');
-
-      // Clear previous logger calls
-      (logger.debug as Mock).mockClear();
-
-      // Now try to import openai
-      const importFn = (globalThis as any).import;
-      await importFn('openai');
-
-      expect(logger.debug).toHaveBeenCalledWith('[Register] Intercepting OpenAI dynamic import');
-      expect(mockImport).toHaveBeenCalledWith('openai');
 
       // Restore
       Object.defineProperty(process, 'versions', {
