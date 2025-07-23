@@ -72,11 +72,11 @@ import { LilypadClient } from '../lilypad/generated/Client';
 // Get mocked functions
 const mockSettings = vi.mocked(getSettings);
 const mockClosure = vi.mocked(getCachedClosure);
-const mockLogger = vi.mocked(logger);
-const mockProvider = vi.mocked(getProvider);
-const mockPooledClient = vi.mocked(getPooledClient);
-const mockBackgroundError = vi.mocked(handleBackgroundError);
-const mockLilypadClient = vi.mocked(LilypadClient);
+const _mockLogger = vi.mocked(logger);
+const _mockProvider = vi.mocked(getProvider);
+const _mockPooledClient = vi.mocked(getPooledClient);
+const _mockBackgroundError = vi.mocked(handleBackgroundError);
+const _mockLilypadClient = vi.mocked(LilypadClient);
 
 describe('trace', () => {
   const mockSpan = {

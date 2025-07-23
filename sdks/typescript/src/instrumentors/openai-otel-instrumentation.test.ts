@@ -16,7 +16,7 @@ vi.mock('@opentelemetry/instrumentation', () => ({
       target[name] = wrapper(target[name]);
       return target[name];
     }
-    _unwrap(target: any, name: string) {
+    _unwrap(_target: any, _name: string) {
       // Mock unwrap
     }
   },
