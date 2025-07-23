@@ -9,7 +9,7 @@
 import { logger } from '../utils/logger';
 import type { ExtractedFunction, VersioningMetadata } from './typescript-extractor';
 
-class MetadataLoader {
+export class MetadataLoader {
   private metadata: VersioningMetadata | null = null;
   private functionsByHash: Map<string, ExtractedFunction> = new Map();
   private functionsByName: Map<string, ExtractedFunction> = new Map();

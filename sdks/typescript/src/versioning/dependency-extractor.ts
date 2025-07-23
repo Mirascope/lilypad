@@ -21,7 +21,7 @@ import * as crypto from 'crypto';
 export interface ExtractedDependency {
   name: string;
   code: string;
-  type: 'function' | 'class' | 'variable' | 'type' | 'interface';
+  type: 'function' | 'class' | 'variable' | 'type' | 'interface' | 'enum' | 'import';
   source?: string; // module it was imported from
 }
 
@@ -70,11 +70,11 @@ export class DependencyExtractor {
 
     // Queue for processing dependencies recursively
     const identifiersToProcess = [...identifiers];
-    
+
     while (identifiersToProcess.length > 0) {
       const identifier = identifiersToProcess.shift()!;
       const dep = this.resolveDependency(identifier, sourceFile);
-      
+
       if (dep && !processedDeps.has(dep.name)) {
         processedDeps.add(dep.name);
         dependencies.push(dep);
@@ -83,7 +83,7 @@ export class DependencyExtractor {
         if (dep.source) {
           imports.add(`import { ${dep.name} } from '${dep.source}';`);
         }
-        
+
         // For functions and variables, find their dependencies too
         if (dep.type === 'function' || dep.type === 'variable') {
           const depNode = this.findNodeByCode(sourceFile, dep.code);
@@ -221,7 +221,7 @@ export class DependencyExtractor {
    */
   private findNodeByCode(sourceFile: SourceFile, code: string): Node | null {
     const normalizedCode = code.replace(/\s+/g, ' ').trim();
-    
+
     // Try to find the node with matching text
     const result = sourceFile.forEachDescendant((node) => {
       const nodeText = node.getText().replace(/\s+/g, ' ').trim();
@@ -230,7 +230,7 @@ export class DependencyExtractor {
       }
       return undefined;
     });
-    
+
     return result || null;
   }
 
@@ -353,6 +353,14 @@ export class DependencyExtractor {
       };
     }
 
+    if (Node.isEnumDeclaration(declaration)) {
+      return {
+        name,
+        code: declaration.getText(),
+        type: 'enum',
+      };
+    }
+
     // Handle imports
     if (Node.isImportSpecifier(declaration) || Node.isImportClause(declaration)) {
       const importDecl = declaration.getFirstAncestorByKind(SyntaxKind.ImportDeclaration);
@@ -378,7 +386,7 @@ export class DependencyExtractor {
           return {
             name,
             code: '', // External modules don't have code
-            type: 'function', // Assume function for now
+            type: 'import',
             source: moduleSpecifier,
           };
         }
@@ -463,8 +471,10 @@ export class DependencyExtractor {
       parts.push('');
     }
 
-    // Add type/interface dependencies first
-    const typeDeps = dependencies.filter((d) => d.type === 'type' || d.type === 'interface');
+    // Add type/interface/enum dependencies first
+    const typeDeps = dependencies.filter(
+      (d) => d.type === 'type' || d.type === 'interface' || d.type === 'enum',
+    );
     if (typeDeps.length > 0) {
       parts.push('// Type dependencies');
       typeDeps.forEach((dep) => {

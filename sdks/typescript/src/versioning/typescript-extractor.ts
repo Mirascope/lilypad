@@ -76,7 +76,7 @@ export class TypeScriptExtractor {
           this.tsMorphProject.addSourceFileAtPath(fileName);
         } catch (err) {
           // Skip files that can't be added
-          console.warn(`Failed to add file ${fileName} to ts-morph project:`, err);
+          console.warn(`Failed to add file ${fileName} to ts-morph project:`, err as Error);
         }
       }
 
@@ -197,7 +197,7 @@ export class TypeScriptExtractor {
 
     // Get function name
     let functionName = 'anonymous';
-    
+
     // First, try to get name from options
     if (optionsNode && ts.isObjectLiteralExpression(optionsNode)) {
       for (const prop of optionsNode.properties) {
@@ -214,7 +214,7 @@ export class TypeScriptExtractor {
         }
       }
     }
-    
+
     // If no name in options, try to get from variable declaration
     if (functionName === 'anonymous') {
       // Traverse up to find variable declaration
@@ -226,7 +226,7 @@ export class TypeScriptExtractor {
         }
         parent = parent.parent;
       }
-      
+
       // Try function name if it's a named function expression
       if (functionName === 'anonymous' && ts.isFunctionExpression(fnNode) && fnNode.name) {
         functionName = fnNode.name.text;
