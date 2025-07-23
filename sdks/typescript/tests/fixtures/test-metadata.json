@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "buildTime": "2025-01-23T00:00:00Z",
+  "functions": {
+    "hash123": {
+      "name": "testFunction",
+      "hash": "hash123",
+      "sourceCode": "function testFunction() { return 42; }",
+      "selfContainedCode": "// Complete\nfunction testFunction() { return 42; }",
+      "signature": "function testFunction()",
+      "filePath": "src/test.ts",
+      "startLine": 1,
+      "endLine": 3,
+      "dependencies": {}
+    },
+    "hash456": {
+      "name": "anotherFunction",
+      "hash": "hash456",
+      "sourceCode": "const anotherFunction = () => \"hello\";",
+      "signature": "const anotherFunction",
+      "filePath": "src/another.ts",
+      "startLine": 5,
+      "endLine": 5,
+      "dependencies": {}
+    }
+  }
+}
