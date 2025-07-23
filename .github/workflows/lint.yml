@@ -15,6 +15,7 @@ on:
       - update-typescript-sdk
       - LILYPAD-205
       - LILYPAD-207
+      - LILYPAD-208
 
 jobs:
   codespell:
