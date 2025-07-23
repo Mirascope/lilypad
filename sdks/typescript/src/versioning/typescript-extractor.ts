@@ -1,9 +1,5 @@
 /**
- * TypeScript Code Extractor
- *
  * Extracts TypeScript source code at build time for versioned functions.
- * This allows users to see the original TypeScript code in the UI instead
- * of the compiled JavaScript.
  */
 
 import ts from 'typescript';
@@ -31,9 +27,6 @@ export interface VersioningMetadata {
   functions: Record<string, ExtractedFunction>;
 }
 
-/**
- * Extract versioned functions from TypeScript source files
- */
 export class TypeScriptExtractor {
   private program: ts.Program;
   private extractedFunctions: Map<string, ExtractedFunction> = new Map();
@@ -86,9 +79,6 @@ export class TypeScriptExtractor {
     }
   }
 
-  /**
-   * Extract all versioned functions from the project
-   */
   extract(): VersioningMetadata {
     const sourceFiles = this.program.getSourceFiles();
 
@@ -112,15 +102,11 @@ export class TypeScriptExtractor {
     };
   }
 
-  /**
-   * Visit AST nodes to find versioned functions
-   */
   private visitNode(node: ts.Node, sourceFile: ts.SourceFile): void {
     // Look for trace/wrapWithTrace calls with versioning
     if (ts.isCallExpression(node)) {
       const expression = node.expression;
 
-      // Check if it's a trace or wrapWithTrace call
       if (
         ts.isIdentifier(expression) &&
         (expression.text === 'trace' || expression.text === 'wrapWithTrace')
@@ -133,9 +119,6 @@ export class TypeScriptExtractor {
     ts.forEachChild(node, (child) => this.visitNode(child, sourceFile));
   }
 
-  /**
-   * Handle trace/wrapWithTrace function calls
-   */
   private handleTraceCall(node: ts.CallExpression, sourceFile: ts.SourceFile): void {
     const args = node.arguments;
     if (args.length < 1) return;
@@ -146,22 +129,16 @@ export class TypeScriptExtractor {
     // Second argument might be options
     const optionsArg = args[1];
 
-    // Check if versioning is enabled
     if (!this.hasAutomaticVersioning(optionsArg)) {
       return;
     }
 
-    // Extract the function source
     this.extractFunction(fnArg, node, sourceFile, optionsArg);
   }
 
-  /**
-   * Check if the options enable automatic versioning
-   */
   private hasAutomaticVersioning(optionsNode?: ts.Expression): boolean {
     if (!optionsNode) return false;
 
-    // Handle object literal { versioning: 'automatic' }
     if (ts.isObjectLiteralExpression(optionsNode)) {
       for (const prop of optionsNode.properties) {
         if (
@@ -180,9 +157,6 @@ export class TypeScriptExtractor {
     return false;
   }
 
-  /**
-   * Extract function source code
-   */
   private extractFunction(
     fnNode: ts.Expression,
     callNode: ts.CallExpression,
@@ -195,7 +169,6 @@ export class TypeScriptExtractor {
       return;
     }
 
-    // Get function name
     let functionName = 'anonymous';
 
     // First, try to get name from options
@@ -233,22 +206,17 @@ export class TypeScriptExtractor {
       }
     }
 
-    // Get the source code of the function
     const start = fnNode.getStart(sourceFile);
     const end = fnNode.getEnd();
     const sourceCode = sourceText.substring(start, end);
 
-    // Get line numbers
     const startLine = sourceFile.getLineAndCharacterOfPosition(start).line + 1;
     const endLine = sourceFile.getLineAndCharacterOfPosition(end).line + 1;
 
-    // Extract signature
     const signature = this.extractSignature(fnNode, sourceFile);
 
-    // Extract dependencies (imports used in the function)
     const dependencies = this.extractDependencies(sourceFile, fnNode);
 
-    // Extract self-contained code with ts-morph if available
     let selfContainedCode: string | undefined;
     console.log(`Attempting to extract self-contained code for ${functionName}...`);
     console.log(`DependencyExtractor available: ${!!this.dependencyExtractor}`);
@@ -259,7 +227,6 @@ export class TypeScriptExtractor {
         const tsMorphFile = this.tsMorphProject.getSourceFile(sourceFile.fileName);
         console.log(`TsMorph file found: ${!!tsMorphFile}, fileName: ${sourceFile.fileName}`);
         if (tsMorphFile) {
-          // Find the corresponding function node in ts-morph
           console.log(`Looking for function at positions: start=${start}, end=${end}`);
           console.log(`Function code preview: ${sourceCode.substring(0, 100)}...`);
           const tsMorphFunction = this.findCorrespondingFunctionByCode(tsMorphFile, sourceCode);
@@ -302,9 +269,6 @@ export class TypeScriptExtractor {
     this.extractedFunctions.set(hash, extractedFn);
   }
 
-  /**
-   * Extract function signature
-   */
   private extractSignature(fnNode: ts.Expression, sourceFile: ts.SourceFile): string {
     if (ts.isFunctionExpression(fnNode) || ts.isArrowFunction(fnNode)) {
       const params = fnNode.parameters.map((p) => p.getText(sourceFile)).join(', ');
@@ -321,16 +285,12 @@ export class TypeScriptExtractor {
     return 'function()';
   }
 
-  /**
-   * Extract dependencies (simplified - just module names for now)
-   */
   private extractDependencies(
     sourceFile: ts.SourceFile,
     _fnNode: ts.Expression,
   ): Record<string, string> {
     const dependencies: Record<string, string> = {};
 
-    // Find all import declarations in the file
     sourceFile.statements.forEach((statement) => {
       if (ts.isImportDeclaration(statement)) {
         const moduleSpecifier = statement.moduleSpecifier;
@@ -347,9 +307,6 @@ export class TypeScriptExtractor {
     return dependencies;
   }
 
-  /**
-   * Find corresponding function node in ts-morph AST by code content
-   */
   private findCorrespondingFunctionByCode(
     sourceFile: any, // ts-morph SourceFile
     targetCode: string,
@@ -369,7 +326,6 @@ export class TypeScriptExtractor {
     // Also look for arrow functions and function expressions
     const allFunctions: any[] = [...functionDeclarations];
 
-    // Find all variable declarations that might contain functions
     sourceFile.getDescendantsOfKind(SyntaxKind.VariableDeclaration).forEach((varDecl: any) => {
       const initializer = varDecl.getInitializer();
       if (
@@ -380,7 +336,6 @@ export class TypeScriptExtractor {
       }
     });
 
-    // Find arrow functions in trace calls
     sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression).forEach((callExpr: any) => {
       const expression = callExpr.getExpression();
       if (
@@ -403,7 +358,6 @@ export class TypeScriptExtractor {
     let bestMatch: any = null;
     let bestScore = 0;
 
-    // Check each function
     allFunctions.forEach((func, index) => {
       const nodeText = func.getText().replace(/\s+/g, ' ').trim();
 
@@ -423,7 +377,6 @@ export class TypeScriptExtractor {
         return;
       }
 
-      // Calculate similarity score for fuzzy matching
       const score = this.calculateSimilarityScore(normalizedTarget, nodeText);
       if (score > bestScore) {
         bestMatch = func;
@@ -440,9 +393,6 @@ export class TypeScriptExtractor {
     return foundFunction || (bestScore > 0.8 ? bestMatch : null);
   }
 
-  /**
-   * Calculate similarity score between two strings (0-1)
-   */
   private calculateSimilarityScore(str1: string, str2: string): number {
     // Normalize whitespace for comparison
     const norm1 = str1.replace(/\s+/g, ' ').trim();
@@ -452,15 +402,11 @@ export class TypeScriptExtractor {
     if (norm1 === norm2) return 1;
     if (norm1.length === 0 || norm2.length === 0) return 0;
 
-    // Calculate Levenshtein distance-based similarity
     const maxLen = Math.max(norm1.length, norm2.length);
     const distance = this.levenshteinDistance(norm1, norm2);
     return 1 - distance / maxLen;
   }
 
-  /**
-   * Calculate Levenshtein distance between two strings
-   */
   private levenshteinDistance(str1: string, str2: string): number {
     const matrix: number[][] = [];
 
@@ -490,9 +436,6 @@ export class TypeScriptExtractor {
     return matrix[str2.length][str1.length];
   }
 
-  /**
-   * Save metadata to file
-   */
   saveMetadata(outputPath: string): void {
     const metadata = this.extract();
     const outputDir = path.dirname(outputPath);
@@ -505,9 +448,6 @@ export class TypeScriptExtractor {
   }
 }
 
-/**
- * CLI interface for the extractor
- */
 if (require.main === module) {
   const args = process.argv.slice(2);
 

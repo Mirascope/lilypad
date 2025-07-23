@@ -1,18 +1,10 @@
 /**
- * Comprehensive example demonstrating all major features of Lilypad TypeScript SDK
- *
- * Features covered:
- * - Basic configuration
- * - trace() higher-order function / wrapWithTrace
- * - OpenAI integration
- * - Wrap mode with annotations
- * - Auto-instrumentation with --require flag
+ * Example demonstrating major features of Lilypad TypeScript SDK.
  */
 
 import lilypad, { trace, wrapWithTrace } from '@lilypad/typescript-sdk';
 import OpenAI from 'openai';
 
-// Example 1: Using trace higher-order function (works everywhere)
 class AIService {
   constructor(private client: OpenAI) {}
 
@@ -39,11 +31,9 @@ class AIService {
   );
 }
 
-// Example 2: Using wrapWithTrace (works everywhere, including tsx)
 class DataProcessor {
   processData = wrapWithTrace(
     async (data: string): Promise<string> => {
-      // Simulate processing
       await new Promise((resolve) => setTimeout(resolve, 100));
       return data.toUpperCase();
     },
@@ -77,7 +67,6 @@ async function main() {
 
   console.log('=== Lilypad TypeScript SDK - Comprehensive Example ===\n');
 
-  // Test data processor (no OpenAI dependency)
   console.log('1. Data Processing Example:');
   const processor = new DataProcessor();
 
@@ -92,7 +81,6 @@ async function main() {
     console.log('Analysis result:', analysisTrace);
   }
 
-  // Test OpenAI integration (if API key available)
   if (process.env.OPENAI_API_KEY) {
     console.log('\n2. OpenAI Integration Example:');
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

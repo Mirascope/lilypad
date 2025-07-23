@@ -1,8 +1,5 @@
 /**
- * TypeScript Dependency Extractor
- *
- * Similar to Python's Closure class, this extracts not just the function code
- * but also all its dependencies to create self-contained code blocks.
+ * Extracts function code with all dependencies to create self-contained code blocks.
  */
 
 import {
@@ -45,9 +42,6 @@ export class DependencyExtractor {
     });
   }
 
-  /**
-   * Extract a function and all its dependencies to create self-contained code
-   */
   extractFunctionWithDependencies(
     sourceFile: SourceFile,
     functionNode: FunctionDeclaration | FunctionExpression | ArrowFunction,
@@ -122,9 +116,6 @@ export class DependencyExtractor {
     };
   }
 
-  /**
-   * Get the name of a function node
-   */
   private getFunctionName(node: FunctionDeclaration | FunctionExpression | ArrowFunction): string {
     if (Node.isFunctionDeclaration(node) && node.getName()) {
       return node.getName() || 'anonymous';
@@ -139,9 +130,6 @@ export class DependencyExtractor {
     return 'anonymous';
   }
 
-  /**
-   * Find all identifiers used within a function
-   */
   private findIdentifiersInFunction(functionNode: Node): Identifier[] {
     const identifiers: Identifier[] = [];
     const localVariables = new Set<string>();
@@ -177,9 +165,6 @@ export class DependencyExtractor {
     return identifiers;
   }
 
-  /**
-   * Check if an identifier is a declaration (not a usage)
-   */
   private isDeclaration(identifier: Identifier): boolean {
     const parent = identifier.getParent();
 
@@ -216,9 +201,6 @@ export class DependencyExtractor {
     return false;
   }
 
-  /**
-   * Find a node in the source file by its code
-   */
   private findNodeByCode(sourceFile: SourceFile, code: string): Node | null {
     const normalizedCode = code.replace(/\s+/g, ' ').trim();
 
@@ -234,9 +216,6 @@ export class DependencyExtractor {
     return result || null;
   }
 
-  /**
-   * Check if an identifier is a built-in
-   */
   private isBuiltIn(name: string): boolean {
     const builtIns = new Set([
       'console',
@@ -278,9 +257,6 @@ export class DependencyExtractor {
     return builtIns.has(name);
   }
 
-  /**
-   * Resolve a dependency for an identifier
-   */
   private resolveDependency(
     identifier: Identifier,
     sourceFile: SourceFile,
@@ -396,9 +372,6 @@ export class DependencyExtractor {
     return null;
   }
 
-  /**
-   * Resolve an imported file path
-   */
   private resolveImportedFile(currentFile: SourceFile, importPath: string): SourceFile | null {
     const currentDir = path.dirname(currentFile.getFilePath());
     const possiblePaths = [
@@ -418,9 +391,6 @@ export class DependencyExtractor {
     return null;
   }
 
-  /**
-   * Find an exported declaration by name
-   */
   private findExportedDeclaration(sourceFile: SourceFile, name: string): Identifier | null {
     // Check named exports
     const exportedDeclarations = sourceFile.getExportedDeclarations();
@@ -452,9 +422,6 @@ export class DependencyExtractor {
     return null;
   }
 
-  /**
-   * Build self-contained code from function and dependencies
-   */
   private buildSelfContainedCode(
     _functionName: string,
     functionCode: string,

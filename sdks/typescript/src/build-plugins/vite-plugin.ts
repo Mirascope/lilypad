@@ -1,20 +1,5 @@
 /**
- * Vite Plugin for Lilypad TypeScript Extraction
- *
- * Automatically extracts TypeScript source code during Vite builds.
- *
- * Usage:
- * ```ts
- * import { lilypadPlugin } from '@lilypad/typescript-sdk/vite';
- *
- * export default {
- *   plugins: [
- *     lilypadPlugin({
- *       // options
- *     })
- *   ]
- * };
- * ```
+ * Vite plugin that extracts TypeScript source code during builds.
  */
 
 import type { Plugin } from 'vite';
@@ -23,16 +8,10 @@ import fs from 'fs';
 import { TypeScriptExtractor } from '../versioning/typescript-extractor';
 
 export interface LilypadVitePluginOptions {
-  /**
-   * Path to tsconfig.json
-   * @default './tsconfig.json'
-   */
+  /** @default './tsconfig.json' */
   tsConfig?: string;
 
-  /**
-   * Output filename for metadata
-   * @default 'lilypad-metadata.json'
-   */
+  /** @default 'lilypad-metadata.json' */
   output?: string;
 
   /**
