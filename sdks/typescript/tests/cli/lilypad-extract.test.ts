@@ -72,10 +72,11 @@ export const testFunction = trace(
       // In CI, we might need to use npx tsx instead of bun
       const isCI = process.env.CI === 'true';
       const command = isCI && process.env.RUNNER_OS !== 'macOS' ? 'npx' : 'bun';
-      const commandArgs = isCI && process.env.RUNNER_OS !== 'macOS' 
-        ? ['tsx', cliPath, ...args] 
-        : ['run', cliPath, ...args];
-      
+      const commandArgs =
+        isCI && process.env.RUNNER_OS !== 'macOS'
+          ? ['tsx', cliPath, ...args]
+          : ['run', cliPath, ...args];
+
       const child = spawn(command, commandArgs, {
         cwd: testDir,
         env: { ...process.env, NODE_ENV: 'test' },
@@ -293,10 +294,9 @@ export const myFunction = trace(
       // Start watch mode in background
       const isCI = process.env.CI === 'true';
       const command = isCI && process.env.RUNNER_OS !== 'macOS' ? 'npx' : 'bun';
-      const commandArgs = isCI && process.env.RUNNER_OS !== 'macOS' 
-        ? ['tsx', cliPath, '-w'] 
-        : ['run', cliPath, '-w'];
-      
+      const commandArgs =
+        isCI && process.env.RUNNER_OS !== 'macOS' ? ['tsx', cliPath, '-w'] : ['run', cliPath, '-w'];
+
       const child = spawn(command, commandArgs, {
         cwd: testDir,
         env: { ...process.env, NODE_ENV: 'test' },
