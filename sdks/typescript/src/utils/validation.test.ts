@@ -109,11 +109,8 @@ describe('validation utilities', () => {
 
     it('should redact passwords', () => {
       const messages = [
-        // gitguardian:ignore
         'Login failed password=mysecret',
-        // gitguardian:ignore
         'password: "p@ssw0rd"',
-        // gitguardian:ignore
         'PASSWORD="admin123"',
       ];
 
@@ -127,11 +124,8 @@ describe('validation utilities', () => {
 
     it('should redact tokens', () => {
       const messages = [
-        // gitguardian:ignore
         'Invalid token=abc123def',
-        // gitguardian:ignore
         'Authorization failed: token: "xyz789"',
-        // gitguardian:ignore
         'bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
       ];
 
