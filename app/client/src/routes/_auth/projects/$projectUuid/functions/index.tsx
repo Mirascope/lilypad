@@ -175,7 +175,7 @@ const FunctionCard = ({
     </Card>
   );
 };
-const FunctionsList = () => {
+export const FunctionsList = () => {
   return (
     <div className="flex flex-col gap-10 p-4">
       <Typography variant="h3">Functions</Typography>

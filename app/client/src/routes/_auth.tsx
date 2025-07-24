@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_auth")({
   ),
 });
 
-function AuthLayout() {
+export function AuthLayout() {
   const posthog = usePostHog();
   const { data: user } = useSuspenseQuery(userQueryOptions());
   const { data: licenseInfo } = useSuspenseQuery(licenseQueryOptions());

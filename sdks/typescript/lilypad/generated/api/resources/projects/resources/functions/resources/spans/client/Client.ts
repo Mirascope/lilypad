@@ -147,14 +147,12 @@ export class Spans {
      * @throws {@link Lilypad.UnprocessableEntityError}
      *
      * @example
-     *     await client.projects.functions.spans.listPaginated("project_uuid", "function_uuid", {
-     *         environment_uuid: "environment_uuid"
-     *     })
+     *     await client.projects.functions.spans.listPaginated("project_uuid", "function_uuid")
      */
     public listPaginated(
         projectUuid: string,
         functionUuid: string,
-        request: Lilypad.projects.functions.SpansListPaginatedRequest,
+        request: Lilypad.projects.functions.SpansListPaginatedRequest = {},
         requestOptions?: Spans.RequestOptions,
     ): core.HttpResponsePromise<Lilypad.PaginatedSpanPublic> {
         return core.HttpResponsePromise.fromPromise(
@@ -165,12 +163,15 @@ export class Spans {
     private async __listPaginated(
         projectUuid: string,
         functionUuid: string,
-        request: Lilypad.projects.functions.SpansListPaginatedRequest,
+        request: Lilypad.projects.functions.SpansListPaginatedRequest = {},
         requestOptions?: Spans.RequestOptions,
     ): Promise<core.WithRawResponse<Lilypad.PaginatedSpanPublic>> {
         const { environment_uuid: environmentUuid, limit, offset, order } = request;
         const _queryParams: Record<string, string | string[] | object | object[] | null> = {};
-        _queryParams["environment_uuid"] = environmentUuid;
+        if (environmentUuid != null) {
+            _queryParams["environment_uuid"] = environmentUuid;
+        }
+
         if (limit != null) {
             _queryParams["limit"] = limit.toString();
         }

@@ -28,7 +28,7 @@ export const Route = createFileRoute(
   ),
 });
 
-const FunctionWorkbench = () => {
+export const FunctionWorkbench = () => {
   const { projectUuid, functionName, functionUuid, tab } = useParams({
     from: Route.id,
   });
