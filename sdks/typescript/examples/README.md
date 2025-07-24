@@ -2,6 +2,14 @@
 
 This directory contains examples demonstrating how to use the Lilypad TypeScript SDK.
 
+## Important: TypeScript Decorators
+
+**TypeScript decorators (`@trace`) only work on class methods, not standalone functions.**
+
+- ✅ Use `@trace()` on class methods
+- ❌ Cannot use `@trace()` on standalone functions
+- ✅ Use `wrapWithTrace()` for standalone functions
+
 ## Prerequisites
 
 1. Set environment variables:
@@ -9,10 +17,7 @@ This directory contains examples demonstrating how to use the Lilypad TypeScript
    ```bash
    export LILYPAD_API_KEY="your-lilypad-api-key"
    export LILYPAD_PROJECT_ID="your-project-id"
-   export OPENAI_API_KEY="your-openai-api-key"  # For OpenAI examples
-
-   # Optional: Use staging environment
-   export LILYPAD_BASE_URL="https://lilypad-staging.up.railway.app/v0"
+   export OPENAI_API_KEY="your-openai-api-key"  # Optional for OpenAI examples
    ```
 
 2. Build the SDK:
@@ -21,101 +26,128 @@ This directory contains examples demonstrating how to use the Lilypad TypeScript
    bun run build
    ```
 
-## Available Examples
+## Core Examples
 
 ### 1. Basic Usage (`basic.ts`)
 
-Basic example showing manual span creation and metadata tracking.
+Simple example showing basic SDK configuration and OpenAI integration.
 
 ```bash
+# Run with Bun
+bun run examples/basic.ts
+
+# Run with Node.js/tsx
 npx tsx examples/basic.ts
 ```
 
-### 2. Span with Auto-instrumented LLM (`span-with-auto-llm.ts`)
+### 2. Trace Decorator Examples (`trace-decorator-examples.ts`, `trace-decorator-class-methods.ts`)
 
-Demonstrates how to combine manual spans with auto-instrumented OpenAI calls.
+Comprehensive examples showing how to use `@trace` decorator on class methods:
+
+- Basic class methods with `@trace()`
+- Async methods with error handling
+- Wrap mode for post-processing
+- Versioning with decorators
+- Custom tags and attributes
 
 ```bash
-# REQUIRED: Use --require flag for auto-instrumentation
-npx tsx --require ./dist/register.js examples/span-with-auto-llm.ts
-
-# Or with Bun (use --preload instead of --require)
-bun --preload ./dist/register.js examples/span-with-auto-llm.ts
+# Run decorator examples
+bun run examples/trace-decorator-examples.ts
+bun run examples/trace-decorator-class-methods.ts
 ```
 
-**Important**: The `--require` flag is necessary for OpenAI auto-instrumentation to work. Without it, OpenAI calls won't be traced.
+### 3. Comprehensive Example (`comprehensive.ts`)
 
-### 3. Span Usage Patterns (`span-usage.ts`)
+Complete example demonstrating all major features:
 
-Shows various ways to use the span API including sync/async patterns.
+- trace() function for method instrumentation
+- OpenAI integration
+- Wrap mode with annotations
+- Both decorator and functional approaches
 
 ```bash
-npx tsx examples/span-usage.ts
+# With Bun (native decorator support)
+bun run examples/comprehensive.ts
+
+# With tsx (using custom tsconfig)
+npx tsx --tsconfig tsconfig.tsx.json examples/comprehensive.ts
+
+# With auto-instrumentation
+npx tsx --require ./dist/register.js examples/comprehensive.ts
 ```
 
-### 4. Span with Environment Variables (`span-with-env.ts`)
+### 3. Streaming (`streaming.ts`)
 
-Demonstrates using environment-specific span attributes.
-
-```bash
-npx tsx examples/span-with-env.ts
-```
-
-### 5. Streaming (`streaming.ts`)
-
-Shows how to handle streaming responses with proper span lifecycle management.
+Shows how to handle streaming responses from OpenAI with proper span lifecycle management.
 
 ```bash
-# With manual instrumentation
-npx tsx examples/streaming.ts
+# Basic streaming
+bun run examples/streaming.ts
 
 # With auto-instrumentation
 npx tsx --require ./dist/register.js examples/streaming.ts
 ```
 
-## Important Notes
+### 4. Trace Wrap Mode (`trace-wrap-mode.ts`)
 
-### Auto-instrumentation Requires --require Flag
+Advanced tracing features using wrap mode:
 
-The `autoLlm: true` configuration option has significant limitations and only works with strict import ordering. For reliable auto-instrumentation, you must use:
+- Post-execution annotations
+- Tagging spans
+- Assigning traces to team members
 
 ```bash
-npx tsx --require ./dist/register.js your-script.ts
+bun run examples/trace-wrap-mode.ts
 ```
 
-This ensures:
+## Running Examples
 
-- ✅ OpenAI is instrumented before your code runs
-- ✅ Parent-child span relationships work correctly
-- ✅ No import order issues
-- ✅ Works reliably in all scenarios
+### Option 1: Using Bun (Recommended)
 
-Note: While `autoLlm: true` can work with careful dynamic import ordering, it's not recommended due to reliability issues. See [AUTO_LLM_CONSTRAINTS.md](../AUTO_LLM_CONSTRAINTS.md) for technical details.
+Bun has native support for TypeScript and decorators:
 
-### Parent-Child Span Relationships
-
-When using `--require ./dist/register.js`, manual spans created with `span()` will correctly appear as parents of auto-instrumented OpenAI calls:
-
-```typescript
-await span("parent-operation", async () => {
-  // This OpenAI call will be a child of "parent-operation"
-  const response = await openai.chat.completions.create({...});
-});
+```bash
+bun run examples/[example-name].ts
 ```
+
+### Option 2: Using tsx
+
+For running with tsx:
+
+```bash
+npx tsx examples/[example-name].ts
+```
+
+### Option 3: With Auto-instrumentation
+
+To automatically trace OpenAI calls without manual wrapping:
+
+```bash
+npx tsx --require ./dist/register.js examples/[example-name].ts
+```
+
+## Key Features Demonstrated
+
+1. **Basic Tracing**: Manual span creation and metadata tracking
+2. **Function Tracing**: Using trace() function for method instrumentation
+3. **Wrap Mode**: Getting trace objects for post-execution operations
+4. **Auto-instrumentation**: Automatic OpenAI call tracing with --require
+5. **Streaming**: Handling streaming responses with proper cleanup
+6. **Annotations**: Adding labels and metadata to traces after execution
 
 ## Troubleshooting
 
-1. **OpenAI calls not being traced**: Make sure you're using `--require ./dist/register.js`
-2. **Module not found errors**: Run `bun run build` to rebuild the SDK
-3. **Invalid project ID**: Ensure `LILYPAD_PROJECT_ID` is a valid UUID
-4. **Traces not appearing**: Wait 5-10 seconds for BatchSpanProcessor to export
+1. **TypeScript errors**: Ensure you've built the SDK with `bun run build` first
+2. **OpenAI not traced**: Use `--require ./dist/register.js` for auto-instrumentation
+3. **Module not found**: Run `bun run build` first
+4. **No traces appearing**: Check environment variables and wait for batch export
 
 ## Viewing Traces
 
-After running an example, you'll see output like:
+After running an example, look for output like:
 
 ```
-[Lilypad] View trace: https://staging.lilypad.so/projects/xxx/traces/yyy
+[Lilypad] View trace: https://lilypad.mirascope.com/projects/xxx/traces/yyy
 ```
 
 Click the link to view your trace in the Lilypad dashboard.

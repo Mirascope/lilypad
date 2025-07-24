@@ -1,0 +1,25 @@
+{
+  "name": "typescript-extraction-demo",
+  "version": "1.0.0",
+  "description": "Demo project showing TypeScript code extraction with Lilypad SDK",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "npm run extract && tsc",
+    "extract": "node extract.js",
+    "extract:watch": "tsx ../../src/cli/lilypad-extract.ts --watch",
+    "start": "node dist/index.js",
+    "start:with-instrumentation": "tsx --require @lilypad/typescript-sdk/dist/register.js dist/index.js",
+    "test": "npm run extract && npm run test:metadata && npm run dev",
+    "test:metadata": "node -e \"const fs=require('fs'); const m=JSON.parse(fs.readFileSync('./lilypad-metadata.json')); console.log('✅ Found', Object.keys(m.functions).length, 'versioned functions');\"",
+    "clean": "rm -rf dist lilypad-metadata.json"
+  },
+  "dependencies": {
+    "@lilypad/typescript-sdk": "file:../..",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0"
+  }
+}

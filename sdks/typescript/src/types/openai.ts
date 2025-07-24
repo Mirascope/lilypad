@@ -59,6 +59,21 @@ export interface ChatCompletionChunk {
   };
 }
 
+// Type for chat.completions.create function
+export type ChatCompletionsCreateFunction = (
+  params: ChatCompletionParams,
+  options?: unknown,
+) => Promise<ChatCompletionResponse | AsyncIterable<ChatCompletionChunk>>;
+
+// Interface for OpenAI-like instances
+export interface OpenAILike {
+  chat?: {
+    completions?: {
+      create?: ChatCompletionsCreateFunction;
+    };
+  };
+}
+
 export type OpenAIModule =
   | OpenAIClass
   | {
@@ -67,14 +82,5 @@ export type OpenAIModule =
     };
 
 export interface OpenAIClass {
-  prototype: {
-    chat?: {
-      completions?: {
-        create: (
-          params: ChatCompletionParams,
-          options?: unknown,
-        ) => Promise<ChatCompletionResponse | AsyncIterable<ChatCompletionChunk>>;
-      };
-    };
-  };
+  prototype: OpenAILike;
 }

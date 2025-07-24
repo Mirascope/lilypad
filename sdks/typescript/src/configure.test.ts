@@ -1,30 +1,56 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+
+// Mock modules before imports
+vi.mock('./utils/settings', () => ({
+  setSettings: vi.fn(),
+  isConfigured: vi.fn(),
+  getSettings: vi.fn(),
+}));
+
+vi.mock('./utils/logger', () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    setLevel: vi.fn(),
+  },
+}));
+
+vi.mock('@opentelemetry/sdk-trace-node', () => ({
+  NodeTracerProvider: vi.fn(),
+}));
+
+vi.mock('./exporters/json-exporter', () => ({
+  JSONSpanExporter: vi.fn().mockImplementation(() => ({})),
+}));
+
+vi.mock('@opentelemetry/sdk-trace-base', () => ({
+  BatchSpanProcessor: vi.fn().mockImplementation(() => ({})),
+}));
+
+vi.mock('../lilypad/generated', () => ({
+  LilypadClient: vi.fn().mockImplementation(() => ({})),
+}));
+
+// Import after mocking
 import { configure, getTracerProvider, getTracer, getProvider } from './configure';
 import * as settings from './utils/settings';
 import { logger } from './utils/logger';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { trace } from '@opentelemetry/api';
 
-vi.mock('./utils/settings');
-vi.mock('./utils/logger');
-vi.mock('@opentelemetry/sdk-trace-node');
-vi.mock('./exporters/json-exporter');
-vi.mock('@opentelemetry/sdk-trace-base', () => ({
-  BatchSpanProcessor: vi.fn().mockImplementation(() => ({})),
-}));
-vi.mock('../lilypad/generated', () => ({
-  LilypadClient: vi.fn().mockImplementation(() => ({})),
-}));
+// Get mocked functions
+const mockSetSettings = vi.mocked(settings.setSettings);
+const mockIsConfigured = vi.mocked(settings.isConfigured);
+const mockLogger = vi.mocked(logger);
+const mockNodeTracerProvider = vi.mocked(NodeTracerProvider);
 
 describe('configure', () => {
-  const mockSetSettings = vi.mocked(settings.setSettings);
-  const mockIsConfigured = vi.mocked(settings.isConfigured);
-  const mockLogger = vi.mocked(logger);
-
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsConfigured.mockReturnValue(false);
-    vi.mocked(NodeTracerProvider).mockImplementation(
+    mockNodeTracerProvider.mockImplementation(
       () =>
         ({
           register: vi.fn(),
@@ -108,8 +134,8 @@ describe('configure', () => {
         expect.objectContaining({
           apiKey: 'test-api-key',
           projectId: '123e4567-e89b-12d3-a456-426614174000',
-          baseUrl: 'https://api.app.lilypad.so/v0',
-          remoteClientUrl: 'https://app.lilypad.so',
+          baseUrl: 'https://lilypad-api.mirascope.com/v0',
+          remoteClientUrl: 'https://lilypad.mirascope.com',
           logLevel: 'info',
           serviceName: 'lilypad-node-app',
           autoLlm: false,

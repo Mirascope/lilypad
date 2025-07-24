@@ -3,12 +3,67 @@
 
 version: 2
 
-# Specific patterns to ignore
-ignored-matches:
-  # Ignore the specific mock database URL used in test_security.py
-  - name: "Mock PostgreSQL credentials for testing"
-    match: "postgresql://user:pass@host"
+# Set to true if the desired exit code for the CLI is always 0
+exit_zero: false
+
+# Verbosity
+verbose: false
+
+# GitGuardian instance URL
+instance: https://dashboard.gitguardian.com
+
+# Maximum commits to scan in a hook
+max_commits_for_hook: 50
+
+# Secret scanning configuration
+secret:
+  # Exclude test files from scanning
+  ignored_paths:
+    - '**/test/**'
+    - '**/tests/**'
+    - '**/*.test.ts'
+    - '**/*.test.js'
+    - '**/*.spec.ts'
+    - '**/*.spec.js'
+    - '**/test_*.py'
+    - '**/*_test.py'
+  
+  # Ignore specific secret matches
+  # These are mock secrets used in test files
+  ignored_matches:
+    # Mock PostgreSQL credentials in test_security.py
+    - name: "Mock PostgreSQL URL for testing"
+      match: "postgresql://user:pass@host"
     
-  # Ignore by specific GitGuardian secret ID
-  - name: "test_security.py mock credentials"
-    match: 17785514
+    # Mock passwords used in validation.test.ts
+    - name: "Test password - mysecret"
+      match: "password=mysecret"
+    
+    - name: "Test password - p@ssw0rd"
+      match: 'password: "p@ssw0rd"'
+    
+    - name: "Test password - admin123"
+      match: 'PASSWORD="admin123"'
+    
+    # Mock tokens used in validation.test.ts
+    - name: "Test token - abc123def"
+      match: "token=abc123def"
+    
+    - name: "Test token - xyz789"
+      match: 'token: "xyz789"'
+    
+    - name: "Test bearer token"
+      match: "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+    
+    # Mock AWS credentials
+    - name: "Test AWS access key"
+      match: "aws_access_key_id=AKIAIOSFODNN7EXAMPLE"
+    
+    - name: "Test AWS secret key"
+      match: 'aws-secret-access-key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"'
+  
+  # Show secrets in output (for debugging, set to false in production)
+  show_secrets: false
+  
+  # Ignore secrets already known to GitGuardian dashboard
+  ignore_known_secrets: true

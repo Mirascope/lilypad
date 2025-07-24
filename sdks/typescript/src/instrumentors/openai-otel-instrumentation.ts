@@ -457,9 +457,11 @@ export class OpenAIInstrumentation extends InstrumentationBase {
     const onFinalize = () => {
       // Record the completed stream
       if (content) {
-        span.addEvent('gen_ai.assistant.message', {
+        span.addEvent('gen_ai.choice', {
           'gen_ai.system': 'openai',
-          content: content,
+          index: 0,
+          message: JSON.stringify({ role: 'assistant', content: content }),
+          finish_reason: finishReason || 'stop',
         });
       }
 
@@ -488,11 +490,14 @@ export class OpenAIInstrumentation extends InstrumentationBase {
 
     // Record response attributes
     if (response.choices && response.choices.length > 0) {
-      response.choices.forEach((choice: any) => {
+      response.choices.forEach((choice: any, index: number) => {
         if (choice.message) {
-          span.addEvent('gen_ai.assistant.message', {
+          // Match Python's event format
+          span.addEvent('gen_ai.choice', {
             'gen_ai.system': 'openai',
-            content: choice.message.content || '',
+            index: index,
+            message: JSON.stringify(choice.message),
+            finish_reason: choice.finish_reason || '',
           });
         }
       });

@@ -1,5 +1,5 @@
 # All targets
-.PHONY: help setup build dev test test-coverage test-watch lint typecheck format fix check clean update-deps
+.PHONY: help setup build fix-generated-exports dev test test-coverage test-watch lint typecheck format fix check clean update-deps
 
 help:
 	@echo "Available targets:"
@@ -20,8 +20,23 @@ help:
 setup:
 	bun install
 
-build:
+build: fix-generated-exports
 	bun run build
+
+fix-generated-exports:
+	@echo "Fixing generated TypeScript exports..."
+	@# Fix BinaryResponse export to be a type export
+	@if grep -q "export { BinaryResponse }" lilypad/generated/core/fetcher/index.ts 2>/dev/null; then \
+		if [ "$$(uname)" = "Darwin" ]; then \
+			sed -i '.bak' 's/export { BinaryResponse }/export type { BinaryResponse }/g' lilypad/generated/core/fetcher/index.ts && rm lilypad/generated/core/fetcher/index.ts.bak; \
+		else \
+			sed -i 's/export { BinaryResponse }/export type { BinaryResponse }/g' lilypad/generated/core/fetcher/index.ts; \
+		fi \
+	fi
+	@# Add getBinaryResponse export if missing
+	@if ! grep -q "export { getBinaryResponse }" lilypad/generated/core/fetcher/index.ts 2>/dev/null; then \
+		echo 'export { getBinaryResponse } from "./BinaryResponse.js";' >> lilypad/generated/core/fetcher/index.ts; \
+	fi
 
 dev:
 	bun run dev

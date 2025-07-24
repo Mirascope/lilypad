@@ -7,11 +7,15 @@ on:
       - main
       - update-typescript-sdk
       - LILYPAD-205
+      - LILYPAD-207
+      - LILYPAD-208
   pull_request:
     branches:
       - main
       - update-typescript-sdk
       - LILYPAD-205
+      - LILYPAD-207
+      - LILYPAD-208
 
 jobs:
   tests:
@@ -140,4 +144,4 @@ jobs:
           verbose: true
 
       - name: Build TypeScript SDK
-        run: bun run build
+        run: cd ../.. && make -C sdks/typescript build

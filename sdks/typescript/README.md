@@ -14,75 +14,134 @@ bun add @lilypad/typescript-sdk
 
 ## Quick Start
 
-### Option 1: Manual Tracing
+### Complete Example: Auto-instrumentation with Custom Tracing
 
 ```typescript
-import lilypad from '@lilypad/typescript-sdk';
+import lilypad, { trace } from '@lilypad/typescript-sdk';
 import OpenAI from 'openai';
 
-// Configure the SDK
+// Configure with auto_llm enabled for automatic OpenAI instrumentation
 await lilypad.configure({
-  apiKey: 'your-api-key',
-  projectId: 'your-project-id',
-});
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Manually trace OpenAI calls
-const response = await lilypad.traceOpenAICompletion(
-  {
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: 'Hello, how are you?' }],
-  },
-  () =>
-    openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: 'Hello, how are you?' }],
-    }),
-);
-```
-
-### Option 2: Automatic Instrumentation with auto_llm
-
-Enable automatic instrumentation in your code without requiring a command-line flag:
-
-```typescript
-import lilypad from '@lilypad/typescript-sdk';
-import OpenAI from 'openai';
-
-// Configure with auto_llm enabled
-await lilypad.configure({
-  apiKey: 'your-api-key',
-  projectId: 'your-project-id',
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
   auto_llm: true, // Enable automatic LLM instrumentation
 });
 
-const openai = new OpenAI({
+const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// OpenAI calls are automatically traced!
-const response = await openai.chat.completions.create({
-  model: 'gpt-4o-mini',
-  messages: [{ role: 'user', content: 'Hello, how are you?' }],
+class QuestionService {
+  answerQuestion = trace(async (question: string): Promise<string | null> => {
+    const convertedQuestion = question.toLowerCase().trim();
+
+    // This OpenAI call is automatically traced thanks to auto_llm
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: `Answer this question: ${convertedQuestion}` }],
+    });
+
+    return response.choices[0].message.content;
+  });
+}
+
+// Usage
+const service = new QuestionService();
+const response = await service.answerQuestion('What is the capital of France?');
+console.log(response);
+```
+
+This example demonstrates:
+
+- **Auto-instrumentation**: OpenAI calls are automatically traced with `auto_llm: true`
+- **Custom tracing**: Your own functions can be traced with the `trace()` function
+- **Complete visibility**: Both your business logic and LLM calls are captured in the same trace
+
+#### Running with Node.js/tsx (Recommended for Auto-instrumentation)
+
+For the best auto-instrumentation experience, use tsx with the --require flag:
+
+```bash
+# Install tsx globally or locally
+npm install -g tsx
+# or
+npm install --save-dev tsx
+
+# Set up environment variables
+export LILYPAD_API_KEY=your-api-key
+export LILYPAD_PROJECT_ID=your-project-id
+export OPENAI_API_KEY=your-openai-key
+
+# Run with automatic OpenAI instrumentation
+npx tsx --require @lilypad/typescript-sdk/dist/register.js examples/auto-instrumentation-with-trace-node.ts
+
+# Or use the npm script
+npm run example:auto-simple:node
+```
+
+**Note**: The SDK uses the `trace()` function for tracing. You can also use the alias `wrapWithTrace` for backward compatibility.
+
+This approach ensures OpenAI calls are automatically instrumented without manual wrapping.
+
+### Option 1: Manual Tracing (if auto_llm is not available)
+
+For environments where auto-instrumentation doesn't work:
+
+```typescript
+import lilypad, { wrapOpenAI } from '@lilypad/typescript-sdk';
+import OpenAI from 'openai';
+
+await lilypad.configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+});
+
+// Manually wrap OpenAI for environments like Bun or Deno
+const WrappedOpenAI = wrapOpenAI(OpenAI);
+const client = new WrappedOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 ```
 
-### Option 3: Automatic Instrumentation with --require flag (CommonJS)
+### Option 2: Automatic Instrumentation with --require flag (Recommended)
 
-```bash
-# Run with tsx
-npx tsx --require @lilypad/typescript-sdk/dist/register.cjs your-script.ts
+When using the `--require` flag, OpenAI is automatically instrumented without any code changes:
 
-# Or with node
-node --require @lilypad/typescript-sdk/dist/register.cjs your-script.js
+```typescript
+import lilypad from '@lilypad/typescript-sdk';
+import OpenAI from 'openai';
+
+// Configure Lilypad (no auto_llm needed)
+await lilypad.configure({
+  apiKey: process.env.LILYPAD_API_KEY!,
+  projectId: process.env.LILYPAD_PROJECT_ID!,
+});
+
+// Create OpenAI client normally - NO manual wrapping needed
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// All OpenAI calls are automatically traced!
+const response = await client.chat.completions.create({
+  model: 'gpt-4o-mini',
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
 ```
 
-This method automatically instruments all OpenAI calls when the module is loaded, without requiring `auto_llm: true` in your configuration.
+Run with:
 
-### Option 4: Automatic Instrumentation with ESM Loader
+```bash
+# With tsx (TypeScript)
+npx tsx --require @lilypad/typescript-sdk/dist/register.js your-script.ts
+
+# With node (JavaScript)
+node --require @lilypad/typescript-sdk/dist/register.js your-script.js
+```
+
+This method automatically instruments all OpenAI calls when the module is loaded.
+
+### Option 3: Automatic Instrumentation with ESM Loader
 
 For ESM modules, use the loader hooks:
 
@@ -207,6 +266,201 @@ Both standard and streaming responses are fully traced with:
 - Timing information
 - Error tracking
 
+## Trace Function
+
+The Lilypad SDK provides a `trace` function for instrumenting your functions with distributed tracing.
+
+### Basic Usage
+
+```typescript
+import { trace } from '@lilypad/typescript-sdk';
+
+class DataService {
+  // Trace function always returns a Promise
+  processData = trace((input: string) => input.toUpperCase());
+
+  fetchData = trace(
+    async (id: string): Promise<any> => {
+      const response = await fetch(`/api/data/${id}`);
+      return response.json();
+    },
+    { name: 'custom-span-name' },
+  );
+}
+
+// Usage
+const service = new DataService();
+// The trace function returns a Promise
+const result = await service.processData('hello'); // Returns: "HELLO"
+```
+
+**Important**: The `trace` function always returns a Promise to support tracing. This is consistent with OpenTelemetry's async nature.
+
+### Using with TypeScript/tsx
+
+The trace function works seamlessly with all TypeScript environments:
+
+```typescript
+import { trace } from '@lilypad/typescript-sdk';
+
+class DataService {
+  processData = trace(
+    async (input: string): Promise<string> => {
+      return input.toUpperCase();
+    },
+    { name: 'processData' },
+  );
+
+  fetchData = trace(
+    async (id: string): Promise<any> => {
+      const response = await fetch(`/api/data/${id}`);
+      return response.json();
+    },
+    { name: 'fetchData', tags: ['api', 'fetch'] },
+  );
+}
+```
+
+This approach works with all JavaScript runtimes including Node.js, Bun, tsx, and Deno.
+
+### Wrap Mode
+
+The `mode: 'wrap'` option returns a `Trace` object instead of the raw result, enabling post-execution operations:
+
+```typescript
+import { trace, Trace, AsyncTrace } from '@lilypad/typescript-sdk';
+
+class AnalyticsService {
+  analyzeData = trace(
+    (data: any): { score: number; category: string } => {
+      // Your analysis logic
+      return { score: 0.85, category: 'positive' };
+    },
+    { mode: 'wrap' },
+  );
+}
+
+// Usage
+const service = new AnalyticsService();
+const result = service.analyzeData(someData);
+
+// result is a Trace<T> object, not the raw result
+console.log(result.response); // Access the actual result: { score: 0.85, category: 'positive' }
+
+// Add tags
+result.tag('production', 'analytics');
+
+// Assign to team members
+result.assign('reviewer@example.com', 'qa@example.com');
+```
+
+### Async Functions with Wrap Mode
+
+For async functions, wrap mode returns an `AsyncTrace` object:
+
+```typescript
+class MLService {
+  predict = trace(
+    async (input: any): Promise<{ prediction: string; confidence: number }> => {
+      // Async ML inference
+      return { prediction: 'category_a', confidence: 0.92 };
+    },
+    { mode: 'wrap', tags: ['ml', 'inference'] },
+  );
+}
+
+const mlService = new MLService();
+const traceResult = await mlService.predict(inputData);
+
+// Access the response
+const prediction = traceResult.response;
+
+// Add tags based on confidence
+await traceResult.tag(
+  prediction.confidence > 0.9 ? 'high-confidence' : 'low-confidence',
+  'ml-prediction',
+);
+```
+
+### Trace Options
+
+```typescript
+interface TraceOptions {
+  name?: string; // Custom span name (default: class.method)
+  mode?: 'wrap' | null; // Return mode: 'wrap' returns Trace object, null returns raw result
+  tags?: string[]; // Tags to attach to the span
+  attributes?: Record<string, any>; // Additional span attributes
+}
+```
+
+### Annotation Structure
+
+```typescript
+interface Annotation {
+  data?: Record<string, any> | null; // Custom data to attach
+  label?: 'pass' | 'fail' | null; // Evaluation label
+  reasoning?: string | null; // Explanation for the evaluation
+  type?: 'manual' | 'automatic' | null; // How the annotation was created
+}
+```
+
+## Function Versioning
+
+The TypeScript SDK supports automatic function versioning, allowing you to track code changes and manage different versions of your functions.
+
+### Basic Usage
+
+```typescript
+class DataService {
+  @trace({ versioning: 'automatic' })
+  async processData(input: string): Promise<string> {
+    // Function implementation
+    return input.toUpperCase();
+  }
+}
+
+const service = new DataService();
+
+// Execute normally
+const result = await service.processData('hello');
+
+// Access versioning methods
+const versions = await service.processData.versions(); // List all versions
+const v1 = service.processData.version(1); // Get specific version
+await service.processData.deploy(1); // Deploy a version
+const remote = await service.processData.remote('input'); // Execute deployed version
+```
+
+### Versioning Methods
+
+Every versioned function gets these methods:
+
+- `fn.version(n)` - Execute a specific version
+- `fn.versions()` - List all available versions
+- `fn.deploy(n)` - Deploy a specific version
+- `fn.remote(...args)` - Execute the deployed version
+
+### Important Notes
+
+- **Decorators only work on class methods** in TypeScript
+- For standalone functions, use `wrapWithTrace()` with versioning option
+- Function code is automatically captured and hashed for versioning
+- Versions are tracked in the Lilypad backend
+
+### Example with Wrap Mode
+
+```typescript
+@trace({ versioning: 'automatic', mode: 'wrap' })
+async analyzeData(data: any): Promise<{ score: number }> {
+  return { score: Math.random() };
+}
+
+// Returns AsyncTrace with versioning methods
+const result = await service.analyzeData(data);
+console.log(result.response); // { score: 0.85 }
+await result.tag('analyzed');
+```
+
 ## Shutdown
 
 The SDK automatically handles graceful shutdown on process termination (SIGTERM, SIGINT, and normal exit) to ensure all spans are flushed. You can also manually trigger shutdown:
@@ -267,14 +521,28 @@ bun run typecheck
 ### Running Examples
 
 ```bash
-# Manual tracing example
+# Basic example
 bun run example:basic
 
-# Automatic instrumentation example
-bun run example:auto
+# Auto-instrumentation with custom tracing (Bun - manual wrapping)
+bun run example:auto-with-trace
+
+# Auto-instrumentation with custom tracing (Node.js/tsx - automatic)
+npm run example:auto-require:node
+# or directly:
+npx tsx --require ./dist/register.js examples/auto-instrumentation-require-only.ts
+
+# Alternative with wrapWithTrace function (avoids decorator issues)
+npm run example:auto-simple:node
+
+# Example with trace function
+bun run example:comprehensive
+
+# Trace function with wrap mode
+bun run example:trace-wrap
 
 # Or run directly with environment variables
-OPENAI_API_KEY=your-key LILYPAD_API_KEY=your-key LILYPAD_PROJECT_ID=your-project-id bun run example:auto
+OPENAI_API_KEY=your-key LILYPAD_API_KEY=your-key LILYPAD_PROJECT_ID=your-project-id bun run examples/auto-instrumentation-with-trace.ts
 ```
 
 ## Requirements
