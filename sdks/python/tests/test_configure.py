@@ -3,6 +3,7 @@
 import logging
 from unittest.mock import Mock, patch
 import pytest
+import httpx
 from opentelemetry import trace
 from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
 
@@ -163,6 +164,117 @@ def test_export_failure(mock_get_settings, mock_get_client):
     assert result.name == "FAILURE"
 
 
+@patch("lilypad._configure.time.time")
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
+def test_export_connection_error_suppression(mock_get_settings, mock_get_client, mock_time):
+    """Test that connection errors are suppressed after the first occurrence."""
+    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project")
+    
+    # Mock time to control error suppression
+    mock_time.side_effect = [0.0, 100.0, 200.0, 400.0]  # First error, second error (suppressed), third error (suppressed), fourth error (not suppressed)
+    
+    # Mock client to raise connection error
+    mock_client = Mock()
+    mock_client.projects.traces.create.side_effect = httpx.ConnectError("[Errno -2] Name or service not known")
+    mock_get_client.return_value = mock_client
+
+    # Create minimal mock span
+    def create_mock_span():
+        mock_span = Mock()
+        mock_span.context = Mock(trace_id=123, span_id=456)
+        mock_span.parent = None
+        mock_span.instrumentation_scope = None
+        mock_span.resource = Mock()
+        mock_span.resource.to_json.return_value = {}
+        mock_span.name = "test"
+        mock_span.start_time = 1000
+        mock_span.end_time = 2000
+        mock_span.attributes = None
+        mock_status_code = Mock()
+        mock_status_code.name = "OK"
+        mock_span.status = Mock(status_code=mock_status_code)
+        mock_span.events = []
+        mock_span.links = []
+        return mock_span
+
+    exporter = _JSONSpanExporter()
+    
+    # Capture log output
+    with patch.object(exporter.log, 'error') as mock_error, \
+         patch.object(exporter.log, 'debug') as mock_debug:
+        
+        # First error - should log error
+        result1 = exporter.export([create_mock_span()])
+        assert result1.name == "FAILURE"
+        assert mock_error.call_count == 1
+        assert "Network error sending spans to Lilypad server" in mock_error.call_args[0][0]
+        assert "LLM calls will continue to work" in mock_error.call_args[0][0]
+        
+        # Second error within suppression window - should only log debug
+        result2 = exporter.export([create_mock_span()])
+        assert result2.name == "FAILURE"
+        assert mock_error.call_count == 1  # No new error log
+        assert mock_debug.call_count >= 1
+        
+        # Third error within suppression window - should only log debug
+        result3 = exporter.export([create_mock_span()])
+        assert result3.name == "FAILURE"
+        assert mock_error.call_count == 1  # Still no new error log
+        
+        # Fourth error after suppression window - should log error again
+        result4 = exporter.export([create_mock_span()])
+        assert result4.name == "FAILURE"
+        assert mock_error.call_count == 2  # New error log
+
+
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
+def test_export_connection_error_reset_on_success(mock_get_settings, mock_get_client):
+    """Test that error count is reset after successful connection."""
+    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project", remote_client_url="https://app.lilypad.com")
+    
+    # Mock client to first fail, then succeed
+    mock_response = Mock(trace_status="queued", span_count=1, trace_ids=["trace-1"])
+    mock_client = Mock()
+    mock_client.projects.traces.create.side_effect = [
+        OSError(-2, "Name or service not known"),
+        mock_response  # Success
+    ]
+    mock_get_client.return_value = mock_client
+
+    # Create minimal mock span
+    def create_mock_span():
+        mock_span = Mock()
+        mock_span.context = Mock(trace_id=123, span_id=456)
+        mock_span.parent = None
+        mock_span.instrumentation_scope = None
+        mock_span.resource = Mock()
+        mock_span.resource.to_json.return_value = {}
+        mock_span.name = "test"
+        mock_span.start_time = 1000
+        mock_span.end_time = 2000
+        mock_span.attributes = None
+        mock_status_code = Mock()
+        mock_status_code.name = "OK"
+        mock_span.status = Mock(status_code=mock_status_code)
+        mock_span.events = []
+        mock_span.links = []
+        return mock_span
+
+    exporter = _JSONSpanExporter()
+    
+    # First call fails
+    result1 = exporter.export([create_mock_span()])
+    assert result1.name == "FAILURE"
+    assert exporter._connection_error_count == 1
+    
+    # Second call succeeds - error count should reset
+    result2 = exporter.export([create_mock_span()])
+    assert result2.name == "SUCCESS"
+    assert exporter._connection_error_count == 0
+
+
 def test_shutdown():
     """Test exporter shutdown."""
     with patch("lilypad._configure.get_sync_client"), patch("lilypad._configure.get_settings"):
@@ -291,7 +403,7 @@ def test_configure_auto_llm(mock_trace, mock_find_spec):
         patch("lilypad._opentelemetry.OpenAIInstrumentor") as mock_openai,
         patch("lilypad._opentelemetry.AnthropicInstrumentor") as mock_anthropic,
         patch("lilypad._opentelemetry.AzureInstrumentor") as mock_azure,
-        patch("lilypad._opentelemetry.GoogleGenAIInstrumentor") as mock_google,
+        patch("lilypad._opentelemetry.GoogleGenAIInstrumentor", create=True) as mock_google,
         patch("lilypad._opentelemetry.BedrockInstrumentor") as mock_bedrock,
         patch("lilypad._opentelemetry.MistralInstrumentor", create=True) as mock_mistral,
         patch("lilypad._opentelemetry.OutlinesInstrumentor") as mock_outlines,

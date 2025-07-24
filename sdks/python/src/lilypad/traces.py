@@ -37,7 +37,8 @@ from ._utils import (
     create_mirascope_middleware,
 )
 from .sandbox import SandboxRunner, SubprocessSandboxRunner
-from .exceptions import RemoteFunctionError
+import httpx
+from .exceptions import RemoteFunctionError, LilypadException
 from ._utils.json import to_text, json_dumps, fast_jsonable
 from ._utils.client import get_sync_client, get_async_client
 from ._utils.settings import get_settings
@@ -950,7 +951,22 @@ def trace(
                             )
 
                     if versioning == "automatic":
-                        function = await get_or_create_function_async()
+                        try:
+                            function = await get_or_create_function_async()
+                        except (httpx.NetworkError, OSError) as exc:
+                            logger.error(
+                                "Failed to connect to Lilypad server for versioning: %s. "
+                                "Continuing without versioning. LLM calls will still work.",
+                                exc
+                            )
+                            function = None
+                        except LilypadException as exc:
+                            logger.debug(
+                                "Lilypad API error during versioning: %s. "
+                                "Continuing without versioning.",
+                                exc
+                            )
+                            function = None
                     else:
                         function = None
 
@@ -1145,7 +1161,25 @@ def trace(
                                 prompt_template=prompt_template,
                             )
 
-                    function = get_or_create_function_sync() if versioning == "automatic" else None
+                    if versioning == "automatic":
+                        try:
+                            function = get_or_create_function_sync()
+                        except (httpx.NetworkError, OSError) as exc:
+                            logger.error(
+                                "Failed to connect to Lilypad server for versioning: %s. "
+                                "Continuing without versioning. LLM calls will still work.",
+                                exc
+                            )
+                            function = None
+                        except LilypadException as exc:
+                            logger.debug(
+                                "Lilypad API error during versioning: %s. "
+                                "Continuing without versioning.",
+                                exc
+                            )
+                            function = None
+                    else:
+                        function = None
 
                     function_uuid = function.uuid_ if function else None
 
