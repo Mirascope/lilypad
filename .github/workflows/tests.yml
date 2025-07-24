@@ -144,4 +144,4 @@ jobs:
           verbose: true
 
       - name: Build TypeScript SDK
-        run: bun run build
+        run: cd ../.. && make -C sdks/typescript build
