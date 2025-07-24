@@ -201,19 +201,23 @@ function wrapChatCompletionsCreate(
           // Record messages - match Python SDK format
           if (params?.messages) {
             params.messages.forEach((message) => {
-              const eventName = `gen_ai.${message.role}.message`;
-              const attributes: Attributes = {
-                [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-              };
-
-              if (message.content) {
-                attributes['content'] =
-                  typeof message.content === 'string'
+              if (message.role === 'system') {
+                span.addEvent('gen_ai.system.message', {
+                  [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+                  content: typeof message.content === 'string'
                     ? message.content
-                    : safeStringify(message.content);
+                    : safeStringify(message.content),
+                });
+              } else if (message.role === 'user') {
+                span.addEvent('gen_ai.user.message', {
+                  [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
+                  content: typeof message.content === 'string'
+                    ? message.content
+                    : safeStringify(message.content),
+                });
               }
-
-              span.addEvent(eventName, attributes);
+              // Note: assistant messages in the request are not recorded as events
+              // Only the response assistant message is recorded as gen_ai.choice
             });
           }
 
