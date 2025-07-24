@@ -1,12 +1,12 @@
-import type { Context } from 'hono';
-import type { Environment } from '@/worker/environment';
 import type { User } from '@/db/schema';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { Database } from '@/db/utils';
+import type { Environment } from '@/worker/environment';
+import type { Context } from 'hono';
 
 export async function handleMe(
   c: Context<{
     Bindings: Environment;
-    Variables: { db: PostgresJsDatabase; user: User };
+    Variables: { db: Database; user: User };
   }>
 ): Promise<Response> {
   try {

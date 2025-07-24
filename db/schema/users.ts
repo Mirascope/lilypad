@@ -1,5 +1,5 @@
-import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { organizationMemberships } from './organization-memberships';
 import { userConsents } from './user-consents';
 

@@ -1,2 +1,2 @@
-export { authRouter } from './router';
 export { authSessionMiddleware } from './middleware';
+export { authRouter } from './router';

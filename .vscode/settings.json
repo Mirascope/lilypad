@@ -1,6 +1,6 @@
 {
   "files.autoSave": "onFocusChange",
-  "editor.formatOnSave": true,
+  // "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"

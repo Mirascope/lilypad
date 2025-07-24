@@ -1,5 +1,5 @@
 import type { Environment } from '@/worker/environment';
-import type { OAuthProvider, AuthenticatedUserInfo } from '../types';
+import type { AuthenticatedUserInfo, OAuthProvider } from '../types';
 
 type GoogleUser = {
   id: string;

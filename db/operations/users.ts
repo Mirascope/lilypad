@@ -1,9 +1,9 @@
-import { sql } from 'drizzle-orm';
 import { users, type NewUser, type User } from '@/db/schema';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { Database } from '@/db/utils';
+import { sql } from 'drizzle-orm';
 
 export async function createOrUpdateUser(
-  db: PostgresJsDatabase,
+  db: Database,
   userInfo: Omit<NewUser, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<User | null> {
   try {

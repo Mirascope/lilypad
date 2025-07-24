@@ -1,5 +1,5 @@
-import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const sessions = pgTable('sessions', {

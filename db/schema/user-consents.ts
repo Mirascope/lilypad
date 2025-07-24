@@ -1,5 +1,5 @@
-import { pgTable, serial, integer, text, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { integer, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const userConsents = pgTable('user_consents', {

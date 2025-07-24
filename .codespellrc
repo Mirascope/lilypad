@@ -1,2 +1,2 @@
 [codespell]
-skip = node_modules,bun.lock
+skip = node_modules,bun.lock,dist

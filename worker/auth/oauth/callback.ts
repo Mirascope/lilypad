@@ -1,18 +1,20 @@
+import { createOrUpdateUser, createSession } from '@/db/operations';
+import { DEFAULT_SESSION_DURATION } from '@/db/schema';
+import type { Database } from '@/db/utils';
+import type { Environment } from '@/worker/environment';
+import type { Context } from 'hono';
 import type {
   AuthenticatedUserInfo,
   OAuthProvider,
   OAuthTokenResponse,
 } from './types';
-import type { Environment } from '@/worker/environment';
-import { createOrUpdateUser, createSession } from '@/db/operations';
-import { DEFAULT_SESSION_DURATION } from '@/db/schema';
-import type { Context } from 'hono';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 async function processAuthenticatedUser(
-  c: Context<{ Bindings: Environment; Variables: { db: PostgresJsDatabase } }>,
-  userInfo: AuthenticatedUserInfo
+  c: Context<{ Bindings: Environment; Variables: { db: Database } }>,
+  userInfo: AuthenticatedUserInfo,
+  returnUrl?: string
 ) {
+  const siteUrl = returnUrl || c.env.SITE_URL;
   try {
     if (!userInfo.email) {
       throw new Error('Email is required to process an authenticated user');
@@ -33,7 +35,7 @@ async function processAuthenticatedUser(
       throw new Error('Failed to create session');
     }
 
-    const redirectUrl = new URL(c.env.SITE_URL);
+    const redirectUrl = new URL(siteUrl);
     redirectUrl.searchParams.set('success', 'true');
     redirectUrl.searchParams.set(
       'user',
@@ -65,7 +67,7 @@ async function processAuthenticatedUser(
   } catch (error) {
     console.error('Error processing authentication:', error);
 
-    const errorUrl = new URL(c.env.SITE_URL);
+    const errorUrl = new URL(siteUrl);
     errorUrl.searchParams.set('error', 'authentication_failed');
 
     return new Response(null, {
@@ -79,12 +81,12 @@ async function processAuthenticatedUser(
 
 // Generic OAuth callback handling
 export async function handleOAuthCallback(
-  c: Context<{ Bindings: Environment; Variables: { db: PostgresJsDatabase } }>,
+  c: Context<{ Bindings: Environment; Variables: { db: Database } }>,
   provider: OAuthProvider
 ): Promise<Response> {
   const url = new URL(c.req.url);
   const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
+  const encodedState = url.searchParams.get('state');
 
   // Check if we got an error from the provider
   const error = url.searchParams.get('error');
@@ -99,6 +101,19 @@ export async function handleOAuthCallback(
     throw new Error('No authorization code received');
   }
 
+  if (!encodedState) {
+    console.error('No state received');
+    throw new Error('No state received');
+  }
+  let stateData;
+  try {
+    stateData = JSON.parse(atob(encodedState));
+  } catch (e) {
+    throw new Error(`Failed to decode state: ${e}`);
+  }
+
+  const { randomState, returnUrl } = stateData;
+
   // Verify the state parameter (basic security check)
   const cookies = c.req.header('Cookie');
   const storedState = cookies
@@ -106,8 +121,7 @@ export async function handleOAuthCallback(
     .find((row) => row.startsWith('oauth_state='))
     ?.split('=')[1];
 
-  if (state !== storedState) {
-    console.error('State mismatch - possible CSRF attack');
+  if (storedState !== randomState) {
     throw new Error('Invalid state parameter');
   }
 
@@ -159,7 +173,7 @@ export async function handleOAuthCallback(
 
   const userData = await userResponse.json();
   const userInfo = await provider.mapUserData(userData, tokenData.access_token);
-  const response = await processAuthenticatedUser(c, userInfo);
+  const response = await processAuthenticatedUser(c, userInfo, returnUrl);
 
   const deleteStateCookieHeader = [
     'oauth_state=;',

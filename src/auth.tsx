@@ -1,3 +1,7 @@
+import type { PublicUser } from '@/db/schema';
+import { useLogout } from '@/src/api/auth/logout';
+import { useAuthStatus } from '@/src/api/auth/status';
+import { useNavigate } from '@tanstack/react-router';
 import {
   createContext,
   useContext,
@@ -5,10 +9,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import type { PublicUser } from '@/db/schema';
-import { useAuthStatus } from '@/src/api/auth/status';
-import { useLogout } from '@/src/api/auth/logout';
 
 type AuthContextType = {
   user: PublicUser | null;

@@ -2,16 +2,9 @@ name = "lilypad"
 compatibility_date = "2025-06-17"
 compatibility_flags = ["nodejs_compat"]
 main = "worker/index.ts"
-route = { pattern = "v1.lilypad.mirascope.com/*", zone_name = "mirascope.com" }
-
-[vars]
-SITE_URL = "https://lilypad.mirascope.com"
-GITHUB_CLIENT_ID = "Ov23liUXN3zH9UbkKZqr"
-GITHUB_CALLBACK_URL = "https://lilypad.mirascope.com/auth/github/callback"
-GOOGLE_CLIENT_ID = "454509490482-jp8vn2vq01qtce96cavt4bgqsn9e1j7n.apps.googleusercontent.com"
-GOOGLE_CALLBACK_URL = "https://lilypad.mirascope.com/auth/google/callback"
 
 [assets]
+directory = "dist/client"
 not_found_handling = "single-page-application"
 run_worker_first = ["/api/*", "/auth/*"]
 
@@ -20,3 +13,27 @@ enabled = true
 
 [triggers]
 crons = ["0 0 * * 7"]
+
+[env.production]
+name = "lilypad-production"
+route = { pattern = "v1.lilypad.mirascope.com", zone_name = "mirascope.com", custom_domain = true }
+
+[env.production.vars]
+ENVIRONMENT = "production"
+SITE_URL = "https://v1.lilypad.mirascope.com"
+GITHUB_CLIENT_ID = "Ov23liUXN3zH9UbkKZqr"
+GITHUB_CALLBACK_URL = "https://v1.lilypad.mirascope.com/auth/github/callback"
+GOOGLE_CLIENT_ID = "852098976648-g76gospfvmsdo3g7ri8p7ocfnefcfrhj.apps.googleusercontent.com"
+GOOGLE_CALLBACK_URL = "https://v1.lilypad.mirascope.com/auth/google/callback"
+
+[env.development]
+name = "lilypad-development"
+route = { pattern = "development.lilypad.mirascope.com", zone_name = "mirascope.com", custom_domain = true }
+
+[env.development.vars]
+ENVIRONMENT = "development"
+SITE_URL = "https://development.lilypad.mirascope.com"
+GITHUB_CLIENT_ID = "Ov23lim6U7I6fihGO7Ys"
+GITHUB_CALLBACK_URL = "https://development.lilypad.mirascope.com/auth/github/proxy-callback"
+GOOGLE_CLIENT_ID = "852098976648-nvi9po6sgebbn50ekha2h25lnf56ko40.apps.googleusercontent.com"
+GOOGLE_CALLBACK_URL = "https://development.lilypad.mirascope.com/auth/google/proxy-callback"
