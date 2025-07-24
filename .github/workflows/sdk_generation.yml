@@ -6,10 +6,12 @@ on:
     branches:
       - main
       - update-typescript-sdk # to ensure pushes to this branch also check SDK generation
+      - LILYPAD-205
   pull_request:
     branches:
       - main
       - update-typescript-sdk # to ensure PRs against this branch also check SDK generation
+      - LILYPAD-205
 
 jobs:
   check-openapi-generation:

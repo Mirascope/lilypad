@@ -5,9 +5,13 @@ on:
   push:
     branches:
       - main
+      - update-typescript-sdk
+      - LILYPAD-205
   pull_request:
     branches:
       - main
+      - update-typescript-sdk
+      - LILYPAD-205
 
 jobs:
   codespell:
@@ -84,3 +88,43 @@ jobs:
 
       - name: Minimize uv cache
         run: uv cache prune --ci
+
+  lint-typescript:
+    name: Lint TypeScript SDK
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: sdks/typescript
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-typescript-sdk-${{ hashFiles('sdks/typescript/bun.lockb') }}
+          restore-keys: |
+            bun-${{ runner.os }}-typescript-sdk-
+            bun-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run ESLint
+        run: bun run lint
+
+      - name: Run TypeScript type checking
+        run: bun run typecheck
+
+      - name: Check code formatting
+        run: bun run format:check
+
+      - name: Run all checks (make check)
+        run: make check
