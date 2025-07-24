@@ -1,0 +1,5 @@
+{
+  "name": "lilypad-sdk",
+  "version": "0.0.0-alpha.0",
+  "description": "The official TypeScript library for the Lilypad API"
+}
