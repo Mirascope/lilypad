@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import inspect
 import logging
+import threading
 from types import MappingProxyType
 from typing import (
     Any,
@@ -23,7 +24,7 @@ from collections.abc import Callable, Coroutine, Generator
 
 import orjson
 from pydantic import BaseModel
-from opentelemetry.trace import format_span_id, get_tracer_provider
+from opentelemetry.trace import format_span_id, get_tracer_provider, TracerProvider
 from opentelemetry.util.types import AttributeValue
 
 from .spans import Span
@@ -36,7 +37,8 @@ from ._utils import (
     create_mirascope_middleware,
 )
 from .sandbox import SandboxRunner, SubprocessSandboxRunner
-from .exceptions import RemoteFunctionError
+import httpx
+from .exceptions import RemoteFunctionError, LilypadException
 from ._utils.json import to_text, json_dumps, fast_jsonable
 from ._utils.client import get_sync_client, get_async_client
 from ._utils.settings import get_settings
@@ -66,6 +68,10 @@ _T = TypeVar("_T")
 
 TRACE_MODULE_NAME = "lilypad.traces"
 logger = logging.getLogger(__name__)
+
+# Thread-safe warning flag
+_trace_warning_lock = threading.Lock()
+_trace_warning_shown = False
 
 
 def _get_trace_type(function: FunctionPublic | None) -> Literal["trace", "function"]:
@@ -279,6 +285,50 @@ class AsyncTrace(_TraceBase[_T]):
 
         await client.spans.update(span_uuid=span_uuid, tags_by_name=tag_list)
         return None
+
+
+class NoOpTrace(Generic[_T]):
+    """
+    A no-op trace wrapper that returns the response when Lilypad is not configured.
+    """
+
+    def __init__(self, response: _T) -> None:
+        self.response: _T = response
+
+    def annotate(self, *annotation: Annotation) -> None:
+        """No-op annotate method."""
+        if not annotation:
+            raise ValueError("At least one annotation must be provided")
+
+    def assign(self, *email: str) -> None:
+        """No-op assign method."""
+        ...
+
+    def tag(self, *tags: str) -> None:
+        """No-op tag method."""
+        ...
+
+
+class NoOpAsyncTrace(Generic[_T]):
+    """
+    A no-op async trace wrapper that returns the response when Lilypad is not configured.
+    """
+
+    def __init__(self, response: _T) -> None:
+        self.response: _T = response
+
+    async def annotate(self, *annotation: Annotation) -> None:
+        """No-op annotate method."""
+        if not annotation:
+            raise ValueError("At least one annotation must be provided")
+
+    async def assign(self, *email: str) -> None:
+        """No-op assign method."""
+        ...
+
+    async def tag(self, *tags: str) -> None:
+        """No-op tag method."""
+        ...
 
 
 # Type definitions for decorator registry
@@ -789,7 +839,6 @@ def trace(
         - Context extraction supports multiple propagation formats (W3C, B3, Jaeger)
         - Configure propagation format using `lilypad.configure(propagator="...")`
     """
-
     decorator_tags = sorted(set(tags)) if tags else None
 
     @overload
@@ -838,6 +887,23 @@ def trace(
             @call_safely(execute_user_function_only)
             @wraps(fn)
             async def inner_async(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                if not isinstance(get_tracer_provider(), TracerProvider):
+                    global _trace_warning_shown
+                    with _trace_warning_lock:
+                        if not _trace_warning_shown:
+                            logger.warning(
+                                "Lilypad has not been configured. @trace decorator is disabled "
+                                "for function '%s'. Call `lilypad.configure(...)` early in program start-up.",
+                                trace_name,
+                            )
+                            _trace_warning_shown = True
+
+                    output = await fn(*args, **kwargs)
+                    if mode == "wrap":
+                        # Return a no-op AsyncTrace object
+                        return NoOpAsyncTrace(response=output)
+                    return output
+
                 with Span(trace_name) as span:
                     final_args = args
                     final_kwargs = kwargs
@@ -850,6 +916,13 @@ def trace(
                         pass
                     if needs_trace_ctx and not has_user_provided_trace_ctx:
                         final_args = (span, *args)
+
+                    # If span is in no-op mode, just execute the function with proper args
+                    if span.is_noop:
+                        output = await fn(*final_args, **final_kwargs)
+                        if mode == "wrap":
+                            return NoOpAsyncTrace(response=output)
+                        return output
                     arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
                     arg_values.pop("trace_ctx", None)
                     arg_types.pop("trace_ctx", None)
@@ -878,7 +951,22 @@ def trace(
                             )
 
                     if versioning == "automatic":
-                        function = await get_or_create_function_async()
+                        try:
+                            function = await get_or_create_function_async()
+                        except (httpx.NetworkError, OSError) as exc:
+                            logger.error(
+                                "Failed to connect to Lilypad server for versioning: %s. "
+                                "Continuing without versioning. LLM calls will still work.",
+                                exc
+                            )
+                            function = None
+                        except LilypadException as exc:
+                            logger.debug(
+                                "Lilypad API error during versioning: %s. "
+                                "Continuing without versioning.",
+                                exc
+                            )
+                            function = None
                     else:
                         function = None
 
@@ -1004,11 +1092,28 @@ def trace(
 
             def execute_user_function_only(*args: _P.args, **kwargs: _P.kwargs) -> _R:
                 """Fallback: execute only the user function without any API interactions."""
-                return fn(*args, **kwargs)
+                return fn(*args, **kwargs)  # pragma: no cover
 
             @call_safely(execute_user_function_only)
             @wraps(fn)
             def inner(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                if not isinstance(get_tracer_provider(), TracerProvider):
+                    global _trace_warning_shown
+                    with _trace_warning_lock:
+                        if not _trace_warning_shown:
+                            logger.warning(
+                                "Lilypad has not been configured. @trace decorator is disabled "
+                                "for function '%s'. Call `lilypad.configure(...)` early in program start-up.",
+                                trace_name,
+                            )
+                            _trace_warning_shown = True
+
+                    output = fn(*args, **kwargs)
+                    if mode == "wrap":
+                        # Return a no-op Trace object
+                        return NoOpTrace(response=output)
+                    return output
+
                 with Span(trace_name) as span:
                     final_args = args
                     final_kwargs = kwargs
@@ -1022,6 +1127,13 @@ def trace(
 
                     if needs_trace_ctx and not has_user_provided_trace_ctx:
                         final_args = (span, *args)
+
+                    # If span is in no-op mode, just execute the function with proper args
+                    if span.is_noop:
+                        output = fn(*final_args, **final_kwargs)
+                        if mode == "wrap":
+                            return NoOpTrace(response=output)
+                        return output
                     arg_types, arg_values = inspect_arguments(fn, *final_args, **final_kwargs)
                     arg_values.pop("trace_ctx", None)
                     arg_types.pop("trace_ctx", None)
@@ -1049,7 +1161,25 @@ def trace(
                                 prompt_template=prompt_template,
                             )
 
-                    function = get_or_create_function_sync() if versioning == "automatic" else None
+                    if versioning == "automatic":
+                        try:
+                            function = get_or_create_function_sync()
+                        except (httpx.NetworkError, OSError) as exc:
+                            logger.error(
+                                "Failed to connect to Lilypad server for versioning: %s. "
+                                "Continuing without versioning. LLM calls will still work.",
+                                exc
+                            )
+                            function = None
+                        except LilypadException as exc:
+                            logger.debug(
+                                "Lilypad API error during versioning: %s. "
+                                "Continuing without versioning.",
+                                exc
+                            )
+                            function = None
+                    else:
+                        function = None
 
                     function_uuid = function.uuid_ if function else None
 
