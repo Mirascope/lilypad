@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_auth/projects/$projectUuid/traces/$")({
   component: () => <TraceContainer />,
 });
 
-const TraceContainer = () => {
+export const TraceContainer = () => {
   const navigate = useNavigate();
   const { projectUuid } = useParams({ from: Route.id });
   const handleDetailPanelOpen = (trace: SpanPublic) => {

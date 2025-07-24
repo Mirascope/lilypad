@@ -26,7 +26,7 @@ export const Route = createFileRoute(
   ),
 });
 
-const CompareWorkbench = () => {
+export const CompareWorkbench = () => {
   const { projectUuid, functionName, firstFunctionUuid, secondFunctionUuid, tab } = useParams({
     from: Route.id,
   });

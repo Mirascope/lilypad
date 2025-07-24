@@ -6,12 +6,10 @@ import * as Lilypad from "../../../../../../../../index.js";
 
 /**
  * @example
- *     {
- *         environment_uuid: "environment_uuid"
- *     }
+ *     {}
  */
 export interface SpansListPaginatedRequest {
-    environment_uuid: string;
+    environment_uuid?: string;
     limit?: number;
     offset?: number;
     order?: Lilypad.projects.functions.Order;
