@@ -58,3 +58,6 @@ tmp/
 
 # Backup files (out of scope features)
 *.backup
+
+# Generated metadata
+src/versioning/metadata.json
