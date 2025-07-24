@@ -153,14 +153,15 @@ jobs:
 
       - name: Check for TypeScript SDK differences
         run: |
-          if git diff --quiet sdks/typescript/; then
+          # Exclude metadata.json from diff check as it's auto-generated during build
+          if git diff --quiet -- sdks/typescript/ ':!sdks/typescript/src/versioning/metadata.json'; then
             echo "✅ TypeScript SDK is up to date"
           else
             echo "❌ TypeScript SDK is out of sync!"
             echo ""
             echo "Differences found in generated SDK:"
             echo "Changed files:"
-            git diff --name-only sdks/typescript/
+            git diff --name-only -- sdks/typescript/ ':!sdks/typescript/src/versioning/metadata.json'
             echo ""
             echo "To fix this, run locally:"
             echo "  make generate-sdk-typescript"

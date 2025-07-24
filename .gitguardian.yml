@@ -3,6 +3,16 @@
 
 version: 2
 
+# Exclude test files from scanning
+ignored-paths:
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/*.test.ts"
+  - "**/*.test.js"
+  - "**/*.spec.ts"
+  - "**/*.spec.js"
+  - "**/validation.test.ts"
+
 # Specific patterns to ignore
 ignored-matches:
   # Ignore the specific mock database URL used in test_security.py
@@ -12,3 +22,29 @@ ignored-matches:
   # Ignore by specific GitGuardian secret ID
   - name: "test_security.py mock credentials"
     match: 17785514
+    
+  # Ignore validation.test.ts mock secrets
+  - name: "TypeScript SDK validation test - Generic Password"
+    match: 18770402
+    
+  - name: "TypeScript SDK validation test - Bearer Token"
+    match: 18770403
+    
+  # Ignore common test patterns
+  - name: "Test passwords"
+    match: "password=mysecret"
+    
+  - name: "Test password patterns"
+    match: "p@ssw0rd"
+    
+  - name: "Test admin password"
+    match: "admin123"
+    
+  - name: "Test bearer tokens"
+    match: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+    
+  - name: "Test tokens"
+    match: "token=abc123def"
+    
+  - name: "Test token patterns"
+    match: "token: \"xyz789\""
