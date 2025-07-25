@@ -4,6 +4,7 @@
     "": {
       "name": "@lilypad/typescript-sdk",
       "dependencies": {
+        "@anthropic-ai/sdk": "^0.57.0",
         "@opentelemetry/api": "^1.7.0",
         "@opentelemetry/instrumentation": "^0.203.0",
         "@opentelemetry/resources": "^1.19.0",
@@ -52,6 +53,8 @@
   },
   "packages": {
     "@ampproject/remapping": ["@ampproject/remapping@2.3.0", "", { "dependencies": { "@jridgewell/gen-mapping": "^0.3.5", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw=="],
+
+    "@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.57.0", "", { "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-z5LMy0MWu0+w2hflUgj4RlJr1R+0BxKXL7ldXTO8FasU8fu599STghO+QKwId2dAD0d464aHtU+ChWuRHw4FNw=="],
 
     "@babel/helper-string-parser": ["@babel/helper-string-parser@7.27.1", "", {}, "sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA=="],
 
@@ -1176,6 +1179,8 @@
     "yauzl": ["yauzl@3.2.0", "", { "dependencies": { "buffer-crc32": "~0.2.3", "pend": "~1.2.0" } }, "sha512-Ow9nuGZE+qp1u4JIPvg+uCiUr7xGQWdff7JQSk5VGYTAZMDe2q8lxJ10ygv10qmSj031Ty/6FNJpLO4o1Sgc+w=="],
 
     "yocto-queue": ["yocto-queue@1.2.1", "", {}, "sha512-AyeEbWOu/TAXdxlV9wmGcR0+yh2j3vYPGOECcIj2S7MkrLyC7ne+oye2BKTItt0ii2PHk4cDy+95+LshzbXnGg=="],
+
+    "zod": ["zod@4.0.8", "", {}, "sha512-+MSh9cZU9r3QKlHqrgHMTSr3QwMGv4PLfR0M4N/sYWV5/x67HgXEhIGObdBkpnX8G78pTgWnIrBL2lZcNJOtfg=="],
 
     "@eslint/eslintrc/minimatch": ["minimatch@3.1.2", "", { "dependencies": { "brace-expansion": "^1.1.7" } }, "sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw=="],
 

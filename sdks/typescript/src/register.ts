@@ -14,6 +14,7 @@ import { setSettings } from './utils/settings';
 import type { LogLevel } from './types';
 import { getOrCreateContextManager } from './utils/shared-context';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
+import { AnthropicInstrumentation } from './instrumentors/anthropic-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
 
@@ -99,26 +100,37 @@ if (!apiKey) {
 
     logger.info('[Register] Tracer provider registered successfully');
 
-    // Register OpenAI instrumentation
+    // Register instrumentations
     try {
       const openAIInstrumentation = new OpenAIInstrumentation({
         requestHook: (_span, params) => {
-          logger.debug('[Register] Request hook called', { model: params.model });
+          logger.debug('[Register] OpenAI request hook called', { model: params.model });
         },
         responseHook: (_span, response) => {
-          logger.debug('[Register] Response hook called', { id: response.id });
+          logger.debug('[Register] OpenAI response hook called', { id: response.id });
+        },
+        fallbackToProxy: true, // Enable Proxy fallback for lazy-loaded properties
+        suppressInternalInstrumentation: false,
+      });
+
+      const anthropicInstrumentation = new AnthropicInstrumentation({
+        requestHook: (_span, params) => {
+          logger.debug('[Register] Anthropic request hook called', { model: params.model });
+        },
+        responseHook: (_span, response) => {
+          logger.debug('[Register] Anthropic response hook called', { id: response.id });
         },
         fallbackToProxy: true, // Enable Proxy fallback for lazy-loaded properties
         suppressInternalInstrumentation: false,
       });
 
       registerInstrumentations({
-        instrumentations: [openAIInstrumentation],
+        instrumentations: [openAIInstrumentation, anthropicInstrumentation],
       });
 
-      logger.info('[Register] OpenAI auto-instrumentation loaded with InstrumentationBase');
+      logger.info('[Register] OpenAI and Anthropic auto-instrumentation loaded with InstrumentationBase');
     } catch (instrumentationError) {
-      logger.error('[Register] Failed to register OpenAI instrumentation:', instrumentationError);
+      logger.error('[Register] Failed to register instrumentations:', instrumentationError);
       // Continue even if instrumentation fails
     }
 
