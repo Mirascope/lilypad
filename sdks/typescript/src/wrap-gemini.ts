@@ -6,7 +6,6 @@
 import { trace, context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
 import type { Span } from '@opentelemetry/api';
 import { logger } from './utils/logger';
-import { isAsyncIterable } from './utils/stream-wrapper';
 import { ensureError } from './utils/error-handler';
 import type {
   GeminiGenerateContentParams,
@@ -42,13 +41,17 @@ import {
 } from './constants/gen-ai-semantic-conventions';
 
 // Helper function to normalize params
-function normalizeParams(params: GeminiGenerateContentParams | string): GeminiGenerateContentParams {
+function normalizeParams(
+  params: GeminiGenerateContentParams | string,
+): GeminiGenerateContentParams {
   if (typeof params === 'string') {
     return {
-      contents: [{
-        role: 'user',
-        parts: [{ text: params }]
-      }]
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: params }],
+        },
+      ],
     };
   }
   return params;
@@ -61,9 +64,7 @@ function recordResponse(span: Span, response: GeminiGenerateContentResponse): vo
   // Record response attributes
   if (response.candidates && response.candidates.length > 0) {
     response.candidates.forEach((candidate, index) => {
-      const content = candidate.content.parts
-        .map(part => part.text)
-        .join('');
+      const content = candidate.content.parts.map((part) => part.text).join('');
 
       const message: Record<string, unknown> = {
         role: candidate.content.role || 'model',
@@ -81,7 +82,7 @@ function recordResponse(span: Span, response: GeminiGenerateContentResponse): vo
     // Record finish reasons
     const finishReasons = response.candidates
       .map((c) => c.finish_reason)
-      .filter((reason): reason is string => Boolean(reason));
+      .filter((reason): reason is NonNullable<typeof reason> => Boolean(reason));
     if (finishReasons.length > 0) {
       span.setAttribute(SEMATTRS_GEN_AI_RESPONSE_FINISH_REASONS, finishReasons);
     }
@@ -103,34 +104,34 @@ function recordResponse(span: Span, response: GeminiGenerateContentResponse): vo
 // Helper function to wrap streaming responses
 async function* wrapStream(
   span: Span,
-  streamPromise: Promise<AsyncIterable<GeminiGenerateContentStreamChunk>>
+  streamPromise: Promise<AsyncIterable<GeminiGenerateContentStreamChunk>>,
 ): AsyncIterable<GeminiGenerateContentStreamChunk> {
   let content = '';
   let finishReason: string | null = null;
-  let usage: {
-    prompt_token_count: number;
-    candidates_token_count: number;
-    total_token_count: number;
-  } | undefined;
+  let usage:
+    | {
+        prompt_token_count: number;
+        candidates_token_count: number;
+        total_token_count: number;
+      }
+    | undefined;
 
   try {
     const stream = await streamPromise;
-    
+
     for await (const chunk of stream) {
       // Process chunk
       if (chunk.candidates && chunk.candidates.length > 0) {
         const candidate = chunk.candidates[0];
         if (candidate.content?.parts) {
-          const chunkContent = candidate.content.parts
-            .map(part => part.text)
-            .join('');
+          const chunkContent = candidate.content.parts.map((part) => part.text).join('');
           content += chunkContent;
         }
         if (candidate.finish_reason) {
           finishReason = candidate.finish_reason;
         }
       }
-      
+
       if (chunk.usage_metadata) {
         usage = chunk.usage_metadata;
       }
@@ -216,10 +217,8 @@ function wrapGenerateContent(
         // Record messages
         if (normalizedParams.contents) {
           normalizedParams.contents.forEach((content) => {
-            const text = content.parts
-              .map(part => part.text || '[binary data]')
-              .join('');
-            
+            const text = content.parts.map((part) => part.text || '[binary data]').join('');
+
             span.addEvent(`gen_ai.${content.role}.message`, {
               'gen_ai.system': 'gemini',
               content: text,
@@ -290,10 +289,8 @@ function wrapGenerateContentStream(
         // Record messages
         if (normalizedParams.contents) {
           normalizedParams.contents.forEach((content) => {
-            const text = content.parts
-              .map(part => part.text || '[binary data]')
-              .join('');
-            
+            const text = content.parts.map((part) => part.text || '[binary data]').join('');
+
             span.addEvent(`gen_ai.${content.role}.message`, {
               'gen_ai.system': 'gemini',
               content: text,
@@ -355,7 +352,7 @@ export function wrapGemini<T extends object>(geminiInstance: T): T {
   if (isInstance) {
     // Type assertion to access getGenerativeModel property
     const instance = geminiInstance as GeminiLike;
-    
+
     // Wrap getGenerativeModel to intercept model creation
     if (instance.getGenerativeModel) {
       const originalGetModel = instance.getGenerativeModel.bind(instance);

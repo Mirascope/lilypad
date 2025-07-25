@@ -204,16 +204,18 @@ function wrapChatCompletionsCreate(
               if (message.role === 'system') {
                 span.addEvent('gen_ai.system.message', {
                   [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-                  content: typeof message.content === 'string'
-                    ? message.content
-                    : safeStringify(message.content),
+                  content:
+                    typeof message.content === 'string'
+                      ? message.content
+                      : safeStringify(message.content),
                 });
               } else if (message.role === 'user') {
                 span.addEvent('gen_ai.user.message', {
                   [SEMATTRS_GEN_AI_SYSTEM]: 'openai',
-                  content: typeof message.content === 'string'
-                    ? message.content
-                    : safeStringify(message.content),
+                  content:
+                    typeof message.content === 'string'
+                      ? message.content
+                      : safeStringify(message.content),
                 });
               }
               // Note: assistant messages in the request are not recorded as events
