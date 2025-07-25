@@ -15,6 +15,7 @@ import type { LogLevel } from './types';
 import { getOrCreateContextManager } from './utils/shared-context';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
 import { AnthropicInstrumentation } from './instrumentors/anthropic-otel-instrumentation';
+import { GoogleInstrumentation } from './instrumentors/google-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
 
@@ -100,6 +101,11 @@ if (!apiKey) {
 
     logger.info('[Register] Tracer provider registered successfully');
 
+    // Store the provider reference for shutdown
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { setProvider } = require('./configure');
+    setProvider(provider);
+
     // Register instrumentations
     try {
       const openAIInstrumentation = new OpenAIInstrumentation({
@@ -124,12 +130,25 @@ if (!apiKey) {
         suppressInternalInstrumentation: false,
       });
 
+      const googleInstrumentation = new GoogleInstrumentation({
+        requestHook: (_span, params) => {
+          logger.debug('[Register] Google request hook called', { paramsType: typeof params });
+        },
+        responseHook: (_span, response) => {
+          logger.debug('[Register] Google response hook called', {
+            candidates: response.candidates?.length,
+          });
+        },
+        fallbackToProxy: true, // Enable Proxy fallback for lazy-loaded properties
+        suppressInternalInstrumentation: false,
+      });
+
       registerInstrumentations({
-        instrumentations: [openAIInstrumentation, anthropicInstrumentation],
+        instrumentations: [openAIInstrumentation, anthropicInstrumentation, googleInstrumentation],
       });
 
       logger.info(
-        '[Register] OpenAI and Anthropic auto-instrumentation loaded with InstrumentationBase',
+        '[Register] OpenAI, Anthropic, and Google auto-instrumentation loaded with InstrumentationBase',
       );
     } catch (instrumentationError) {
       logger.error('[Register] Failed to register instrumentations:', instrumentationError);

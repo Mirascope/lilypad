@@ -136,14 +136,19 @@
     "shimmer": "^1.2.1"
   },
   "peerDependencies": {
+    "@google/generative-ai": "^0.24.0",
     "openai": "^4.0.0"
   },
   "peerDependenciesMeta": {
+    "@google/generative-ai": {
+      "optional": true
+    },
     "openai": {
       "optional": true
     }
   },
   "devDependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@swc/cli": "^0.7.8",
     "@swc/core": "^1.12.11",
     "@types/node": "^20.19.4",

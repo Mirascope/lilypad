@@ -13,6 +13,8 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 // import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { logger } from './utils/logger';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
+import { AnthropicInstrumentation } from './instrumentors/anthropic-otel-instrumentation';
+import { GoogleInstrumentation } from './instrumentors/google-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
@@ -102,6 +104,40 @@ if (!apiKey) {
             fallbackToProxy: true,
             suppressInternalInstrumentation: process.env.LILYPAD_SUPPRESS_LOGS === 'true',
           }),
+          new AnthropicInstrumentation({
+            enabled: true,
+            requestHook: (span, params) => {
+              // Add custom attributes if needed
+              if (process.env.LILYPAD_DEBUG === 'true') {
+                span.setAttribute('lilypad.debug.params', JSON.stringify(params));
+              }
+            },
+            responseHook: (span, response) => {
+              // Add custom response attributes if needed
+              if (response.id) {
+                span.setAttribute('gen_ai.response.id', response.id);
+              }
+            },
+            fallbackToProxy: true,
+            suppressInternalInstrumentation: process.env.LILYPAD_SUPPRESS_LOGS === 'true',
+          }),
+          new GoogleInstrumentation({
+            enabled: true,
+            requestHook: (span, params) => {
+              // Add custom attributes if needed
+              if (process.env.LILYPAD_DEBUG === 'true') {
+                span.setAttribute('lilypad.debug.params', JSON.stringify(params));
+              }
+            },
+            responseHook: (span, response) => {
+              // Add custom response attributes if needed
+              if (response.candidates) {
+                span.setAttribute('gen_ai.response.candidates_count', response.candidates.length);
+              }
+            },
+            fallbackToProxy: true,
+            suppressInternalInstrumentation: process.env.LILYPAD_SUPPRESS_LOGS === 'true',
+          }),
         ],
       });
 
@@ -134,4 +170,4 @@ if (!apiKey) {
 }
 
 // Export for testing
-export { OpenAIInstrumentation };
+export { OpenAIInstrumentation, AnthropicInstrumentation, GoogleInstrumentation };
