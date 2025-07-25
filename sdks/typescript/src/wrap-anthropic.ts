@@ -93,16 +93,22 @@ function recordResponse(span: Span, response: AnthropicMessageResponse): void {
 }
 
 // Helper function to wrap streaming responses
-async function* wrapStream<T extends AnthropicMessageChunk>(span: Span, stream: AsyncIterable<T>): AsyncIterable<T> {
+async function* wrapStream<T extends AnthropicMessageChunk>(
+  span: Span,
+  stream: AsyncIterable<T>,
+): AsyncIterable<T> {
   let content = '';
   let stopReason: string | null = null;
-  let usage: { input_tokens: number; output_tokens: number } = {
+  const usage: { input_tokens: number; output_tokens: number } = {
     input_tokens: 0,
     output_tokens: 0,
   };
 
   try {
     for await (const chunk of stream) {
+      // Skip null/undefined chunks
+      if (!chunk) continue;
+
       // Process chunk based on type
       if (chunk.type === 'message_start' && chunk.message) {
         // Initial message with usage info
@@ -170,9 +176,7 @@ async function* wrapStream<T extends AnthropicMessageChunk>(span: Span, stream: 
 }
 
 // Helper function to wrap messages.create
-function wrapMessagesCreate(
-  originalCreate: MessagesCreateFunction,
-): MessagesCreateFunction {
+function wrapMessagesCreate(originalCreate: MessagesCreateFunction): MessagesCreateFunction {
   return async (params: AnthropicMessageParams, ...restArgs: unknown[]) => {
     const tracer = trace.getTracer('lilypad-anthropic', '0.1.0');
 
@@ -209,10 +213,11 @@ function wrapMessagesCreate(
         // Record messages
         if (params?.messages) {
           params.messages.forEach((message) => {
-            const content = typeof message.content === 'string' 
-              ? message.content 
-              : JSON.stringify(message.content);
-            
+            const content =
+              typeof message.content === 'string'
+                ? message.content
+                : JSON.stringify(message.content);
+
             span.addEvent(`gen_ai.${message.role}.message`, {
               'gen_ai.system': 'anthropic',
               content: content,
@@ -281,7 +286,9 @@ export function wrapAnthropic<T extends object>(anthropicInstance: T): T {
 
   if (!isConstructor) {
     // If it's neither an instance nor a constructor, just return it
-    logger.debug('[wrapAnthropic] Object is neither an instance nor a constructor, returning as-is');
+    logger.debug(
+      '[wrapAnthropic] Object is neither an instance nor a constructor, returning as-is',
+    );
     return anthropicInstance;
   }
 
