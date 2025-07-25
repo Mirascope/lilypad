@@ -128,7 +128,9 @@ if (!apiKey) {
         instrumentations: [openAIInstrumentation, anthropicInstrumentation],
       });
 
-      logger.info('[Register] OpenAI and Anthropic auto-instrumentation loaded with InstrumentationBase');
+      logger.info(
+        '[Register] OpenAI and Anthropic auto-instrumentation loaded with InstrumentationBase',
+      );
     } catch (instrumentationError) {
       logger.error('[Register] Failed to register instrumentations:', instrumentationError);
       // Continue even if instrumentation fails

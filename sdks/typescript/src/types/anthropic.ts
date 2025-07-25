@@ -7,15 +7,17 @@ export interface AnthropicMessageParams {
   model: string;
   messages: Array<{
     role: 'user' | 'assistant';
-    content: string | Array<{
-      type: 'text' | 'image';
-      text?: string;
-      source?: {
-        type: 'base64';
-        media_type: string;
-        data: string;
-      };
-    }>;
+    content:
+      | string
+      | Array<{
+          type: 'text' | 'image';
+          text?: string;
+          source?: {
+            type: 'base64';
+            media_type: string;
+            data: string;
+          };
+        }>;
   }>;
   system?: string;
   max_tokens: number;
@@ -46,7 +48,13 @@ export interface AnthropicMessageResponse {
 }
 
 export interface AnthropicMessageChunk {
-  type: 'message_start' | 'content_block_start' | 'content_block_delta' | 'content_block_stop' | 'message_delta' | 'message_stop';
+  type:
+    | 'message_start'
+    | 'content_block_start'
+    | 'content_block_delta'
+    | 'content_block_stop'
+    | 'message_delta'
+    | 'message_stop';
   message?: {
     id: string;
     type: 'message';

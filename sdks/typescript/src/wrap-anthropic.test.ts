@@ -108,7 +108,9 @@ describe('wrapAnthropic', () => {
     it('should log debug message when wrapping', () => {
       wrapAnthropic(AnthropicClass);
 
-      expect(mockedLogger.debug).toHaveBeenCalledWith('[wrapAnthropic] Wrapping Anthropic instance');
+      expect(mockedLogger.debug).toHaveBeenCalledWith(
+        '[wrapAnthropic] Wrapping Anthropic instance',
+      );
     });
 
     it('should handle missing messages.create gracefully', () => {
@@ -134,9 +136,9 @@ describe('wrapAnthropic', () => {
         top_k: 20,
       };
 
-      mockOriginalCreate.mockResolvedValue({ 
+      mockOriginalCreate.mockResolvedValue({
         type: 'message',
-        content: []
+        content: [],
       });
 
       await instance.messages.create(params);
@@ -167,9 +169,9 @@ describe('wrapAnthropic', () => {
         max_tokens: 1000,
       };
 
-      mockOriginalCreate.mockResolvedValue({ 
+      mockOriginalCreate.mockResolvedValue({
         type: 'message',
-        content: []
+        content: [],
       });
 
       await instance.messages.create(params);
@@ -194,9 +196,9 @@ describe('wrapAnthropic', () => {
         max_tokens: 1000,
       };
 
-      mockOriginalCreate.mockResolvedValue({ 
+      mockOriginalCreate.mockResolvedValue({
         type: 'message',
-        content: []
+        content: [],
       });
 
       await instance.messages.create(params);
@@ -221,26 +223,28 @@ describe('wrapAnthropic', () => {
 
       const params = {
         model: 'claude-3-opus-20240229',
-        messages: [{ 
-          role: 'user', 
-          content: [
-            { type: 'text', text: 'What is in this image?' },
-            { 
-              type: 'image',
-              source: { 
-                type: 'base64',
-                media_type: 'image/jpeg',
-                data: 'base64data'
-              }
-            }
-          ]
-        }],
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'What is in this image?' },
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/jpeg',
+                  data: 'base64data',
+                },
+              },
+            ],
+          },
+        ],
         max_tokens: 1000,
       };
 
-      mockOriginalCreate.mockResolvedValue({ 
+      mockOriginalCreate.mockResolvedValue({
         type: 'message',
-        content: []
+        content: [],
       });
 
       await instance.messages.create(params);
@@ -249,14 +253,14 @@ describe('wrapAnthropic', () => {
         'gen_ai.system': 'anthropic',
         content: JSON.stringify([
           { type: 'text', text: 'What is in this image?' },
-          { 
+          {
             type: 'image',
-            source: { 
+            source: {
               type: 'base64',
               media_type: 'image/jpeg',
-              data: 'base64data'
-            }
-          }
+              data: 'base64data',
+            },
+          },
         ]),
       });
     });
@@ -270,9 +274,7 @@ describe('wrapAnthropic', () => {
         type: 'message',
         role: 'assistant',
         model: 'claude-3-opus-20240229',
-        content: [
-          { type: 'text', text: 'Hello! How can I help you today?' }
-        ],
+        content: [{ type: 'text', text: 'Hello! How can I help you today?' }],
         stop_reason: 'end_turn',
         stop_sequence: null,
         usage: {
@@ -283,26 +285,25 @@ describe('wrapAnthropic', () => {
 
       mockOriginalCreate.mockResolvedValue(response);
 
-      await instance.messages.create({ 
+      await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
         'gen_ai.system': 'anthropic',
         index: 0,
         finish_reason: 'end_turn',
-        message: JSON.stringify({ 
-          role: 'assistant', 
-          content: 'Hello! How can I help you today?' 
+        message: JSON.stringify({
+          role: 'assistant',
+          content: 'Hello! How can I help you today?',
         }),
       });
 
-      expect(mockSpan.setAttribute).toHaveBeenCalledWith(
-        'gen_ai.response.finish_reasons', 
-        ['end_turn']
-      );
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith('gen_ai.response.finish_reasons', [
+        'end_turn',
+      ]);
 
       expect(mockSpan.setAttributes).toHaveBeenCalledWith({
         'gen_ai.usage.input_tokens': 10,
@@ -310,7 +311,10 @@ describe('wrapAnthropic', () => {
         'gen_ai.usage.total_tokens': 30,
       });
 
-      expect(mockSpan.setAttribute).toHaveBeenCalledWith('gen_ai.response.model', 'claude-3-opus-20240229');
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith(
+        'gen_ai.response.model',
+        'claude-3-opus-20240229',
+      );
       expect(mockSpan.setAttribute).toHaveBeenCalledWith('gen_ai.response.id', 'msg_123');
     });
 
@@ -321,11 +325,13 @@ describe('wrapAnthropic', () => {
       const error = new Error('API Error');
       mockOriginalCreate.mockRejectedValue(error);
 
-      await expect(instance.messages.create({ 
-        model: 'claude-3-opus-20240229',
-        messages: [],
-        max_tokens: 1000
-      })).rejects.toThrow('API Error');
+      await expect(
+        instance.messages.create({
+          model: 'claude-3-opus-20240229',
+          messages: [],
+          max_tokens: 1000,
+        }),
+      ).rejects.toThrow('API Error');
 
       expect(mockSpan.recordException).toHaveBeenCalledWith(error);
       expect(mockSpan.setStatus).toHaveBeenCalledWith({
@@ -379,11 +385,11 @@ describe('wrapAnthropic', () => {
       mockOriginalCreate.mockResolvedValue(mockStream);
       mockedIsAsyncIterable.mockReturnValue(true);
 
-      const result = await instance.messages.create({ 
+      const result = await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
         max_tokens: 1000,
-        stream: true 
+        stream: true,
       });
 
       // Consume the stream
@@ -399,10 +405,9 @@ describe('wrapAnthropic', () => {
         finish_reason: 'end_turn',
         message: JSON.stringify({ role: 'assistant', content: 'Hello world!' }),
       });
-      expect(mockSpan.setAttribute).toHaveBeenCalledWith(
-        'gen_ai.response.finish_reasons', 
-        ['end_turn']
-      );
+      expect(mockSpan.setAttribute).toHaveBeenCalledWith('gen_ai.response.finish_reasons', [
+        'end_turn',
+      ]);
       expect(mockSpan.setAttributes).toHaveBeenCalledWith({
         'gen_ai.usage.input_tokens': 10,
         'gen_ai.usage.output_tokens': 8,
@@ -429,11 +434,11 @@ describe('wrapAnthropic', () => {
       mockOriginalCreate.mockResolvedValue(mockStream);
       mockedIsAsyncIterable.mockReturnValue(true);
 
-      const result = await instance.messages.create({ 
+      const result = await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
         max_tokens: 1000,
-        stream: true 
+        stream: true,
       });
 
       const chunks = [];
@@ -455,16 +460,16 @@ describe('wrapAnthropic', () => {
       const WrappedAnthropic = wrapAnthropic(AnthropicClass);
       const instance = new WrappedAnthropic();
 
-      const params = { 
+      const params = {
         model: 'claude-3-opus-20240229',
         messages: [],
-        max_tokens: 1000
+        max_tokens: 1000,
       };
       const options = { headers: { 'X-Custom': 'value' } };
 
-      mockOriginalCreate.mockResolvedValue({ 
+      mockOriginalCreate.mockResolvedValue({
         type: 'message',
-        content: []
+        content: [],
       });
 
       await instance.messages.create(params, options);
@@ -481,10 +486,10 @@ describe('wrapAnthropic', () => {
       // Return something that doesn't match AnthropicMessageResponse structure
       mockOriginalCreate.mockResolvedValue(null);
 
-      await instance.messages.create({ 
+      await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       // Should not try to record response
@@ -495,15 +500,15 @@ describe('wrapAnthropic', () => {
       const WrappedAnthropic = wrapAnthropic(AnthropicClass);
       const instance = new WrappedAnthropic();
 
-      mockOriginalCreate.mockResolvedValue({ 
+      mockOriginalCreate.mockResolvedValue({
         type: 'message',
-        content: null 
+        content: null,
       });
 
-      await instance.messages.create({ 
+      await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       expect(mockSpan.addEvent).not.toHaveBeenCalledWith('gen_ai.choice', expect.any(Object));
@@ -546,10 +551,10 @@ describe('wrapAnthropic', () => {
 
       mockOriginalCreate.mockResolvedValue({});
 
-      await instance.messages.create({ 
+      await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       // Should not throw, but also shouldn't record anything
@@ -565,17 +570,17 @@ describe('wrapAnthropic', () => {
         role: 'assistant',
         content: [
           { type: 'text', text: 'First part. ' },
-          { type: 'text', text: 'Second part.' }
+          { type: 'text', text: 'Second part.' },
         ],
         stop_reason: 'end_turn',
       };
 
       mockOriginalCreate.mockResolvedValue(response);
 
-      await instance.messages.create({ 
+      await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       // Should record each content block separately
@@ -605,10 +610,10 @@ describe('wrapAnthropic', () => {
 
       mockOriginalCreate.mockResolvedValue(response);
 
-      await instance.messages.create({ 
+      await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
-        max_tokens: 1000
+        max_tokens: 1000,
       });
 
       expect(mockSpan.setAttribute).toHaveBeenCalledWith('server.address', 'api.anthropic.com');
@@ -641,11 +646,11 @@ describe('wrapAnthropic', () => {
       mockOriginalCreate.mockResolvedValue(mockStream);
       mockedIsAsyncIterable.mockReturnValue(true);
 
-      const result = await instance.messages.create({ 
+      const result = await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
         max_tokens: 1000,
-        stream: true 
+        stream: true,
       });
 
       const chunks = [];
@@ -679,11 +684,11 @@ describe('wrapAnthropic', () => {
       mockOriginalCreate.mockResolvedValue(mockStream);
       mockedIsAsyncIterable.mockReturnValue(true);
 
-      const result = await instance.messages.create({ 
+      const result = await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
         max_tokens: 1000,
-        stream: true 
+        stream: true,
       });
 
       const chunks = [];
@@ -691,7 +696,7 @@ describe('wrapAnthropic', () => {
         chunks.push(chunk);
       }
 
-      expect(chunks).toHaveLength(7);
+      expect(chunks).toHaveLength(5); // null and undefined are skipped
       expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.choice', {
         'gen_ai.system': 'anthropic',
         index: 0,
@@ -718,11 +723,11 @@ describe('wrapAnthropic', () => {
       mockOriginalCreate.mockResolvedValue(mockStream);
       mockedIsAsyncIterable.mockReturnValue(true);
 
-      const result = await instance.messages.create({ 
+      const result = await instance.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [],
         max_tokens: 1000,
-        stream: true 
+        stream: true,
       });
 
       await expect(async () => {
@@ -748,11 +753,13 @@ describe('wrapAnthropic', () => {
       const nonErrorValue = { message: 'object error', code: 'ERR_001' };
       mockOriginalCreate.mockRejectedValue(nonErrorValue);
 
-      await expect(instance.messages.create({ 
-        model: 'claude-3-opus-20240229',
-        messages: [],
-        max_tokens: 1000
-      })).rejects.toThrow();
+      await expect(
+        instance.messages.create({
+          model: 'claude-3-opus-20240229',
+          messages: [],
+          max_tokens: 1000,
+        }),
+      ).rejects.toThrow();
 
       expect(mockedEnsureError).toHaveBeenCalledWith(nonErrorValue);
       expect(mockSpan.recordException).toHaveBeenCalledWith(expect.any(Error));

@@ -67,11 +67,16 @@ export class AnthropicInstrumentation extends InstrumentationBase {
       MODULE_NAME,
       SUPPORTED_VERSIONS,
       (moduleExports, moduleVersion) => {
-        logger.info(`[AnthropicInstrumentation] Applying patch for @anthropic-ai/sdk@${moduleVersion}`);
+        logger.info(
+          `[AnthropicInstrumentation] Applying patch for @anthropic-ai/sdk@${moduleVersion}`,
+        );
+        logger.info('[AnthropicInstrumentation] Module loaded, applying patch');
         return this._applyPatch(moduleExports);
       },
       (moduleExports, moduleVersion) => {
-        logger.info(`[AnthropicInstrumentation] Removing patch for @anthropic-ai/sdk@${moduleVersion}`);
+        logger.info(
+          `[AnthropicInstrumentation] Removing patch for @anthropic-ai/sdk@${moduleVersion}`,
+        );
         return this._removePatch(moduleExports);
       },
     );
@@ -206,6 +211,8 @@ export class AnthropicInstrumentation extends InstrumentationBase {
           logger.debug('[AnthropicInstrumentation] No parent span found in context');
         }
 
+        logger.info('[AnthropicInstrumentation] messages.create called, creating span');
+
         // Start span using the OTel way with active context
         const span = tracer.startSpan(
           `anthropic.messages ${params?.model || 'unknown'}`,
@@ -226,7 +233,7 @@ export class AnthropicInstrumentation extends InstrumentationBase {
           activeContext,
         );
 
-        logger.debug('[AnthropicInstrumentation] Created Anthropic span:', {
+        logger.info('[AnthropicInstrumentation] Created Anthropic span:', {
           spanId: span.spanContext().spanId,
           traceId: span.spanContext().traceId,
           parentSpanId: (span as any).parentSpanId,
@@ -253,10 +260,11 @@ export class AnthropicInstrumentation extends InstrumentationBase {
             // Record messages
             if (params?.messages) {
               params.messages.forEach((message: any) => {
-                const content = typeof message.content === 'string' 
-                  ? message.content 
-                  : JSON.stringify(message.content);
-                
+                const content =
+                  typeof message.content === 'string'
+                    ? message.content
+                    : JSON.stringify(message.content);
+
                 span.addEvent(`gen_ai.${message.role}.message`, {
                   'gen_ai.system': 'anthropic',
                   content: content,
@@ -307,6 +315,7 @@ export class AnthropicInstrumentation extends InstrumentationBase {
 
   private _applyProxyToMessagesGetter(prototype: any): void {
     const instrumentation = this;
+    const wrappedInstances = new WeakSet();
 
     // Store the original property descriptor
     const originalDescriptor = Object.getOwnPropertyDescriptor(prototype, 'messages');
@@ -320,33 +329,112 @@ export class AnthropicInstrumentation extends InstrumentationBase {
             ? originalDescriptor.get.call(this)
             : this._messages;
 
-        if (
-          messages &&
-          messages.create &&
-          !isWrapped(messages.create)
-        ) {
-          logger.info('[AnthropicInstrumentation] Applying lazy wrapping to messages.create');
-          
-          // Store the original create method
-          const originalCreate = messages.create;
-          
-          // Create wrapped function that preserves all properties
-          const wrappedCreate = instrumentation._createWrappedMethod(originalCreate.bind(messages));
-          
-          // Copy all properties from original to wrapped function
-          Object.setPrototypeOf(wrappedCreate, Object.getPrototypeOf(originalCreate));
-          for (const prop of Object.getOwnPropertyNames(originalCreate)) {
-            if (prop !== 'length' && prop !== 'name' && prop !== 'prototype') {
-              try {
-                wrappedCreate[prop] = originalCreate[prop];
-              } catch {
-                // Ignore read-only properties
+        // Check if we've already wrapped this instance
+        if (messages && (messages.create || messages.stream) && !wrappedInstances.has(messages)) {
+          logger.info('[AnthropicInstrumentation] Applying lazy wrapping to messages methods');
+
+          // Wrap the create method
+          if (messages.create) {
+            const originalCreate = messages.create;
+            const wrappedCreate = instrumentation._createWrappedMethod(
+              originalCreate.bind(messages),
+            );
+
+            // Copy all properties from original to wrapped function
+            Object.setPrototypeOf(wrappedCreate, Object.getPrototypeOf(originalCreate));
+            for (const prop of Object.getOwnPropertyNames(originalCreate)) {
+              if (prop !== 'length' && prop !== 'name' && prop !== 'prototype') {
+                try {
+                  (wrappedCreate as any)[prop] = (originalCreate as any)[prop];
+                } catch {
+                  // Ignore read-only properties
+                }
               }
             }
+
+            messages.create = wrappedCreate;
           }
-          
-          // Replace the method
-          messages.create = wrappedCreate;
+
+          // Handle the stream method without wrapping the stream itself
+          if (messages.stream) {
+            const originalStream = messages.stream;
+            messages.stream = function (...args: any[]) {
+              // Skip if shutting down
+              if (isSDKShuttingDown()) {
+                return originalStream.apply(this, args);
+              }
+
+              const [params] = args;
+              const tracer = instrumentation.tracer;
+              const config = instrumentation._config as AnthropicInstrumentationConfig;
+
+              logger.info('[AnthropicInstrumentation] messages.stream called, creating span');
+
+              // Create span for streaming
+              const span = tracer.startSpan(`anthropic.messages ${params?.model || 'unknown'}`, {
+                kind: SpanKind.CLIENT,
+                attributes: {
+                  [SEMATTRS_GEN_AI_SYSTEM]: 'anthropic',
+                  [SEMATTRS_GEN_AI_REQUEST_MODEL]: params?.model,
+                  [SEMATTRS_GEN_AI_REQUEST_TEMPERATURE]: params?.temperature,
+                  [SEMATTRS_GEN_AI_REQUEST_MAX_TOKENS]: params?.max_tokens,
+                  [SEMATTRS_GEN_AI_REQUEST_TOP_P]: params?.top_p,
+                  'gen_ai.request.top_k': params?.top_k,
+                  [SEMATTRS_GEN_AI_OPERATION_NAME]: 'chat',
+                  'lilypad.type': 'llm',
+                  'server.address': 'api.anthropic.com',
+                  'gen_ai.request.stream': true,
+                },
+              });
+
+              logger.info('[AnthropicInstrumentation] Created Anthropic stream span:', {
+                spanId: span.spanContext().spanId,
+                traceId: span.spanContext().traceId,
+              });
+
+              // Call request hook if provided
+              if (config.requestHook) {
+                config.requestHook(span, params);
+              }
+
+              // Record messages
+              if (params?.messages) {
+                params.messages.forEach((message: any) => {
+                  const content =
+                    typeof message.content === 'string'
+                      ? message.content
+                      : JSON.stringify(message.content);
+
+                  span.addEvent(`gen_ai.${message.role}.message`, {
+                    'gen_ai.system': 'anthropic',
+                    content: content,
+                  });
+                });
+              }
+
+              try {
+                // Call original method - it returns a stream object
+                const streamResult = originalStream.apply(this, args);
+
+                // Monitor the stream asynchronously without wrapping
+                instrumentation._monitorStream(span, streamResult, config);
+
+                // Return the original stream unchanged
+                return streamResult;
+              } catch (error) {
+                span.recordException(error as Error);
+                span.setStatus({
+                  code: SpanStatusCode.ERROR,
+                  message: error instanceof Error ? error.message : String(error),
+                });
+                span.end();
+                throw error;
+              }
+            };
+          }
+
+          // Mark this instance as wrapped
+          wrappedInstances.add(messages);
         }
 
         return messages;
@@ -379,6 +467,7 @@ export class AnthropicInstrumentation extends InstrumentationBase {
       const activeContext = context.active();
 
       // Use the same span creation logic as the main wrapped method
+      logger.debug('[AnthropicInstrumentation] Creating span in wrapped method');
       const span = tracer.startSpan(
         `messages ${params?.model || 'unknown'}`,
         {
@@ -399,7 +488,7 @@ export class AnthropicInstrumentation extends InstrumentationBase {
 
       // Call original to get the special promise-like object
       const originalResult = original.apply(this, args);
-      
+
       // If it's not an object with special methods, handle it normally
       if (!originalResult || typeof originalResult !== 'object') {
         // Simple case - just a regular promise
@@ -418,11 +507,11 @@ export class AnthropicInstrumentation extends InstrumentationBase {
           }
         });
       }
-      
+
       // For the Anthropic SDK, we need to preserve special methods like withResponse
       // Create a proxy that intercepts promise resolution
       const wrappedResult = Object.create(Object.getPrototypeOf(originalResult));
-      
+
       // Copy all properties and methods from the original
       for (const key in originalResult) {
         if (key === 'then' || key === 'catch' || key === 'finally') {
@@ -437,20 +526,21 @@ export class AnthropicInstrumentation extends InstrumentationBase {
           // Some properties might not be accessible
         }
       }
-      
+
       // Wrap the then method to add our instrumentation
       wrappedResult.then = (onfulfilled?: any, onrejected?: any) => {
         return originalResult.then(
           (result: any) => {
             return context.with(trace.setSpan(context.active(), span), async () => {
               try {
-                instrumentation._handleResult(span, params, result, config);
-                return onfulfilled ? onfulfilled(result) : result;
+                const handledResult = instrumentation._handleResult(span, params, result, config);
+                return onfulfilled ? onfulfilled(handledResult || result) : handledResult || result;
               } catch (error) {
                 instrumentation._handleError(span, error);
                 throw error;
               } finally {
                 if (!params?.stream) {
+                  logger.debug('[AnthropicInstrumentation] Ending span in wrapped method');
                   span.end();
                 }
               }
@@ -460,36 +550,48 @@ export class AnthropicInstrumentation extends InstrumentationBase {
             instrumentation._handleError(span, error);
             span.end();
             return onrejected ? onrejected(error) : Promise.reject(error);
-          }
+          },
         );
       };
-      
+
       // Wrap catch and finally methods
       wrappedResult.catch = (onrejected: any) => wrappedResult.then(undefined, onrejected);
-      wrappedResult.finally = (onfinally: any) => wrappedResult.then(
-        (value: any) => { onfinally?.(); return value; },
-        (reason: any) => { onfinally?.(); throw reason; }
-      );
-      
+      wrappedResult.finally = (onfinally: any) =>
+        wrappedResult.then(
+          (value: any) => {
+            onfinally?.();
+            return value;
+          },
+          (reason: any) => {
+            onfinally?.();
+            throw reason;
+          },
+        );
+
       return wrappedResult;
     };
-    
+
     // Copy all properties from original to wrapped function
     Object.setPrototypeOf(wrapped, Object.getPrototypeOf(original));
     for (const prop in original) {
-      if (original.hasOwnProperty(prop)) {
+      if (Object.prototype.hasOwnProperty.call(original, prop)) {
         try {
-          wrapped[prop] = original[prop];
+          (wrapped as any)[prop] = (original as any)[prop];
         } catch {
           // Ignore errors when copying properties
         }
       }
     }
-    
+
     return wrapped;
   }
 
-  private _handleResult(span: OtelSpan, params: any, result: any, config: AnthropicInstrumentationConfig): void {
+  private _handleResult(
+    span: OtelSpan,
+    params: any,
+    result: any,
+    config: AnthropicInstrumentationConfig,
+  ): any {
     // Call request hook
     if (config.requestHook) {
       config.requestHook(span, params);
@@ -506,10 +608,9 @@ export class AnthropicInstrumentation extends InstrumentationBase {
     // Record messages
     if (params?.messages) {
       params.messages.forEach((message: any) => {
-        const content = typeof message.content === 'string' 
-          ? message.content 
-          : JSON.stringify(message.content);
-        
+        const content =
+          typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+
         span.addEvent(`gen_ai.${message.role}.message`, {
           'gen_ai.system': 'anthropic',
           content: content,
@@ -519,11 +620,7 @@ export class AnthropicInstrumentation extends InstrumentationBase {
 
     // Handle streaming
     if (params?.stream && isAsyncIterable(result)) {
-      return this._wrapStream(
-        span,
-        result as AsyncIterable<AnthropicMessageChunk>,
-        config,
-      );
+      return this._wrapStream(span, result as AsyncIterable<AnthropicMessageChunk>, config);
     }
 
     // Handle regular response
@@ -535,6 +632,7 @@ export class AnthropicInstrumentation extends InstrumentationBase {
     }
 
     span.setStatus({ code: SpanStatusCode.OK });
+    return result;
   }
 
   private _handleError(span: OtelSpan, error: any): void {
@@ -545,6 +643,91 @@ export class AnthropicInstrumentation extends InstrumentationBase {
     });
   }
 
+  private _monitorStream(
+    span: OtelSpan,
+    stream: any,
+    _config: AnthropicInstrumentationConfig,
+  ): void {
+    // Monitor the stream asynchronously without wrapping it
+    (async () => {
+      let content = '';
+      let stopReason: string | null = null;
+      const usage: { input_tokens: number; output_tokens: number } = {
+        input_tokens: 0,
+        output_tokens: 0,
+      };
+
+      try {
+        for await (const chunk of stream) {
+          // Process chunk based on type
+          if (chunk.type === 'message_start' && chunk.message) {
+            // Initial message with usage info
+            if (chunk.message.usage) {
+              usage.input_tokens = chunk.message.usage.input_tokens;
+              usage.output_tokens = chunk.message.usage.output_tokens;
+            }
+          } else if (chunk.type === 'content_block_delta' && chunk.delta) {
+            // Text content
+            if (chunk.delta.type === 'text_delta' && chunk.delta.text) {
+              content += chunk.delta.text;
+            }
+          } else if (chunk.type === 'message_delta' && chunk.delta) {
+            // Message delta with stop reason
+            if (chunk.delta.stop_reason) {
+              stopReason = chunk.delta.stop_reason;
+            }
+          } else if (chunk.type === 'message_stop' && chunk.usage) {
+            // Final usage info
+            usage.output_tokens = chunk.usage.output_tokens;
+          }
+
+          // Add chunk event
+          span.addEvent('gen_ai.chunk', {
+            size: chunk.delta?.text?.length || 0,
+          });
+        }
+
+        // Record the completed stream
+        if (content || stopReason) {
+          const message: Record<string, unknown> = {
+            role: 'assistant',
+            content: content,
+          };
+
+          span.addEvent('gen_ai.choice', {
+            'gen_ai.system': 'anthropic',
+            index: 0,
+            finish_reason: stopReason || 'error',
+            message: JSON.stringify(message),
+          });
+        }
+
+        if (stopReason) {
+          span.setAttribute(SEMATTRS_GEN_AI_RESPONSE_FINISH_REASONS, [stopReason]);
+        }
+
+        // Record usage if available
+        if (usage) {
+          span.setAttributes({
+            [SEMATTRS_GEN_AI_USAGE_INPUT_TOKENS]: usage.input_tokens,
+            [SEMATTRS_GEN_AI_USAGE_OUTPUT_TOKENS]: usage.output_tokens,
+            'gen_ai.usage.total_tokens': usage.input_tokens + usage.output_tokens,
+          });
+        }
+
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      } finally {
+        span.end();
+      }
+    })();
+  }
+
   private _wrapStream(
     span: OtelSpan,
     stream: AsyncIterable<AnthropicMessageChunk>,
@@ -552,7 +735,7 @@ export class AnthropicInstrumentation extends InstrumentationBase {
   ): AsyncIterable<AnthropicMessageChunk> {
     let content = '';
     let stopReason: string | null = null;
-    let usage: { input_tokens: number; output_tokens: number } = {
+    const usage: { input_tokens: number; output_tokens: number } = {
       input_tokens: 0,
       output_tokens: 0,
     };
@@ -776,10 +959,11 @@ export class AnthropicInstrumentation extends InstrumentationBase {
           // Record messages
           if (params?.messages) {
             params.messages.forEach((message: any) => {
-              const content = typeof message.content === 'string' 
-                ? message.content 
-                : JSON.stringify(message.content);
-              
+              const content =
+                typeof message.content === 'string'
+                  ? message.content
+                  : JSON.stringify(message.content);
+
               span.addEvent(`gen_ai.${message.role}.message`, {
                 'gen_ai.system': 'anthropic',
                 content: content,
