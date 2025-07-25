@@ -9,6 +9,7 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
+      - LILYPAD-209 
   pull_request:
     branches:
       - main
@@ -16,6 +17,7 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
+      - LILYPAD-209 
 
 jobs:
   tests:
