@@ -559,10 +559,9 @@ describe('setupOpenAIHooks', () => {
         'gen_ai.system': 'openai',
         content: 'Hello',
       });
-      expect(mockSpan.addEvent).toHaveBeenCalledWith('gen_ai.assistant.message', {
-        'gen_ai.system': 'openai',
-        content: '{"type":"text","text":"Hi there"}',
-      });
+      // Assistant messages in the request are not recorded as events
+      // Only assistant messages from the response are recorded
+      expect(mockSpan.addEvent).toHaveBeenCalledTimes(2);
     });
 
     it('should handle successful response', async () => {

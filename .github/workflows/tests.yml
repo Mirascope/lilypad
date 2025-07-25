@@ -9,6 +9,7 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
+      - add-ts-anthropic
       - LILYPAD-209 
   pull_request:
     branches:
@@ -17,6 +18,7 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
+      - add-ts-anthropic
       - LILYPAD-209 
 
 jobs:

@@ -9,6 +9,7 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
+      - add-ts-anthropic
       - LILYPAD-209 
 
   pull_request:
@@ -18,7 +19,8 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
-      - LILYPAD-209 
+      - add-ts-anthropic
+      - LILYPAD-209
 
 jobs:
   codespell:
