@@ -45,9 +45,11 @@
         "vitest": "^1.0.0",
       },
       "peerDependencies": {
+        "@google/generative-ai": "^0.24.0",
         "openai": "^4.0.0",
       },
       "optionalPeers": [
+        "@google/generative-ai",
         "openai",
       ],
     },
