@@ -168,3 +168,7 @@ export function getTracer(name = 'lilypad', version?: string) {
 export function getProvider(): NodeTracerProvider | null {
   return _provider;
 }
+
+export function setProvider(provider: NodeTracerProvider): void {
+  _provider = provider;
+}
