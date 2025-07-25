@@ -9,6 +9,7 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
+      - add-ts-anthropic
 
   pull_request:
     branches:
@@ -17,6 +18,7 @@ on:
       - LILYPAD-205
       - LILYPAD-207
       - LILYPAD-208
+      - add-ts-anthropic
 
 jobs:
   check-openapi-generation:
