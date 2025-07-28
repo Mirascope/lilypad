@@ -11,6 +11,7 @@ on:
       - LILYPAD-208
       - LILYPAD-209
       - add-ts-google
+      - add-ts-bedrock
   pull_request:
     branches:
       - main
@@ -20,6 +21,7 @@ on:
       - LILYPAD-208
       - LILYPAD-209
       - add-ts-google
+      - add-ts-bedrock
 
 jobs:
   tests:

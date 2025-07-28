@@ -137,10 +137,14 @@
     "shimmer": "^1.2.1"
   },
   "peerDependencies": {
+    "@azure-rest/ai-inference": "",
     "@google/generative-ai": "^0.24.0",
     "openai": "^4.0.0"
   },
   "peerDependenciesMeta": {
+    "@azure-rest/ai-inference": {
+      "optional": true
+    },
     "@google/generative-ai": {
       "optional": true
     },

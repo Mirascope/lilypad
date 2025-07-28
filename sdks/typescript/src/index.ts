@@ -20,6 +20,7 @@ export { wrapOpenAI } from './wrap-openai';
 export { wrapAnthropic } from './wrap-anthropic';
 export { wrapGoogle } from './wrap-google';
 export { wrapBedrock } from './wrap-bedrock';
+export { wrapAzureInference } from './wrap-azure-inference';
 export { trace, Trace, AsyncTrace, getCurrentSpan, logToCurrentSpan, wrapWithTrace } from './trace';
 export { trace as lilypad } from './trace';
 export type { LilypadConfig, LogLevel } from './types';

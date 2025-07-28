@@ -12,6 +12,7 @@ on:
       - add-ts-anthropic
       - LILYPAD-209
       - add-ts-google
+      - add-ts-bedrock
 
   pull_request:
     branches:
@@ -23,6 +24,7 @@ on:
       - add-ts-anthropic
       - LILYPAD-209
       - add-ts-google
+      - add-ts-bedrock
 
 jobs:
   codespell:
