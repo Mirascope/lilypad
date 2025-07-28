@@ -16,6 +16,7 @@ import { getOrCreateContextManager } from './utils/shared-context';
 import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentation';
 import { AnthropicInstrumentation } from './instrumentors/anthropic-otel-instrumentation';
 import { GoogleInstrumentation } from './instrumentors/google-otel-instrumentation';
+import { BedrockInstrumentation } from './instrumentors/bedrock-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
 
@@ -143,12 +144,28 @@ if (!apiKey) {
         suppressInternalInstrumentation: false,
       });
 
+      const bedrockInstrumentation = new BedrockInstrumentation({
+        requestHook: (_span, params) => {
+          logger.debug('[Register] Bedrock request hook called', { modelId: params.modelId });
+        },
+        responseHook: (_span, response) => {
+          logger.debug('[Register] Bedrock response hook called', { body: !!response.body });
+        },
+        fallbackToProxy: true, // Enable Proxy fallback for lazy-loaded properties
+        suppressInternalInstrumentation: false,
+      });
+
       registerInstrumentations({
-        instrumentations: [openAIInstrumentation, anthropicInstrumentation, googleInstrumentation],
+        instrumentations: [
+          openAIInstrumentation,
+          anthropicInstrumentation,
+          googleInstrumentation,
+          bedrockInstrumentation,
+        ],
       });
 
       logger.info(
-        '[Register] OpenAI, Anthropic, and Google auto-instrumentation loaded with InstrumentationBase',
+        '[Register] OpenAI, Anthropic, Google, and Bedrock auto-instrumentation loaded with InstrumentationBase',
       );
     } catch (instrumentationError) {
       logger.error('[Register] Failed to register instrumentations:', instrumentationError);
