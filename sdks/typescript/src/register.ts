@@ -17,6 +17,7 @@ import { OpenAIInstrumentation } from './instrumentors/openai-otel-instrumentati
 import { AnthropicInstrumentation } from './instrumentors/anthropic-otel-instrumentation';
 import { GoogleInstrumentation } from './instrumentors/google-otel-instrumentation';
 import { BedrockInstrumentation } from './instrumentors/bedrock-otel-instrumentation';
+import { AzureInferenceInstrumentation } from './instrumentors/azure-ai-inference-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
 
@@ -155,17 +156,23 @@ if (!apiKey) {
         suppressInternalInstrumentation: false,
       });
 
+      const azureInferenceInstrumentation = new AzureInferenceInstrumentation({
+        fallbackToProxy: true, // Enable Proxy fallback for lazy-loaded properties
+        suppressInternalInstrumentation: false,
+      });
+
       registerInstrumentations({
         instrumentations: [
           openAIInstrumentation,
           anthropicInstrumentation,
           googleInstrumentation,
           bedrockInstrumentation,
+          azureInferenceInstrumentation,
         ],
       });
 
       logger.info(
-        '[Register] OpenAI, Anthropic, Google, and Bedrock auto-instrumentation loaded with InstrumentationBase',
+        '[Register] OpenAI, Anthropic, Google, Bedrock, and Azure AI Inference auto-instrumentation loaded with InstrumentationBase',
       );
     } catch (instrumentationError) {
       logger.error('[Register] Failed to register instrumentations:', instrumentationError);

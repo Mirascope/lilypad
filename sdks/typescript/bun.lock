@@ -46,10 +46,12 @@
         "vitest": "^1.0.0",
       },
       "peerDependencies": {
+        "@azure-rest/ai-inference": "",
         "@google/generative-ai": "^0.24.0",
         "openai": "^4.0.0",
       },
       "optionalPeers": [
+        "@azure-rest/ai-inference",
         "@google/generative-ai",
         "openai",
       ],
