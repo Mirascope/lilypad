@@ -10,7 +10,8 @@ on:
       - LILYPAD-207
       - LILYPAD-208
       - add-ts-anthropic
-      - LILYPAD-209 
+      - LILYPAD-209
+      - add-ts-google
 
   pull_request:
     branches:
@@ -20,7 +21,8 @@ on:
       - LILYPAD-207
       - LILYPAD-208
       - add-ts-anthropic
-      - LILYPAD-209 
+      - LILYPAD-209
+      - add-ts-google
 
 jobs:
   codespell:
