@@ -12,6 +12,7 @@ import { CryptoIdGenerator } from './utils/id-generator';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { LilypadClient } from '../lilypad/generated';
 import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
+import { configurePropagator } from './utils/context-propagation';
 
 // Tracer provider instance for proper shutdown
 let _provider: NodeTracerProvider | null = null;
@@ -85,6 +86,7 @@ export async function configure(config: LilypadConfig): Promise<void> {
     autoLlm: false,
     autoHttp: false,
     preserveExistingPropagator: false,
+    propagator: 'tracecontext',
     ...config,
     batchProcessorOptions: {
       scheduledDelayMillis: 5000,
@@ -107,6 +109,14 @@ export async function configure(config: LilypadConfig): Promise<void> {
 
   // Configure logger
   logger.setLevel(finalConfig.logLevel || 'info');
+
+  // Configure propagator
+  if (!finalConfig.preserveExistingPropagator) {
+    configurePropagator(finalConfig.propagator);
+    logger.debug(`Configured propagator: ${finalConfig.propagator}`);
+  } else {
+    logger.debug('Preserving existing propagator configuration');
+  }
 
   // Log configuration for debugging
   logger.debug(`Using baseUrl: ${finalConfig.baseUrl}`);
