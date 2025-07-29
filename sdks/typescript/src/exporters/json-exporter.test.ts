@@ -250,6 +250,36 @@ describe('JSONSpanExporter', () => {
       const callArgs = mockMakeCustomTracesRequest.mock.calls[0];
       const serializedSpan = callArgs[0][0];
 
+      // Type should be 'llm' since lilypad.type is set to 'llm'
+      expect(serializedSpan.type).toBe('llm');
+      expect(serializedSpan.session_id).toBe('session-123');
+    });
+
+    it('should handle span with lilypad.versioning attribute', async () => {
+      const span = createMockSpan({
+        attributes: {
+          'lilypad.type': 'llm',
+          'lilypad.versioning': 'automatic',
+          'lilypad.session_id': 'session-123',
+        },
+      });
+
+      // Mock the makeCustomTracesRequest method for this test
+      const mockMakeCustomTracesRequest = vi
+        .spyOn(exporter as any, 'makeCustomTracesRequest')
+        .mockResolvedValue({
+          trace_status: 'queued',
+          span_count: 1,
+          trace_ids: ['12345678901234567890123456789012'],
+        });
+
+      const callback = vi.fn();
+      await exporter.export([span], callback);
+
+      const callArgs = mockMakeCustomTracesRequest.mock.calls[0];
+      const serializedSpan = callArgs[0][0];
+
+      // Type should be 'llm' since lilypad.type is set to 'llm' (versioning doesn't affect type)
       expect(serializedSpan.type).toBe('llm');
       expect(serializedSpan.session_id).toBe('session-123');
     });

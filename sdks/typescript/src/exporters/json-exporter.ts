@@ -99,7 +99,12 @@ export class JSONSpanExporter implements SpanExporter {
       start_time: span.startTime[0] * 1e9 + span.startTime[1],
       end_time: span.endTime[0] * 1e9 + span.endTime[1],
       type: spanType,
-      attributes: span.attributes || {},
+      attributes: (() => {
+        const attrs = { ...(span.attributes || {}) };
+        // Remove lilypad.type from attributes to avoid duplication with the type field
+        delete attrs['lilypad.type'];
+        return attrs;
+      })(),
       status: SpanStatusCode[span.status.code],
       session_id: (span.attributes?.['lilypad.session_id'] as string | null) || null,
       events: span.events.map((event) => ({
