@@ -216,10 +216,11 @@ describe('session operations', () => {
       await createSession(db, testUserId);
       await createSession(db, otherUser!.id);
 
+      const totalSessions = (await db.select().from(sessions)).length;
       await deleteUserSessions(db, testUserId);
-
       const remainingSessions = await db.select().from(sessions);
-      expect(remainingSessions).toHaveLength(1);
+
+      expect(remainingSessions).toHaveLength(totalSessions - 1);
       expect(remainingSessions[0].userId).toBe(otherUser!.id);
     });
 

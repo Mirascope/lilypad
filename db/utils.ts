@@ -25,7 +25,7 @@ export function getDeletedRowCount(
       return result.rowCount;
     }
   }
-  return 0;
+  throw new Error(`Unknown result type: ${typeof result}`);
 }
 
 export function createNeonDbConnection(databaseUrl: string): NeonHttpDatabase {
