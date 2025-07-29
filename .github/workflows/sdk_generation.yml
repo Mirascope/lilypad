@@ -14,6 +14,7 @@ on:
       - add-ts-google
       - add-ts-bedrock
       - add-ts-azure
+      - add-ts-mistral
 
   pull_request:
     branches:
@@ -27,6 +28,7 @@ on:
       - add-ts-google
       - add-ts-bedrock
       - add-ts-azure
+      - add-ts-mistral
 
 jobs:
   check-openapi-generation:

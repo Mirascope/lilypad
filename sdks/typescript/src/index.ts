@@ -10,6 +10,13 @@ import { logger } from './utils/logger';
 import { Span, span, syncSpan } from './span';
 import { session, sessionAsync, getCurrentSession, withSession, withSessionAsync } from './session';
 import { trace, Trace, AsyncTrace } from './trace';
+import {
+  propagatedContext,
+  propagatedContextSync,
+  getCurrentContext,
+  detachedSpan,
+} from './context-managers';
+import { extractContext, injectContext } from './utils/context-propagation';
 
 export { configure, getTracerProvider, getTracer } from './configure';
 export { shutdown } from './shutdown';
@@ -24,9 +31,17 @@ export { wrapAzureInference } from './wrap-azure-inference';
 export { wrapMistral } from './wrap-mistral';
 export { trace, Trace, AsyncTrace, getCurrentSpan, logToCurrentSpan, wrapWithTrace } from './trace';
 export { trace as lilypad } from './trace';
-export type { LilypadConfig, LogLevel } from './types';
+export {
+  propagatedContext,
+  propagatedContextSync,
+  getCurrentContext,
+  detachedSpan,
+} from './context-managers';
+export { extractContext, injectContext } from './utils/context-propagation';
+export type { LilypadConfig, LogLevel, Propagator } from './types';
 export type { Session } from './session';
 export type { TraceOptions } from './trace';
+export type { PropagatedContextOptions } from './context-managers';
 
 // Versioning-related exports removed - TypeScript extraction happens at build time
 
@@ -46,6 +61,12 @@ const lilypad = {
   trace,
   Trace,
   AsyncTrace,
+  propagatedContext,
+  propagatedContextSync,
+  getCurrentContext,
+  detachedSpan,
+  extractContext,
+  injectContext,
 };
 
 export default lilypad;
