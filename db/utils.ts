@@ -28,11 +28,21 @@ export function getDeletedRowCount(
   return 0;
 }
 
-export function createDbConnection(databaseUrl: string): Database {
-  if (databaseUrl.includes('neon.tech') || databaseUrl.includes('neon.dev')) {
-    const sql = neon(databaseUrl);
-    return drizzleNeon(sql);
-  }
+export function createNeonDbConnection(databaseUrl: string): NeonHttpDatabase {
+  const sql = neon(databaseUrl);
+  return drizzleNeon(sql);
+}
+
+export function createPostgresDbConnection(
+  databaseUrl: string
+): PostgresJsDatabase {
   const queryClient = postgres(databaseUrl);
   return drizzlePostgres(queryClient);
+}
+
+export function createDbConnection(databaseUrl: string): Database {
+  if (databaseUrl.includes('neon.tech') || databaseUrl.includes('neon.dev')) {
+    return createNeonDbConnection(databaseUrl);
+  }
+  return createPostgresDbConnection(databaseUrl);
 }
