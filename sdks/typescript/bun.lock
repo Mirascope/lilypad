@@ -6,6 +6,7 @@
       "dependencies": {
         "@anthropic-ai/sdk": "^0.57.0",
         "@aws-sdk/client-bedrock-runtime": "^3.848.0",
+        "@mistralai/mistralai": "^1.7.5",
         "@opentelemetry/api": "^1.7.0",
         "@opentelemetry/instrumentation": "^0.203.0",
         "@opentelemetry/resources": "^1.19.0",
@@ -227,6 +228,8 @@
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.29", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ=="],
 
     "@js-sdsl/ordered-map": ["@js-sdsl/ordered-map@4.4.2", "", {}, "sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw=="],
+
+    "@mistralai/mistralai": ["@mistralai/mistralai@1.7.5", "", { "dependencies": { "zod-to-json-schema": "^3.24.1" }, "peerDependencies": { "zod": ">= 3" } }, "sha512-5YfNVSYm8r/zbYAVYfAEILGOvyFYMSgmgr5q8SYFhlxBWwvmxV/p/FNH5PihVZPbE4fNpa8aFo7JNX6jbWhWcg=="],
 
     "@napi-rs/nice": ["@napi-rs/nice@1.0.4", "", { "optionalDependencies": { "@napi-rs/nice-android-arm-eabi": "1.0.4", "@napi-rs/nice-android-arm64": "1.0.4", "@napi-rs/nice-darwin-arm64": "1.0.4", "@napi-rs/nice-darwin-x64": "1.0.4", "@napi-rs/nice-freebsd-x64": "1.0.4", "@napi-rs/nice-linux-arm-gnueabihf": "1.0.4", "@napi-rs/nice-linux-arm64-gnu": "1.0.4", "@napi-rs/nice-linux-arm64-musl": "1.0.4", "@napi-rs/nice-linux-ppc64-gnu": "1.0.4", "@napi-rs/nice-linux-riscv64-gnu": "1.0.4", "@napi-rs/nice-linux-s390x-gnu": "1.0.4", "@napi-rs/nice-linux-x64-gnu": "1.0.4", "@napi-rs/nice-linux-x64-musl": "1.0.4", "@napi-rs/nice-win32-arm64-msvc": "1.0.4", "@napi-rs/nice-win32-ia32-msvc": "1.0.4", "@napi-rs/nice-win32-x64-msvc": "1.0.4" } }, "sha512-Sqih1YARrmMoHlXGgI9JrrgkzxcaaEso0AH+Y7j8NHonUs+xe4iDsgC3IBIDNdzEewbNpccNN6hip+b5vmyRLw=="],
 
@@ -1353,6 +1356,8 @@
     "yocto-queue": ["yocto-queue@1.2.1", "", {}, "sha512-AyeEbWOu/TAXdxlV9wmGcR0+yh2j3vYPGOECcIj2S7MkrLyC7ne+oye2BKTItt0ii2PHk4cDy+95+LshzbXnGg=="],
 
     "zod": ["zod@4.0.8", "", {}, "sha512-+MSh9cZU9r3QKlHqrgHMTSr3QwMGv4PLfR0M4N/sYWV5/x67HgXEhIGObdBkpnX8G78pTgWnIrBL2lZcNJOtfg=="],
+
+    "zod-to-json-schema": ["zod-to-json-schema@3.24.6", "", { "peerDependencies": { "zod": "^3.24.1" } }, "sha512-h/z3PKvcTcTetyjl1fkj79MHNEjm+HpD6NXheWjzOekY7kV+lwDYnHw+ivHkijnCSMz1yJaWBD9vu/Fcmk+vEg=="],
 
     "@aws-crypto/sha256-browser/@smithy/util-utf8": ["@smithy/util-utf8@2.3.0", "", { "dependencies": { "@smithy/util-buffer-from": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-R8Rdn8Hy72KKcebgLiv8jQcQkXoLMOGGv5uI1/k0l+snqkOzQ1R0ChUBCxWMlBsFMekWjq0wRudIweFs7sKT5A=="],
 

@@ -17,6 +17,7 @@ import { AnthropicInstrumentation } from './instrumentors/anthropic-otel-instrum
 import { GoogleInstrumentation } from './instrumentors/google-otel-instrumentation';
 import { BedrockInstrumentation } from './instrumentors/bedrock-otel-instrumentation';
 import { AzureInferenceInstrumentation } from './instrumentors/azure-ai-inference-otel-instrumentation';
+import { MistralInstrumentation } from './instrumentors/mistral-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
@@ -158,6 +159,23 @@ if (!apiKey) {
             suppressInternalInstrumentation: process.env.LILYPAD_SUPPRESS_LOGS === 'true',
           }),
           new AzureInferenceInstrumentation({
+            enabled: true,
+            requestHook: (span, params) => {
+              // Add custom attributes if needed
+              if (process.env.LILYPAD_DEBUG === 'true') {
+                span.setAttribute('lilypad.debug.params', JSON.stringify(params));
+              }
+            },
+            responseHook: (span, response) => {
+              // Add custom response attributes if needed
+              if (response.id) {
+                span.setAttribute('gen_ai.response.id', response.id);
+              }
+            },
+            fallbackToProxy: true,
+            suppressInternalInstrumentation: process.env.LILYPAD_SUPPRESS_LOGS === 'true',
+          }),
+          new MistralInstrumentation({
             enabled: true,
             requestHook: (span, params) => {
               // Add custom attributes if needed

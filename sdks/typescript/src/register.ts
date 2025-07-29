@@ -18,6 +18,7 @@ import { AnthropicInstrumentation } from './instrumentors/anthropic-otel-instrum
 import { GoogleInstrumentation } from './instrumentors/google-otel-instrumentation';
 import { BedrockInstrumentation } from './instrumentors/bedrock-otel-instrumentation';
 import { AzureInferenceInstrumentation } from './instrumentors/azure-ai-inference-otel-instrumentation';
+import { MistralInstrumentation } from './instrumentors/mistral-otel-instrumentation';
 import { JSONSpanExporter } from './exporters/json-exporter';
 import { BASE_URL, REMOTE_CLIENT_URL } from './constants';
 
@@ -161,6 +162,11 @@ if (!apiKey) {
         suppressInternalInstrumentation: false,
       });
 
+      const mistralInstrumentation = new MistralInstrumentation({
+        fallbackToProxy: true, // Enable Proxy fallback for lazy-loaded properties
+        suppressInternalInstrumentation: false,
+      });
+
       registerInstrumentations({
         instrumentations: [
           openAIInstrumentation,
@@ -168,11 +174,12 @@ if (!apiKey) {
           googleInstrumentation,
           bedrockInstrumentation,
           azureInferenceInstrumentation,
+          mistralInstrumentation,
         ],
       });
 
       logger.info(
-        '[Register] OpenAI, Anthropic, Google, Bedrock, and Azure AI Inference auto-instrumentation loaded with InstrumentationBase',
+        '[Register] OpenAI, Anthropic, Google, Bedrock, Azure AI Inference, and Mistral auto-instrumentation loaded with InstrumentationBase',
       );
     } catch (instrumentationError) {
       logger.error('[Register] Failed to register instrumentations:', instrumentationError);
