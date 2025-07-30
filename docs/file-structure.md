@@ -65,8 +65,10 @@ The serverless backend running on Cloudflare Workers that handles API requests a
 ```text
 worker/
 ├── api/                  # API handlers
+│   ├── schemas/            # Shared API schemas
+│   │   └── common.ts         # Common response schemas
 │   ├── index.ts            # API route handlers
-│   └── router.ts           # API router configuration
+│   └── router.ts           # API router with OpenAPI documentation
 ├── auth/                 # Authentication handlers
 │   ├── middleware/         # Auth middleware
 │   │   ├── index.ts          # Middleware exports
@@ -81,11 +83,14 @@ worker/
 │   │   ├── initiate.ts       # OAuth initiation
 │   │   ├── proxy-callback.ts # OAuth proxy callback
 │   │   └── types.ts          # OAuth type definitions
+│   ├── routes.ts           # OpenAPI route definitions
+│   ├── schemas.ts          # Zod schemas for validation
 │   ├── index.ts            # Auth route handlers
-│   ├── logout.ts           # Logout handler
-│   ├── me.ts               # User info endpoint
-│   ├── router.ts           # Auth router configuration
+│   ├── router.ts           # Auth router with OpenAPI documentation
+│   ├── router.test.ts      # Consolidated router, schema, and integration tests
 │   └── utils.ts            # Auth utilities
+├── tests/
+│   └── integration.test.ts # Integration tests
 ├── environment.ts        # Environment configuration
 └── index.ts              # Main worker entry point
 ```
@@ -95,6 +100,8 @@ worker/
 - **Hono**: Lightweight web framework with excellent TypeScript support
 - **Cloudflare Workers**: Global edge deployment with automatic scaling
 - **OAuth Integration**: GitHub and Google authentication with production URLs
+- **OpenAPI with Zod**: Type-safe API documentation using @hono/zod-openapi
+- **Swagger UI**: Interactive API documentation at `/docs`
 
 ## Database (`db/`)
 

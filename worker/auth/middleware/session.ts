@@ -5,29 +5,13 @@ import type { Database } from '@/db/utils';
 import type { Environment } from '@/worker/environment';
 import { eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
-
-function extractSessionId(request: Request): string | null {
-  const cookieHeader = request.headers.get('Cookie');
-
-  if (!cookieHeader) {
-    return null;
-  }
-
-  const cookies = cookieHeader.split(';');
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === 'session') {
-      return value || null;
-    }
-  }
-  return null;
-}
+import { getSessionFromCookie } from '../utils';
 
 export const authSessionMiddleware: MiddlewareHandler<{
   Bindings: Environment;
   Variables: { user: User; db: Database };
 }> = async (c, next) => {
-  const sessionId = extractSessionId(c.req.raw);
+  const sessionId = getSessionFromCookie(c.req.raw);
 
   if (!sessionId) {
     return c.json(

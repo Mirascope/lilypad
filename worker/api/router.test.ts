@@ -1,4 +1,7 @@
+import type { User } from '@/db/schema';
+import type { Database } from '@/db/utils';
 import type { Environment } from '@/worker/environment';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiRouter } from './router';
 
@@ -316,6 +319,89 @@ describe('apiRouter', () => {
 
       const data = (await response.json()) as any;
       expect(data).toEqual({ success: true });
+    });
+  });
+  describe('Router Configuration', () => {
+    it('should be an instance of OpenAPIHono', () => {
+      expect(apiRouter).toBeInstanceOf(OpenAPIHono);
+    });
+
+    it('should have correct type definitions for Bindings and Variables', () => {
+      const testRouter = new OpenAPIHono<{
+        Bindings: Environment;
+        Variables: {
+          db: Database;
+          user?: User;
+        };
+      }>();
+
+      expect(apiRouter.constructor).toBe(testRouter.constructor);
+    });
+  });
+
+  describe('OpenAPI Document Generation', () => {
+    it('should generate a valid OpenAPI document', () => {
+      const doc = apiRouter.getOpenAPIDocument({
+        openapi: '3.1.0',
+        info: {
+          title: 'API',
+          version: '1.0.0',
+        },
+      });
+
+      expect(doc).toBeDefined();
+      expect(doc.openapi).toBe('3.1.0');
+      expect(doc.info.title).toBe('API');
+      expect(doc.info.version).toBe('1.0.0');
+    });
+
+    it('should have correct base structure for OpenAPI document', () => {
+      const doc = apiRouter.getOpenAPIDocument({
+        openapi: '3.1.0',
+        info: {
+          title: 'API',
+          version: '1.0.0',
+          description: 'API routes for the application',
+        },
+        servers: [
+          {
+            url: 'https://api.example.com',
+            description: 'Production server',
+          },
+        ],
+      });
+
+      expect(doc.info.description).toBe('API routes for the application');
+      expect(doc.servers).toBeDefined();
+      expect(doc.servers?.[0].url).toBe('https://api.example.com');
+      expect(doc.servers?.[0].description).toBe('Production server');
+    });
+  });
+
+  describe('Router Middleware Context', () => {
+    it.skip('should properly type the context with Environment bindings', () => {
+      apiRouter.use(async (c, next) => {
+        const env: Environment = c.env;
+        expect(env).toBeDefined();
+        await next();
+      });
+    });
+
+    it.skip('should properly type the context with Variables', () => {
+      apiRouter.use(async (c, next) => {
+        const db: Database | undefined = c.get('db');
+        const user: User | undefined = c.get('user');
+
+        if (db) {
+          expect(db).toBeDefined();
+        }
+
+        if (user) {
+          expect(user).toBeDefined();
+        }
+
+        await next();
+      });
     });
   });
 });

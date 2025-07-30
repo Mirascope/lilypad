@@ -1,11 +1,13 @@
 [test]
-preload = ["./tests/setup.ts"]
+preload = ["./tests/setup-db.ts"]
 coverage = true
-coverageSkipTestFiles = false
+coverageSkipTestFiles = true
 coverageThreshold = { lines = 1, functions = 1, statements = 1 }
 # Ignores until we achieve 100% coverage in following PRs
 coveragePathIgnorePatterns = [
-    "tests/setup.ts",
+    "tests/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
     "db/schema/*.ts",
     "src/**",
     "worker/**",

@@ -25,14 +25,17 @@ describe('handleMe', () => {
     await handleMe(mockContext);
 
     expect(mockContext.get).toHaveBeenCalledWith('user');
-    expect(mockContext.json).toHaveBeenCalledWith({
-      success: true,
-      user: {
-        id: testUser.id,
-        email: testUser.email,
-        name: testUser.name,
+    expect(mockContext.json).toHaveBeenCalledWith(
+      {
+        success: true as const,
+        user: {
+          id: testUser.id,
+          email: testUser.email,
+          name: testUser.name,
+        },
       },
-    });
+      200
+    );
   });
 
   it('should only return id, email, and name fields', async () => {
@@ -126,13 +129,16 @@ describe('handleMe', () => {
 
     await handleMe(mockContext);
 
-    expect(mockContext.json).toHaveBeenCalledWith({
-      success: true,
-      user: {
-        id: userWithNullName!.id,
-        email: userWithNullName!.email,
-        name: null,
+    expect(mockContext.json).toHaveBeenCalledWith(
+      {
+        success: true as const,
+        user: {
+          id: userWithNullName!.id,
+          email: userWithNullName!.email,
+          name: null,
+        },
       },
-    });
+      200
+    );
   });
 });
