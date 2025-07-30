@@ -1,6 +1,6 @@
 import { users, type NewUser, type User } from '@/db/schema';
 import type { Database } from '@/db/utils';
-import { sql } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
 
 export async function createOrUpdateUser(
   db: Database,
@@ -16,10 +16,21 @@ export async function createOrUpdateUser(
         target: users.email,
         set: {
           name: userInfo.name,
-          updatedAt: sql`CASE WHEN ${users.name} != ${userInfo.name} THEN NOW() ELSE ${users.updatedAt} END`,
+          updatedAt: new Date(),
         },
+        where: ne(users.name, userInfo.name ?? ''),
       })
       .returning();
+
+    if (result.length === 0) {
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, userInfo.email))
+        .limit(1);
+
+      return existingUser;
+    }
 
     return result[0];
   } catch (error) {

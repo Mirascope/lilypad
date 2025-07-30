@@ -115,7 +115,9 @@ db/
 ├── operations/                      # Database operations
 │   ├── index.ts                       # Operations exports
 │   ├── sessions.ts                    # Session operations
-│   └── users.ts                       # User-related operations
+│   ├── sessions.test.ts               # Session operations tests
+│   ├── users.ts                       # User-related operations
+│   └── users.test.ts                  # User operations tests
 └── schema/                          # Database schema definitions
     ├── index.ts                       # Schema exports and types
     ├── users.ts                       # User table schema
@@ -175,6 +177,15 @@ scripts/
 └── lint-staged.ts          # Pre-commit linting configuration
 ```
 
+## Tests (`tests/`)
+
+Global test configuration and setup files.
+
+```text
+tests/
+└── setup.ts                # Global test setup and configuration
+```
+
 ## GitHub Actions (`.github/`)
 
 CI/CD workflows and GitHub configuration.
@@ -185,7 +196,8 @@ CI/CD workflows and GitHub configuration.
 │   ├── cleanup-preview.yml   # Preview cleanup workflow
 │   ├── deploy.yml            # Production deployment
 │   ├── lint.yml              # Code quality checks
-│   └── preview-deploy.yml    # Preview deployments
+│   ├── preview-deploy.yml    # Preview deployments
+│   └── test.yml              # Test execution workflow
 └── ISSUE_TEMPLATE/         # Issue templates
     ├── bug-report.yml         # Bug report template
     ├── feature-request.yml    # Feature request template
