@@ -1,4 +1,14 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import type { NeonQueryFunction } from '@neondatabase/serverless';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+  type Mock,
+} from 'bun:test';
 import type {
   NeonHttpDatabase,
   NeonHttpQueryResult,
@@ -13,39 +23,51 @@ import {
   type Database,
 } from './utils';
 
-// Create mock database objects that match the expected types
-const mockNeonDb = {} as NeonHttpDatabase;
-const mockPostgresDb = {} as PostgresJsDatabase;
-const mockNeonSql = mock(() => ({}));
-const mockPostgresClient = mock(() => ({}));
-
-// Mock the external dependencies
-const mockNeonDrizzle = mock(() => mockNeonDb);
-const mockPostgresDrizzle = mock(() => mockPostgresDb);
-
-mock.module('@neondatabase/serverless', () => ({
-  neon: mockNeonSql,
-}));
-
-mock.module('drizzle-orm/neon-http', () => ({
-  drizzle: mockNeonDrizzle,
-}));
-
-mock.module('drizzle-orm/postgres-js', () => ({
-  drizzle: mockPostgresDrizzle,
-}));
-
-mock.module('postgres', () => ({
-  default: mockPostgresClient,
-}));
-
 describe('Database Utilities', () => {
+  const mockNeonDb = {} as NeonHttpDatabase & {
+    $client: NeonQueryFunction<any, any>;
+  };
+  const mockPostgresDb = {} as PostgresJsDatabase & {
+    $client: postgres.Sql<{}>;
+  };
+  const mockNeonClient = {} as NeonQueryFunction<boolean, boolean>;
+  const mockPostgresClient = {} as postgres.Sql;
+
+  let neonSpy: Mock<typeof import('@neondatabase/serverless').neon>;
+  let neonDrizzleSpy: Mock<typeof import('drizzle-orm/neon-http').drizzle>;
+  let postgresDrizzleSpy: Mock<
+    typeof import('drizzle-orm/postgres-js').drizzle
+  >;
+  let postgresClientSpy: Mock<typeof import('postgres')>;
+
+  beforeAll(async () => {
+    const neonModule = await import('@neondatabase/serverless');
+    const neonDrizzle = await import('drizzle-orm/neon-http');
+    const postgresDrizzle = await import('drizzle-orm/postgres-js');
+    const postgresModule = await import('postgres');
+
+    neonSpy = spyOn(neonModule, 'neon').mockReturnValue(mockNeonClient);
+    neonDrizzleSpy = spyOn(neonDrizzle, 'drizzle').mockReturnValue(mockNeonDb);
+    postgresDrizzleSpy = spyOn(postgresDrizzle, 'drizzle').mockReturnValue(
+      mockPostgresDb
+    );
+    postgresClientSpy = spyOn(postgresModule, 'default').mockReturnValue(
+      mockPostgresClient
+    );
+  });
+
+  afterAll(() => {
+    neonSpy?.mockRestore();
+    neonDrizzleSpy?.mockRestore();
+    postgresDrizzleSpy?.mockRestore();
+    postgresClientSpy?.mockRestore();
+  });
+
   beforeEach(() => {
-    // Clear mock call counts
-    mockNeonSql.mockClear();
-    mockNeonDrizzle.mockClear();
-    mockPostgresDrizzle.mockClear();
-    mockPostgresClient.mockClear();
+    neonSpy?.mockClear();
+    neonDrizzleSpy?.mockClear();
+    postgresDrizzleSpy?.mockClear();
+    postgresClientSpy?.mockClear();
   });
 
   describe('getDeletedRowCount', () => {
@@ -134,8 +156,8 @@ describe('Database Utilities', () => {
       const databaseUrl = 'postgresql://user:pass@neon.tech/db';
       const connection = createNeonDbConnection(databaseUrl);
 
-      expect(mockNeonSql).toHaveBeenCalledWith(databaseUrl);
-      expect(mockNeonDrizzle).toHaveBeenCalledWith({});
+      expect(neonSpy).toHaveBeenCalledWith(databaseUrl);
+      expect(neonDrizzleSpy).toHaveBeenCalledWith({});
       expect(connection).toBe(mockNeonDb);
     });
 
@@ -149,9 +171,9 @@ describe('Database Utilities', () => {
         createNeonDbConnection(url);
       });
 
-      expect(mockNeonSql).toHaveBeenCalledTimes(2);
-      expect(mockNeonSql).toHaveBeenNthCalledWith(1, urls[0]);
-      expect(mockNeonSql).toHaveBeenNthCalledWith(2, urls[1]);
+      expect(neonSpy).toHaveBeenCalledTimes(2);
+      expect(neonSpy).toHaveBeenNthCalledWith(1, urls[0]);
+      expect(neonSpy).toHaveBeenNthCalledWith(2, urls[1]);
     });
   });
 
@@ -160,8 +182,8 @@ describe('Database Utilities', () => {
       const databaseUrl = 'postgresql://user:pass@localhost:5432/db';
       const connection = createPostgresDbConnection(databaseUrl);
 
-      expect(mockPostgresClient).toHaveBeenCalledWith(databaseUrl);
-      expect(mockPostgresDrizzle).toHaveBeenCalledWith({});
+      expect(postgresClientSpy).toHaveBeenCalledWith(databaseUrl);
+      expect(postgresDrizzleSpy).toHaveBeenCalledWith({});
       expect(connection).toBe(mockPostgresDb);
     });
 
@@ -176,10 +198,10 @@ describe('Database Utilities', () => {
         createPostgresDbConnection(url);
       });
 
-      expect(mockPostgresClient).toHaveBeenCalledTimes(3);
-      expect(mockPostgresClient).toHaveBeenNthCalledWith(1, urls[0]);
-      expect(mockPostgresClient).toHaveBeenNthCalledWith(2, urls[1]);
-      expect(mockPostgresClient).toHaveBeenNthCalledWith(3, urls[2]);
+      expect(postgresClientSpy).toHaveBeenCalledTimes(3);
+      expect(postgresClientSpy).toHaveBeenNthCalledWith(1, urls[0]);
+      expect(postgresClientSpy).toHaveBeenNthCalledWith(2, urls[1]);
+      expect(postgresClientSpy).toHaveBeenNthCalledWith(3, urls[2]);
     });
   });
 
@@ -188,8 +210,8 @@ describe('Database Utilities', () => {
       const neonUrl = 'postgresql://user:pass@ep-123.neon.tech/db';
       const connection = createDbConnection(neonUrl);
 
-      expect(mockNeonSql).toHaveBeenCalledWith(neonUrl);
-      expect(mockNeonDrizzle).toHaveBeenCalledWith({});
+      expect(neonSpy).toHaveBeenCalledWith(neonUrl);
+      expect(neonDrizzleSpy).toHaveBeenCalledWith({});
       expect(connection).toBe(mockNeonDb);
     });
 
@@ -197,8 +219,8 @@ describe('Database Utilities', () => {
       const neonUrl = 'postgresql://user:pass@ep-456.neon.dev/db';
       const connection = createDbConnection(neonUrl);
 
-      expect(mockNeonSql).toHaveBeenCalledWith(neonUrl);
-      expect(mockNeonDrizzle).toHaveBeenCalledWith({});
+      expect(neonSpy).toHaveBeenCalledWith(neonUrl);
+      expect(neonDrizzleSpy).toHaveBeenCalledWith({});
       expect(connection).toBe(mockNeonDb);
     });
 
@@ -206,8 +228,8 @@ describe('Database Utilities', () => {
       const regularUrl = 'postgresql://user:pass@localhost:5432/db';
       const connection = createDbConnection(regularUrl);
 
-      expect(mockPostgresClient).toHaveBeenCalledWith(regularUrl);
-      expect(mockPostgresDrizzle).toHaveBeenCalledWith({});
+      expect(postgresClientSpy).toHaveBeenCalledWith(regularUrl);
+      expect(postgresDrizzleSpy).toHaveBeenCalledWith({});
       expect(connection).toBe(mockPostgresDb);
     });
 
@@ -225,7 +247,7 @@ describe('Database Utilities', () => {
         expect(connection).toBe(mockPostgresDb);
       });
 
-      expect(mockPostgresClient).toHaveBeenCalledTimes(5);
+      expect(postgresClientSpy).toHaveBeenCalledTimes(5);
     });
 
     it('should be case sensitive for Neon detection', () => {
@@ -241,7 +263,7 @@ describe('Database Utilities', () => {
         expect(connection).toBe(mockPostgresDb);
       });
 
-      expect(mockPostgresClient).toHaveBeenCalledTimes(3);
+      expect(postgresClientSpy).toHaveBeenCalledTimes(3);
     });
 
     it('should handle edge cases in URL detection', () => {
@@ -263,8 +285,8 @@ describe('Database Utilities', () => {
       const neonConnection = createDbConnection(neonUrl);
       expect(neonConnection).toBe(mockNeonDb);
 
-      expect(mockPostgresClient).toHaveBeenCalledTimes(4);
-      expect(mockNeonSql).toHaveBeenCalledTimes(1);
+      expect(postgresClientSpy).toHaveBeenCalledTimes(4);
+      expect(neonSpy).toHaveBeenCalledTimes(1);
     });
   });
 
