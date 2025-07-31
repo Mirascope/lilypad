@@ -7,7 +7,6 @@ coverageThreshold = { lines = 1, functions = 1, statements = 1 }
 coveragePathIgnorePatterns = [
     "tests/setup.ts",
     "db/schema/*.ts",
-    "db/utils.ts",
     "src/**",
     "worker/**",
 ]
