@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1752696836528,
-      "tag": "0000_users_organizations",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1752728273920,
-      "tag": "0001_auth_sessions",
+      "when": 1753927256190,
+      "tag": "0000_initial_schemas",
       "breakpoints": true
     }
   ]
