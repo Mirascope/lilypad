@@ -3,7 +3,8 @@ import {
   sessions,
   type NewSession,
 } from '@/db/schema';
-import { getDeletedRowCount, type Database } from '@/db/utils';
+import type { Database } from '@/db/types';
+import { getDeletedRowCount } from '@/db/utils';
 import { eq, lt } from 'drizzle-orm';
 
 function generateSessionId(): string {

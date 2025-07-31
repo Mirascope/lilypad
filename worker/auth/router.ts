@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import type { Database } from '@/db/utils';
+import type { Database } from '@/db/types';
 import type { Environment } from '@/worker/environment';
 import { handleLogout } from './logout';
 import { handleMe } from './me';

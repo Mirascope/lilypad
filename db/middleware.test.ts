@@ -1,28 +1,20 @@
-import {
-  afterAll,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-  type Mock,
-} from 'bun:test';
-import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { Context } from 'hono';
+import type { MockInstance } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dbMiddleware } from './middleware';
+import { type Database } from './types';
+import type * as utils from './utils';
 
 describe('dbMiddleware', () => {
-  const mockDb = {} as NeonHttpDatabase | PostgresJsDatabase;
-  let createDbConnectionSpy: Mock<typeof import('./utils').createDbConnection>;
+  const mockDb = {} as Database;
+  let createDbConnectionSpy: MockInstance<typeof utils.createDbConnection>;
 
   beforeAll(async () => {
     const utils = await import('./utils');
 
-    createDbConnectionSpy = spyOn(utils, 'createDbConnection').mockReturnValue(
-      mockDb
-    );
+    createDbConnectionSpy = vi
+      .spyOn(utils, 'createDbConnection')
+      .mockReturnValue(mockDb);
   });
 
   afterAll(() => {
@@ -30,8 +22,8 @@ describe('dbMiddleware', () => {
   });
 
   it('should set database connection when DATABASE_URL is provided', async () => {
-    const mockSet = mock();
-    const mockNext = mock();
+    const mockSet = vi.fn();
+    const mockNext = vi.fn();
 
     const mockContext = {
       env: { DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb' },
@@ -48,11 +40,11 @@ describe('dbMiddleware', () => {
   });
 
   it('should throw error when DATABASE_URL is not provided', async () => {
-    const mockNext = mock();
+    const mockNext = vi.fn();
 
     const mockContext = {
       env: {},
-      set: mock(),
+      set: vi.fn(),
     } as unknown as Context;
 
     await expect(dbMiddleware(mockContext, mockNext)).rejects.toThrow(
@@ -63,11 +55,11 @@ describe('dbMiddleware', () => {
   });
 
   it('should throw error when env is undefined', async () => {
-    const mockNext = mock();
+    const mockNext = vi.fn();
 
     const mockContext = {
       env: undefined,
-      set: mock(),
+      set: vi.fn(),
     } as unknown as Context;
 
     await expect(dbMiddleware(mockContext, mockNext)).rejects.toThrow(
@@ -78,11 +70,11 @@ describe('dbMiddleware', () => {
   });
 
   it('should throw error when DATABASE_URL is empty string', async () => {
-    const mockNext = mock();
+    const mockNext = vi.fn();
 
     const mockContext = {
       env: { DATABASE_URL: '' },
-      set: mock(),
+      set: vi.fn(),
     } as unknown as Context;
 
     await expect(dbMiddleware(mockContext, mockNext)).rejects.toThrow(
@@ -93,8 +85,8 @@ describe('dbMiddleware', () => {
   });
 
   it('should handle different DATABASE_URL formats', async () => {
-    const mockSet = mock();
-    const mockNext = mock();
+    const mockSet = vi.fn();
+    const mockNext = vi.fn();
 
     const testUrls = [
       'postgresql://user:pass@neon.tech/db',

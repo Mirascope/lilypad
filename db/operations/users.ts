@@ -1,5 +1,5 @@
 import { users, type NewUser, type User } from '@/db/schema';
-import type { Database } from '@/db/utils';
+import type { Database } from '@/db/types';
 import { eq, ne } from 'drizzle-orm';
 
 export async function createOrUpdateUser(

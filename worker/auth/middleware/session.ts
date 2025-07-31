@@ -1,7 +1,7 @@
 import { sessionIsValid } from '@/db/operations';
 import { sessions, users } from '@/db/schema';
 import type { User } from '@/db/schema/users';
-import type { Database } from '@/db/utils';
+import type { Database } from '@/db/types';
 import type { Environment } from '@/worker/environment';
 import { eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
