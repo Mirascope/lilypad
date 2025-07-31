@@ -1,5 +1,5 @@
 import { baseUser, db } from '@/tests/setup';
-import { describe, expect, it, spyOn } from 'bun:test';
+import { describe, expect, it, vi } from 'vitest';
 import { createOrUpdateUser } from './users';
 
 describe('createOrUpdateUser', () => {
@@ -36,8 +36,8 @@ describe('createOrUpdateUser', () => {
   });
 
   it('returns null when database error occurs', async () => {
-    const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
-    const dbSpy = spyOn(db, 'insert').mockImplementation(() => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const dbSpy = vi.spyOn(db, 'insert').mockImplementation(() => {
       throw new Error('Database connection failed');
     });
 

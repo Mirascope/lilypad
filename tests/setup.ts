@@ -1,9 +1,9 @@
-import { afterAll, afterEach, beforeAll, beforeEach } from 'bun:test';
 import * as dotenv from 'dotenv';
 import { sql as sqlTag } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
+import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 
 dotenv.config({ path: '.env.local' });
 
