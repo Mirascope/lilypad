@@ -19,7 +19,7 @@ jobs:
         with:
           username: ${{ vars.NEON_USERNAME }}
           project_id: ${{ vars.NEON_PROJECT_ID }}
-          parent: development
+          parent: staging
           branch_name: preview/pr-${{ github.event.number }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
@@ -35,8 +35,35 @@ jobs:
         env:
           DATABASE_URL: ${{ steps.create-branch.outputs.db_url }}
 
-      - name: Build
-        run: bun run build:development
+      - name: Build for PR
+        run: bun run build
+        env:
+          CLOUDFLARE_ENV: pr-${{ github.event.number }}
+
+      - name: Create wrangler.toml for PR
+        run: |
+          cat > wrangler.pr.toml << EOF
+          name = "lilypad-pr-${{ github.event.number }}"
+          compatibility_date = "2025-06-17"
+          compatibility_flags = ["nodejs_compat"]
+          main = "worker/index.ts"
+
+          [assets]
+          directory = "dist/client" 
+          not_found_handling = "single-page-application"
+          run_worker_first = ["/api/*", "/auth/*"]
+
+          [observability]
+          enabled = true
+
+          [vars]
+          ENVIRONMENT = "preview"
+          SITE_URL = "https://lilypad-pr-${{ github.event.number }}.mirascope.workers.dev"
+          GITHUB_CLIENT_ID = "Ov23lim6U7I6fihGO7Ys"
+          GITHUB_CALLBACK_URL = "https://staging.lilypad.mirascope.com/auth/github/proxy-callback"
+          GOOGLE_CLIENT_ID = "852098976648-nvi9po6sgebbn50ekha2h25lnf56ko40.apps.googleusercontent.com"
+          GOOGLE_CALLBACK_URL = "https://staging.lilypad.mirascope.com/auth/google/proxy-callback"
+          EOF
 
       - name: Deploy to Cloudflare Workers
         id: deploy
@@ -44,12 +71,12 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >
-            versions upload
-            --tag pr-${{ github.event.number }}
-            --preview-alias pr-${{ github.event.number }}
-            --var SITE_URL:"https://pr-${{ github.event.number }}-lilypad-development.mirascope.workers.dev"
-            --var DATABASE_URL:"${{ steps.create-branch.outputs.db_url }}"
+          command: deploy --config wrangler.pr.toml
+          postCommands: |
+            echo "*** Setting Preview Worker Secrets ***"
+            echo "${{ steps.create-branch.outputs.db_url }}" | bunx wrangler secret put DATABASE_URL --name lilypad-pr-${{ github.event.number }}
+            echo "${{ secrets.STAGING_GITHUB_CLIENT_SECRET }}" | bunx wrangler secret put GITHUB_CLIENT_SECRET --name lilypad-pr-${{ github.event.number }}
+            echo "${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}" | bunx wrangler secret put GOOGLE_CLIENT_SECRET --name lilypad-pr-${{ github.event.number }}
 
       - name: Comment PR with preview URL
         uses: thollander/actions-comment-pull-request@v3
@@ -59,7 +86,7 @@ jobs:
 
             Your changes have been deployed to a preview environment:
 
-            **Preview URL:** https://pr-${{ github.event.number }}-lilypad-development.mirascope.workers.dev
+            **Preview URL:** https://lilypad-pr-${{ github.event.number }}.mirascope.workers.dev
 
             **Database Branch:** `preview/pr-${{ github.event.number }}`
 

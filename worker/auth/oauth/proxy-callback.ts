@@ -6,9 +6,8 @@ function isValidPreviewUrl(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
     return (
-      parsedUrl.hostname.endsWith(
-        '-lilypad-development.mirascope.workers.dev'
-      ) || parsedUrl.hostname === 'development.lilypad.mirascope.com'
+      !!parsedUrl.hostname.match(/^lilypad-pr-\d+\.mirascope\.workers\.dev$/) ||
+      parsedUrl.hostname === 'staging.lilypad.mirascope.com'
     );
   } catch {
     return false;
@@ -68,7 +67,7 @@ export async function handleOAuthProxyCallback(
   callbackUrl.searchParams.set('code', code);
   callbackUrl.searchParams.set('state', encodedState);
 
-  console.log('Proxying OAuth callback from development to preview:', {
+  console.log('Proxying OAuth callback from staging to preview:', {
     from: url.toString(),
     to: callbackUrl.toString(),
   });

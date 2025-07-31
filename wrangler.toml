@@ -26,14 +26,14 @@ GITHUB_CALLBACK_URL = "https://v1.lilypad.mirascope.com/auth/github/callback"
 GOOGLE_CLIENT_ID = "852098976648-g76gospfvmsdo3g7ri8p7ocfnefcfrhj.apps.googleusercontent.com"
 GOOGLE_CALLBACK_URL = "https://v1.lilypad.mirascope.com/auth/google/callback"
 
-[env.development]
-name = "lilypad-development"
-route = { pattern = "development.lilypad.mirascope.com", zone_name = "mirascope.com", custom_domain = true }
+[env.staging]
+name = "lilypad-staging"
+route = { pattern = "staging.lilypad.mirascope.com", zone_name = "mirascope.com", custom_domain = true }
 
-[env.development.vars]
-ENVIRONMENT = "development"
-SITE_URL = "https://development.lilypad.mirascope.com"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+SITE_URL = "https://staging.lilypad.mirascope.com"
 GITHUB_CLIENT_ID = "Ov23lim6U7I6fihGO7Ys"
-GITHUB_CALLBACK_URL = "https://development.lilypad.mirascope.com/auth/github/proxy-callback"
+GITHUB_CALLBACK_URL = "https://staging.lilypad.mirascope.com/auth/github/proxy-callback"
 GOOGLE_CLIENT_ID = "852098976648-nvi9po6sgebbn50ekha2h25lnf56ko40.apps.googleusercontent.com"
-GOOGLE_CALLBACK_URL = "https://development.lilypad.mirascope.com/auth/google/proxy-callback"
+GOOGLE_CALLBACK_URL = "https://staging.lilypad.mirascope.com/auth/google/proxy-callback"
