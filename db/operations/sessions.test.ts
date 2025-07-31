@@ -13,7 +13,7 @@ import {
 import { createOrUpdateUser } from './users';
 
 describe('session operations', () => {
-  let testUserId: number;
+  let testUserId: string;
 
   beforeEach(async () => {
     // Create a fresh test user for each test

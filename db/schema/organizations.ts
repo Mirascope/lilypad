@@ -1,9 +1,9 @@
 import { relations } from 'drizzle-orm';
-import { boolean, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { organizationMemberships } from './organization-memberships';
 
 export const organizations = pgTable('organizations', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull().unique(),
   supportServices: boolean('support_services').default(true),
   createdAt: timestamp('created_at').defaultNow(),

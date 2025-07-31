@@ -1,12 +1,5 @@
 import { relations } from 'drizzle-orm';
-import {
-  integer,
-  pgEnum,
-  pgTable,
-  serial,
-  timestamp,
-  unique,
-} from 'drizzle-orm/pg-core';
+import { pgEnum, pgTable, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { users } from './users';
 
@@ -20,11 +13,11 @@ export const roleEnum = pgEnum('role', [
 export const organizationMemberships = pgTable(
   'organization_memberships',
   {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id')
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
       .references(() => users.id)
       .notNull(),
-    organizationId: integer('organization_id')
+    organizationId: uuid('organization_id')
       .references(() => organizations.id)
       .notNull(),
     role: roleEnum('role').notNull(),

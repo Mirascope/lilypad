@@ -20,7 +20,7 @@ export function sessionIsExpired(session: { expiresAt: Date }): boolean {
 
 export async function createSession(
   db: Database,
-  userId: number
+  userId: string
 ): Promise<string | null> {
   try {
     const sessionId = generateSessionId();
@@ -54,7 +54,7 @@ export async function deleteSession(
 
 export async function deleteUserSessions(
   db: Database,
-  userId: number
+  userId: string
 ): Promise<void> {
   try {
     await db.delete(sessions).where(eq(sessions.userId, userId));
