@@ -24,7 +24,7 @@ export async function createSession(
 ): Promise<string | null> {
   try {
     const sessionId = generateSessionId();
-    const expiresAt = new Date(Date.now() + DEFAULT_SESSION_DURATION); // 7 days
+    const expiresAt = new Date(Date.now() + DEFAULT_SESSION_DURATION);
 
     const newSession: NewSession = {
       id: sessionId,
@@ -91,7 +91,6 @@ export async function sessionIsValid(
     }
 
     if (sessionIsExpired(session)) {
-      // Delete expired session
       await deleteSession(db, sessionId);
       return false;
     }

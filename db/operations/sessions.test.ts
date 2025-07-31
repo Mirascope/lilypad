@@ -1,5 +1,5 @@
 import { sessions } from '@/db/schema';
-import { baseUser, db } from '@/tests/setup';
+import { baseUser, db } from '@/tests/db-setup';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -222,12 +222,25 @@ describe('session operations', () => {
       await createSession(db, testUserId);
       await createSession(db, otherUser!.id);
 
-      const totalSessions = (await db.select().from(sessions)).length;
-      await deleteUserSessions(db, testUserId);
-      const remainingSessions = await db.select().from(sessions);
+      const sessionsBeforeDeletion = await db.select().from(sessions);
+      const otherUserSessionsCount = sessionsBeforeDeletion.filter(
+        (s) => s.userId === otherUser!.id
+      ).length;
 
-      expect(remainingSessions).toHaveLength(totalSessions - 1);
-      expect(remainingSessions[0].userId).toBe(otherUser!.id);
+      await deleteUserSessions(db, testUserId);
+
+      // Get sessions after deletion
+      const remainingSessions = await db.select().from(sessions);
+      const remainingTestUserSessions = remainingSessions.filter(
+        (s) => s.userId === testUserId
+      );
+      const remainingOtherUserSessions = remainingSessions.filter(
+        (s) => s.userId === otherUser!.id
+      );
+
+      // Verify only test user's sessions were deleted
+      expect(remainingTestUserSessions).toHaveLength(0);
+      expect(remainingOtherUserSessions).toHaveLength(otherUserSessionsCount);
     });
 
     it('handles database error gracefully', async () => {

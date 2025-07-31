@@ -28,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: authUser, isLoading: isCheckingAuth } = useAuthStatus();
   const logoutMutation = useLogout();
 
-  // Update user state when auth status changes
   useEffect(() => {
     setUser(authUser || null);
   }, [authUser]);
@@ -44,7 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user = JSON.parse(decodeURIComponent(userData)) as PublicUser;
         setUser(user);
 
-        // Clean up URL
         window.history.replaceState(
           {},
           document.title,
@@ -73,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Failed to logout:', error);
     }
 
-    // Clear user state (mutation already clears query cache)
     setUser(null);
   };
 

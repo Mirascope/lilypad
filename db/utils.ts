@@ -16,11 +16,9 @@ export function getDeletedRowCount(
   result: NeonHttpQueryResult<never> | postgres.RowList<never[]>
 ): number {
   if (typeof result === 'object' && result !== null) {
-    // PostgresJS returns { count: number }
     if ('count' in result && typeof result.count === 'number') {
       return result.count;
     }
-    // Neon HTTP may return { rowCount: number } or similar
     if ('rowCount' in result && typeof result.rowCount === 'number') {
       return result.rowCount;
     }

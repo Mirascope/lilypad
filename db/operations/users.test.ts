@@ -1,4 +1,4 @@
-import { baseUser, db } from '@/tests/setup';
+import { baseUser, db } from '@/tests/db-setup';
 import { describe, expect, it, vi } from 'vitest';
 import { createOrUpdateUser } from './users';
 

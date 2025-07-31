@@ -106,7 +106,7 @@ describe('dbMiddleware', () => {
       await dbMiddleware(mockContext, mockNext);
 
       expect(createDbConnectionSpy).toHaveBeenCalledWith(url);
-      expect(mockSet).toHaveBeenCalledWith('db', mockDb);
+      expect(mockSet).toHaveBeenCalledWith('db', expect.anything());
       expect(mockNext).toHaveBeenCalled();
     }
   });

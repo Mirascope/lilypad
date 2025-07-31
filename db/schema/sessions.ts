@@ -24,5 +24,5 @@ export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 
 // Public types
-export const DEFAULT_SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+export const DEFAULT_SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
 export type PublicSession = Pick<Session, 'id' | 'expiresAt'>;
