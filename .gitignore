@@ -46,6 +46,9 @@ out/
 tmp/
 temp/
 
+# Test coverage
+coverage/
+
 # Example Environment Files
 !.example.dev.vars
 !.example.env.local
