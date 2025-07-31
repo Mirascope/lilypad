@@ -34,7 +34,9 @@ By using this software, you agree to be bound by the license terms.
 
 - `bun run dev` - Start development server on port 3000
 - `bun run build` - Build for production (runs vite build && tsc)
-- `bun test` - Run tests with bun
+- `bun test` - Run tests with vitest
+- `bun test:coverage` - Run tests with coverage report
+- `bun test:watch` - Run tests in watch mode
 - `bun run deploy` - Deploy to Cloudflare Workers
 - `bun run typecheck` - Run TypeScript type checking
 - `bun run lint` - Run full linting suite (typecheck + eslint + prettier check)
