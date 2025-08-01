@@ -3,9 +3,9 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    globals: false,
+    globals: true,
     environment: 'node',
-    setupFiles: './tests/setup.ts',
+    setupFiles: ['./tests/db-setup.ts', './tests/worker-setup.ts'],
     pool: 'forks',
     poolOptions: {
       forks: {
@@ -15,17 +15,19 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['db/**/*.ts'],
+      include: ['db/**/*.ts', 'worker/**/*.ts'],
       exclude: [
         '**/*.d.ts',
         '**/*.config.*',
         '**/mockData.ts',
         '**/migrations/**',
-        '**/index.ts',
+        'src/index.ts',
         'routeTree.gen.ts',
         'src/**',
         'worker/**/*.ts',
         'db/schema/**/*.ts',
+        'worker/environment.ts',
+        'worker/auth/oauth/types.ts',
         ...coverageConfigDefaults.exclude,
       ],
       thresholds: {
