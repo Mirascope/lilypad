@@ -1,5 +1,5 @@
 import { sessions } from '@/db/schema';
-import { baseUser, db } from '@/tests/setup';
+import { baseUser, db } from '@/tests/db-setup';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {

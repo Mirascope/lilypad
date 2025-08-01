@@ -1,25 +1,31 @@
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { Context } from 'hono';
-import type { MockInstance } from 'vitest';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dbMiddleware } from './middleware';
-import type * as utils from './utils';
+
+// Mock the utils module before any imports
+vi.mock('./utils', async () => {
+  const actual = await vi.importActual('./utils');
+  return {
+    ...actual,
+    createDbConnection: vi.fn(
+      () => ({}) as NeonHttpDatabase | PostgresJsDatabase
+    ),
+  };
+});
 
 describe('dbMiddleware', () => {
+  let createDbConnectionMock: any;
   const mockDb = {} as NeonHttpDatabase | PostgresJsDatabase;
-  let createDbConnectionSpy: MockInstance<typeof utils.createDbConnection>;
 
   beforeAll(async () => {
     const utils = await import('./utils');
-
-    createDbConnectionSpy = vi
-      .spyOn(utils, 'createDbConnection')
-      .mockReturnValue(mockDb);
+    createDbConnectionMock = utils.createDbConnection as any;
   });
 
-  afterAll(() => {
-    createDbConnectionSpy.mockRestore();
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it('should set database connection when DATABASE_URL is provided', async () => {
@@ -33,7 +39,7 @@ describe('dbMiddleware', () => {
 
     await dbMiddleware(mockContext, mockNext);
 
-    expect(createDbConnectionSpy).toHaveBeenCalledWith(
+    expect(createDbConnectionMock).toHaveBeenCalledWith(
       'postgresql://test:test@localhost:5432/testdb'
     );
     expect(mockSet).toHaveBeenCalledWith('db', mockDb);
@@ -96,7 +102,7 @@ describe('dbMiddleware', () => {
     ];
 
     for (const url of testUrls) {
-      createDbConnectionSpy.mockClear();
+      createDbConnectionMock.mockClear();
       mockSet.mockClear();
       mockNext.mockClear();
 
@@ -107,8 +113,8 @@ describe('dbMiddleware', () => {
 
       await dbMiddleware(mockContext, mockNext);
 
-      expect(createDbConnectionSpy).toHaveBeenCalledWith(url);
-      expect(mockSet).toHaveBeenCalledWith('db', mockDb);
+      expect(createDbConnectionMock).toHaveBeenCalledWith(url);
+      expect(mockSet).toHaveBeenCalledWith('db', {});
       expect(mockNext).toHaveBeenCalled();
     }
   });
