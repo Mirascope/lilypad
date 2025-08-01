@@ -13,7 +13,6 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: logout,
     onSuccess: () => {
-      // Clear all queries on logout
       queryClient.clear();
     },
   });
