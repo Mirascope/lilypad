@@ -10,6 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Favor smaller changes that are easier to review
 - Whenever there are changes to the file structure, update `docs/file-structure.md` accordingly
 - Ensure any changes requiring documentation have corresponding `docs/*` updates as well
+- Never create files unless absolutely necessary - always prefer editing existing files
+- Never proactively create documentation files (\*.md) or README files unless explicitly requested
 
 ## Technical Documentation
 
