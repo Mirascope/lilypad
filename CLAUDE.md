@@ -10,6 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Favor smaller changes that are easier to review
 - Whenever there are changes to the file structure, update `docs/file-structure.md` accordingly
 - Ensure any changes requiring documentation have corresponding `docs/*` updates as well
+- Never create files unless absolutely necessary - always prefer editing existing files
+- Never proactively create documentation files (\*.md) or README files unless explicitly requested
 
 ## Development Commands
 
@@ -29,6 +31,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `bun run typecheck` - Run TypeScript type checking
 - `bun run lint` - Run full linting suite (typecheck + eslint + prettier check)
 - `bun run fix` - Auto-fix formatting and linting issues
+- `bun run codespell` - Check for spelling errors across the codebase
+- `bun run lint:ci` - CI-specific linting (includes codespell)
 
 ### Database Management
 
@@ -40,7 +44,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a full-stack React application deployed on Cloudflare Workers:
+This is a full-stack React application with a serverless, cloud-native architecture that can be deployed on multiple cloud providers (Cloudflare primary, AWS alternative). See `docs/architecture/001-overview.md` for detailed architecture documentation.
 
 ### Frontend (`src/`)
 
@@ -77,10 +81,11 @@ This is a full-stack React application deployed on Cloudflare Workers:
 
 - Uses Bun as the package manager and runtime
 - Vite for development server and build tooling
-- ESLint + Prettier for code quality
-- Vitest test runner with v8 coverage reporting
+- ESLint + Prettier for code quality with pre-commit hooks (Husky + lint-staged)
+- Vitest test runner with v8 coverage reporting (100% coverage requirement for db/)
 - Docker Compose for local PostgreSQL development
 - Environment variables configured in `.dev.vars` for local development
+- Lint-staged runs full project typecheck and eslint on pre-commit
 
 ## Testing Strategy
 
@@ -104,13 +109,13 @@ Required environment variables:
 ## Infrastructure & Deployment
 
 - **Production**: v1.lilypad.mirascope.com (Cloudflare Workers)
-- **Staging**: staging.lilypad.mirascope.com
-- **Database**: Neon PostgreSQL (production), local Docker (development)
+- **Staging**: staging.lilypad.mirascope.com (auto-deploys on PR merge)
+- **Database**: Neon PostgreSQL with ParadeDB pg_search extensions (production), local Docker (development)
 - **Storage**: Cloudflare R2 for blob storage
 - **Caching**: Cloudflare KV Store
 - **Background Jobs**: Cloudflare Queues
 - **CI/CD**: GitHub Actions for automated testing and deployment
-- **Preview Deployments**: Automatic for pull requests
+- **Preview Deployments**: Automatic for PRs with Neon database branching
 
 ## Important Notes
 
@@ -120,3 +125,6 @@ Required environment variables:
 - Development environment allows localhost CORS, production is restricted to mirascope.com domains
 - Database migrations must be generated (`db:generate`) before running `db:migrate`
 - Cloudflare bindings (KV, R2, Queues) are configured in `wrangler.toml`
+- Pre-commit hooks automatically run linting and formatting via Husky
+- The database directory (`db/`) requires 100% test coverage
+- PR preview deployments create separate Neon database branches automatically
