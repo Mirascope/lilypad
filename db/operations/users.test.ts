@@ -1,5 +1,5 @@
-import { baseUser, db } from '@/tests/setup';
-import { describe, expect, it, spyOn } from 'bun:test';
+import { baseUser, db } from '@/tests/db';
+import { describe, expect, it, vi } from 'vitest';
 import { createOrUpdateUser } from './users';
 
 describe('createOrUpdateUser', () => {
@@ -35,9 +35,21 @@ describe('createOrUpdateUser', () => {
     expect(updated?.updatedAt!.getTime()).toBe(inserted!.updatedAt!.getTime());
   });
 
+  it('handles null name correctly', async () => {
+    const userWithNullName = { email: 'null-name@example.com', name: null };
+    const inserted = await createOrUpdateUser(db, userWithNullName);
+    expect(inserted?.email).toBe(userWithNullName.email);
+    expect(inserted?.name).toBeNull();
+
+    // Update with a different null value should not change updatedAt
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    const updated = await createOrUpdateUser(db, userWithNullName);
+    expect(updated?.updatedAt!.getTime()).toBe(inserted!.updatedAt!.getTime());
+  });
+
   it('returns null when database error occurs', async () => {
-    const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
-    const dbSpy = spyOn(db, 'insert').mockImplementation(() => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const dbSpy = vi.spyOn(db, 'insert').mockImplementation(() => {
       throw new Error('Database connection failed');
     });
 

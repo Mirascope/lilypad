@@ -1,7 +1,7 @@
 import { sessions } from '@/db/schema';
-import { baseUser, db } from '@/tests/setup';
-import { beforeEach, describe, expect, it, spyOn } from 'bun:test';
+import { baseUser, db } from '@/tests/db';
 import { eq } from 'drizzle-orm';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createSession,
   deleteExpiredSessions,
@@ -67,8 +67,10 @@ describe('session operations', () => {
     });
 
     it('returns null when database error occurs', async () => {
-      const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
-      const dbSpy = spyOn(db, 'insert').mockImplementation(() => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const dbSpy = vi.spyOn(db, 'insert').mockImplementation(() => {
         throw new Error('Database connection failed');
       });
 
@@ -134,8 +136,10 @@ describe('session operations', () => {
     });
 
     it('returns false when database error occurs', async () => {
-      const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
-      const dbSpy = spyOn(db, 'select').mockImplementation(() => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const dbSpy = vi.spyOn(db, 'select').mockImplementation(() => {
         throw new Error('Database connection failed');
       });
 
@@ -174,8 +178,10 @@ describe('session operations', () => {
     });
 
     it('handles database error gracefully', async () => {
-      const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
-      const dbSpy = spyOn(db, 'delete').mockImplementation(() => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const dbSpy = vi.spyOn(db, 'delete').mockImplementation(() => {
         throw new Error('Database connection failed');
       });
 
@@ -225,8 +231,10 @@ describe('session operations', () => {
     });
 
     it('handles database error gracefully', async () => {
-      const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
-      const dbSpy = spyOn(db, 'delete').mockImplementation(() => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const dbSpy = vi.spyOn(db, 'delete').mockImplementation(() => {
         throw new Error('Database connection failed');
       });
 
@@ -302,8 +310,10 @@ describe('session operations', () => {
     });
 
     it('returns 0 when database error occurs', async () => {
-      const consoleSpy = spyOn(console, 'error').mockImplementation(() => {});
-      const dbSpy = spyOn(db, 'delete').mockImplementation(() => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      const dbSpy = vi.spyOn(db, 'delete').mockImplementation(() => {
         throw new Error('Database connection failed');
       });
 

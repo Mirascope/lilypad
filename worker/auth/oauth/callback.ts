@@ -1,6 +1,6 @@
 import { createOrUpdateUser, createSession } from '@/db/operations';
 import { DEFAULT_SESSION_DURATION } from '@/db/schema';
-import type { Database } from '@/db/utils';
+import type { Database } from '@/db/types';
 import type { Environment } from '@/worker/environment';
 import type { Context } from 'hono';
 import type {

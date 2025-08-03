@@ -9,8 +9,7 @@ import {
   type PostgresJsDatabase,
 } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-
-export type Database = PostgresJsDatabase | NeonHttpDatabase;
+import { type Database } from './types';
 
 export function getDeletedRowCount(
   result: NeonHttpQueryResult<never> | postgres.RowList<never[]>
