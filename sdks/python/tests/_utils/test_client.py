@@ -344,8 +344,8 @@ def test_get_sync_client_with_api_key(mock_lilypad, mock_get_settings):
     result = get_sync_client(api_key="test_key", base_url="https://test.com")
 
     assert result == mock_instance
-    # Should not call get_settings when key is provided
-    mock_get_settings.assert_not_called()
+    # Now get_settings is called to get the timeout
+    mock_get_settings.assert_called()
 
 
 @patch("lilypad._utils.client.get_settings")
