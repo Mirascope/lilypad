@@ -1,6 +1,7 @@
 """Comprehensive tests for the Lilypad configuration module."""
 
 import logging
+import os
 from unittest.mock import Mock, patch
 import pytest
 import httpx
@@ -14,6 +15,7 @@ from lilypad._configure import (
     lilypad_config,
 )
 from lilypad.exceptions import LilypadException
+from lilypad._utils.settings import Settings
 
 
 def test_generate_span_id():
@@ -70,13 +72,13 @@ def test_regenerate_invalid_ids(mock_token_bytes):
 @patch("lilypad._configure.get_settings")
 def test_init(mock_get_settings, mock_get_client):
     """Test exporter initialization."""
-    mock_settings = Mock(api_key="test-key", project_id="test-project")
+    mock_settings = Mock(api_key="test-key", project_id="test-project", timeout=10.0)
     mock_get_settings.return_value = mock_settings
 
     exporter = _JSONSpanExporter()
 
     assert exporter.settings == mock_settings
-    mock_get_client.assert_called_once_with(api_key="test-key")
+    mock_get_client.assert_called_once_with(api_key="test-key", timeout=10.0)
     assert isinstance(exporter._logged_trace_ids, set)
 
 
@@ -84,7 +86,7 @@ def test_init(mock_get_settings, mock_get_client):
 @patch("lilypad._configure.get_settings")
 def test_export_empty_spans(mock_get_settings, mock_get_client):
     """Test exporting empty span list."""
-    mock_get_settings.return_value = Mock(api_key="test-key")
+    mock_get_settings.return_value = Mock(api_key="test-key", timeout=10.0)
     exporter = _JSONSpanExporter()
 
     result = exporter.export([])
@@ -95,7 +97,9 @@ def test_export_empty_spans(mock_get_settings, mock_get_client):
 @patch("lilypad._configure.get_settings")
 def test_export_success(mock_get_settings, mock_get_client):
     """Test successful span export."""
-    mock_settings = Mock(api_key="test-key", project_id="test-project", remote_client_url="https://app.lilypad.com")
+    mock_settings = Mock(
+        api_key="test-key", project_id="test-project", remote_client_url="https://app.lilypad.com", timeout=10.0
+    )
     mock_get_settings.return_value = mock_settings
 
     # Mock client response
@@ -134,7 +138,7 @@ def test_export_success(mock_get_settings, mock_get_client):
 @patch("lilypad._configure.get_settings")
 def test_export_failure(mock_get_settings, mock_get_client):
     """Test span export failure."""
-    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project")
+    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project", timeout=3.0)
 
     # Mock client to raise exception
     mock_client = Mock()
@@ -169,11 +173,16 @@ def test_export_failure(mock_get_settings, mock_get_client):
 @patch("lilypad._configure.get_settings")
 def test_export_connection_error_suppression(mock_get_settings, mock_get_client, mock_time):
     """Test that connection errors are suppressed after the first occurrence."""
-    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project")
-    
+    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project", timeout=3.0)
+
     # Mock time to control error suppression
-    mock_time.side_effect = [0.0, 100.0, 200.0, 400.0]  # First error, second error (suppressed), third error (suppressed), fourth error (not suppressed)
-    
+    mock_time.side_effect = [
+        0.0,
+        100.0,
+        200.0,
+        400.0,
+    ]  # First error, second error (suppressed), third error (suppressed), fourth error (not suppressed)
+
     # Mock client to raise connection error
     mock_client = Mock()
     mock_client.projects.traces.create.side_effect = httpx.ConnectError("[Errno -2] Name or service not known")
@@ -199,29 +208,27 @@ def test_export_connection_error_suppression(mock_get_settings, mock_get_client,
         return mock_span
 
     exporter = _JSONSpanExporter()
-    
+
     # Capture log output
-    with patch.object(exporter.log, 'error') as mock_error, \
-         patch.object(exporter.log, 'debug') as mock_debug:
-        
+    with patch.object(exporter.log, "error") as mock_error, patch.object(exporter.log, "debug") as mock_debug:
         # First error - should log error
         result1 = exporter.export([create_mock_span()])
         assert result1.name == "FAILURE"
         assert mock_error.call_count == 1
         assert "Network error sending spans to Lilypad server" in mock_error.call_args[0][0]
         assert "LLM calls will continue to work" in mock_error.call_args[0][0]
-        
+
         # Second error within suppression window - should only log debug
         result2 = exporter.export([create_mock_span()])
         assert result2.name == "FAILURE"
         assert mock_error.call_count == 1  # No new error log
         assert mock_debug.call_count >= 1
-        
+
         # Third error within suppression window - should only log debug
         result3 = exporter.export([create_mock_span()])
         assert result3.name == "FAILURE"
         assert mock_error.call_count == 1  # Still no new error log
-        
+
         # Fourth error after suppression window - should log error again
         result4 = exporter.export([create_mock_span()])
         assert result4.name == "FAILURE"
@@ -232,14 +239,16 @@ def test_export_connection_error_suppression(mock_get_settings, mock_get_client,
 @patch("lilypad._configure.get_settings")
 def test_export_connection_error_reset_on_success(mock_get_settings, mock_get_client):
     """Test that error count is reset after successful connection."""
-    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project", remote_client_url="https://app.lilypad.com")
-    
+    mock_get_settings.return_value = Mock(
+        api_key="test-key", project_id="test-project", remote_client_url="https://app.lilypad.com", timeout=3.0
+    )
+
     # Mock client to first fail, then succeed
     mock_response = Mock(trace_status="queued", span_count=1, trace_ids=["trace-1"])
     mock_client = Mock()
     mock_client.projects.traces.create.side_effect = [
         OSError(-2, "Name or service not known"),
-        mock_response  # Success
+        mock_response,  # Success
     ]
     mock_get_client.return_value = mock_client
 
@@ -263,12 +272,12 @@ def test_export_connection_error_reset_on_success(mock_get_settings, mock_get_cl
         return mock_span
 
     exporter = _JSONSpanExporter()
-    
+
     # First call fails
     result1 = exporter.export([create_mock_span()])
     assert result1.name == "FAILURE"
     assert exporter._connection_error_count == 1
-    
+
     # Second call succeeds - error count should reset
     result2 = exporter.export([create_mock_span()])
     assert result2.name == "SUCCESS"
@@ -576,3 +585,37 @@ def test_span_to_dict_minimal(mock_get_settings, mock_get_client):
     assert result["events"] == []
     assert result["links"] == []
     assert result["instrumentation_scope"]["name"] is None
+
+
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
+def test_export_with_custom_timeout(mock_get_settings, mock_get_client):
+    """Test that custom timeout from settings is used."""
+    mock_settings = Mock(api_key="test-key", project_id="test-project", timeout=10.0)
+    mock_get_settings.return_value = mock_settings
+
+    exporter = _JSONSpanExporter()
+
+    assert exporter.settings == mock_settings
+    mock_get_client.assert_called_once_with(api_key="test-key", timeout=10.0)
+
+
+def test_settings_timeout_default():
+    """Test that Settings has correct default timeout (OpenTelemetry standard)."""
+    settings = Settings()
+    assert settings.timeout == 10.0
+
+
+@patch.dict(os.environ, {"LILYPAD_TIMEOUT": "15.0"}, clear=False)
+def test_settings_timeout_from_env():
+    """Test that timeout can be set from environment variable."""
+    # Clear the cache to ensure we get a fresh Settings instance
+    from lilypad._utils.settings import _default_settings
+
+    _default_settings.cache_clear()
+
+    settings = Settings()
+    assert settings.timeout == 15.0
+
+    # Clear cache again after test
+    _default_settings.cache_clear()
