@@ -86,7 +86,7 @@ class _JSONSpanExporter(SpanExporter):
         except LilypadException as exc:
             self.log.debug("Server responded with error: %s", exc)
             return SpanExportResult.FAILURE
-        except (httpx.NetworkError, OSError) as exc:
+        except (httpx.NetworkError, httpx.TimeoutException, OSError) as exc:
             current_time = time.time()
             self._connection_error_count += 1
 

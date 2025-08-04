@@ -284,6 +284,46 @@ def test_export_connection_error_reset_on_success(mock_get_settings, mock_get_cl
     assert exporter._connection_error_count == 0
 
 
+@patch("lilypad._configure.get_sync_client")
+@patch("lilypad._configure.get_settings")
+def test_export_timeout_error(mock_get_settings, mock_get_client):
+    """Test that timeout errors are properly handled."""
+    mock_get_settings.return_value = Mock(api_key="test-key", project_id="test-project", timeout=10.0)
+    
+    # Mock client to raise timeout error
+    mock_client = Mock()
+    mock_client.projects.traces.create.side_effect = httpx.ConnectTimeout("Request timed out")
+    mock_get_client.return_value = mock_client
+
+    # Create minimal mock span
+    mock_span = Mock()
+    mock_span.context = Mock(trace_id=123, span_id=456)
+    mock_span.parent = None
+    mock_span.instrumentation_scope = None
+    mock_span.resource = Mock()
+    mock_span.resource.to_json.return_value = {}
+    mock_span.name = "test"
+    mock_span.start_time = 1000
+    mock_span.end_time = 2000
+    mock_span.attributes = None
+    mock_status_code = Mock()
+    mock_status_code.name = "OK"
+    mock_span.status = Mock(status_code=mock_status_code)
+    mock_span.events = []
+    mock_span.links = []
+
+    exporter = _JSONSpanExporter()
+    
+    # Should handle timeout gracefully
+    with patch.object(exporter.log, 'error') as mock_error:
+        result = exporter.export([mock_span])
+        
+        assert result.name == "FAILURE"
+        assert mock_error.call_count == 1
+        assert "Network error sending spans to Lilypad server" in mock_error.call_args[0][0]
+        assert "LLM calls will continue to work" in mock_error.call_args[0][0]
+
+
 def test_shutdown():
     """Test exporter shutdown."""
     with patch("lilypad._configure.get_sync_client"), patch("lilypad._configure.get_settings"):
