@@ -953,19 +953,15 @@ def trace(
                     if versioning == "automatic":
                         try:
                             function = await get_or_create_function_async()
-                        except (httpx.NetworkError, OSError) as exc:
+                        except (httpx.NetworkError, httpx.TimeoutException, OSError) as exc:
                             logger.error(
                                 "Failed to connect to Lilypad server for versioning: %s. "
                                 "Continuing without versioning. LLM calls will still work.",
-                                exc
+                                exc,
                             )
                             function = None
                         except LilypadException as exc:
-                            logger.debug(
-                                "Lilypad API error during versioning: %s. "
-                                "Continuing without versioning.",
-                                exc
-                            )
+                            logger.debug("Lilypad API error during versioning: %s. Continuing without versioning.", exc)
                             function = None
                     else:
                         function = None
@@ -1164,19 +1160,15 @@ def trace(
                     if versioning == "automatic":
                         try:
                             function = get_or_create_function_sync()
-                        except (httpx.NetworkError, OSError) as exc:
+                        except (httpx.NetworkError, httpx.TimeoutException, OSError) as exc:
                             logger.error(
                                 "Failed to connect to Lilypad server for versioning: %s. "
                                 "Continuing without versioning. LLM calls will still work.",
-                                exc
+                                exc,
                             )
                             function = None
                         except LilypadException as exc:
-                            logger.debug(
-                                "Lilypad API error during versioning: %s. "
-                                "Continuing without versioning.",
-                                exc
-                            )
+                            logger.debug("Lilypad API error during versioning: %s. Continuing without versioning.", exc)
                             function = None
                     else:
                         function = None
