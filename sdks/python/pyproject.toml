@@ -1,0 +1,20 @@
+[project]
+name = "lilypad-sdk"
+version = "1.0.0-alpha.0"
+description = "The official Python library for the Lilypad API"
+readme = "README.md"
+authors = [{ name = "Mirascope", email = "support@mirascope.com" }]
+requires-python = ">=3.10"
+classifiers = [
+    "Typing :: Typed",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
