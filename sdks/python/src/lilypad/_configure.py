@@ -64,7 +64,7 @@ class _JSONSpanExporter(SpanExporter):
     def __init__(self) -> None:
         """Initialize the exporter with the custom endpoint URL."""
         self.settings = get_settings()
-        self.client = get_sync_client(api_key=self.settings.api_key)
+        self.client = get_sync_client(api_key=self.settings.api_key, timeout=self.settings.timeout)
         self.log = logging.getLogger(__name__)
         self._logged_trace_ids = set()  # Track which traces we've already logged
         self._last_error_time = 0.0
@@ -86,22 +86,25 @@ class _JSONSpanExporter(SpanExporter):
         except LilypadException as exc:
             self.log.debug("Server responded with error: %s", exc)
             return SpanExportResult.FAILURE
-        except (httpx.NetworkError, OSError) as exc:
+        except (httpx.NetworkError, httpx.TimeoutException, OSError) as exc:
             current_time = time.time()
             self._connection_error_count += 1
-            
-            if self._connection_error_count == 1 or (current_time - self._last_error_time) > self._error_suppression_duration:
+
+            if (
+                self._connection_error_count == 1
+                or (current_time - self._last_error_time) > self._error_suppression_duration
+            ):
                 self.log.error(
                     "Network error sending spans to Lilypad server: %s. "
                     "LLM calls will continue to work. "
                     "Further connection errors will be suppressed for %d minutes.",
                     exc,
-                    int(self._error_suppression_duration / 60)
+                    int(self._error_suppression_duration / 60),
                 )
                 self._last_error_time = current_time
             else:
                 self.log.debug("Suppressed connection error: %s", exc)  # pragma: no cover
-            
+
             return SpanExportResult.FAILURE  # pragma: no cover
 
         self.log.debug(f"Spans {response.trace_status}: {response.span_count} spans")

@@ -336,11 +336,16 @@ def test_get_sync_client_with_api_key(mock_lilypad, mock_get_settings):
     mock_instance = Mock()
     mock_lilypad.return_value = mock_instance
 
+    # Setup mock settings for timeout
+    mock_settings = Mock()
+    mock_settings.timeout = 10.0
+    mock_get_settings.return_value = mock_settings
+
     result = get_sync_client(api_key="test_key", base_url="https://test.com")
 
     assert result == mock_instance
-    # Should not call get_settings when key is provided
-    mock_get_settings.assert_not_called()
+    # Now get_settings is called to get the timeout
+    mock_get_settings.assert_called()
 
 
 @patch("lilypad._utils.client.get_settings")
@@ -348,6 +353,7 @@ def test_get_sync_client_no_api_key(mock_get_settings):
     """Test get_sync_client without API key."""
     mock_settings = Mock()
     mock_settings.api_key = None
+    mock_settings.timeout = 10.0
     mock_get_settings.return_value = mock_settings
 
     with pytest.raises(RuntimeError) as exc_info:
@@ -363,6 +369,7 @@ def test_get_sync_client_from_env(mock_singleton, mock_get_settings):
     mock_settings = Mock()
     mock_settings.api_key = "env_key"
     mock_settings.base_url = "https://env.com"
+    mock_settings.timeout = 10.0
     mock_get_settings.return_value = mock_settings
 
     mock_instance = Mock()
@@ -371,7 +378,7 @@ def test_get_sync_client_from_env(mock_singleton, mock_get_settings):
     result = get_sync_client()
 
     assert result == mock_instance
-    mock_singleton.assert_called_once_with("env_key", "https://env.com")
+    mock_singleton.assert_called_once_with("env_key", "https://env.com", 10.0)
 
 
 @pytest.mark.asyncio
@@ -395,6 +402,7 @@ async def test_get_async_client_success(mock_singleton, mock_get_settings):
     mock_settings = Mock()
     mock_settings.api_key = "test_key"
     mock_settings.base_url = "https://test.com"
+    mock_settings.timeout = 10.0
     mock_get_settings.return_value = mock_settings
 
     mock_instance = Mock()
@@ -403,9 +411,9 @@ async def test_get_async_client_success(mock_singleton, mock_get_settings):
     result = get_async_client()
 
     assert result == mock_instance
-    # Verify singleton was called with correct loop ID
+    # Verify singleton was called with correct loop ID and timeout
     loop = asyncio.get_running_loop()
-    mock_singleton.assert_called_once_with("test_key", id(loop), "https://test.com")
+    mock_singleton.assert_called_once_with("test_key", id(loop), "https://test.com", 10.0)
 
 
 @patch("lilypad._utils.client.Lilypad")
@@ -419,15 +427,15 @@ def test_sync_singleton_caching(mock_lilypad):
     _sync_singleton.cache_clear()
 
     # First call
-    result1 = _sync_singleton("key1", "https://test.com")
+    result1 = _sync_singleton("key1", "https://test.com", 10.0)
     assert result1 == mock_instance1
 
     # Second call with same key - should return cached
-    result2 = _sync_singleton("key1", "https://test.com")
+    result2 = _sync_singleton("key1", "https://test.com", 10.0)
     assert result2 == mock_instance1
 
     # Call with different key - should create new
-    result3 = _sync_singleton("key2", "https://test.com")
+    result3 = _sync_singleton("key2", "https://test.com", 10.0)
     assert result3 == mock_instance2
 
     # Verify Lilypad was only called twice
@@ -447,11 +455,11 @@ async def test_async_singleton_caching(mock_async_lilypad):
     loop_id = id(asyncio.get_running_loop())
 
     # First call
-    result1 = _async_singleton("key1", loop_id, "https://test.com")
+    result1 = _async_singleton("key1", loop_id, "https://test.com", 10.0)
     assert result1 == mock_instance
 
     # Second call with same key and loop - should return cached
-    result2 = _async_singleton("key1", loop_id, "https://test.com")
+    result2 = _async_singleton("key1", loop_id, "https://test.com", 10.0)
     assert result2 == mock_instance
 
     # Verify AsyncLilypad was only called once
@@ -536,6 +544,7 @@ def test_sync_client_with_custom_params():
         mock_settings = Mock()
         mock_settings.api_key = "env_key"
         mock_settings.base_url = "https://env.com"
+        mock_settings.timeout = 10.0
         mock_get_settings.return_value = mock_settings
 
         mock_instance = Mock()
@@ -544,8 +553,8 @@ def test_sync_client_with_custom_params():
         # Call with custom base_url to override env settings
         result = get_sync_client(base_url="https://custom.com")
 
-        # Should use custom base_url instead of env base_url
-        mock_lilypad.assert_called_once_with(api_key="env_key", base_url="https://custom.com")
+        # Should use custom base_url instead of env base_url, with default timeout
+        mock_lilypad.assert_called_once_with(api_key="env_key", base_url="https://custom.com", timeout=10.0)
         assert result == mock_instance
 
 
@@ -571,6 +580,7 @@ async def test_async_client_with_custom_params():
         mock_settings = Mock()
         mock_settings.api_key = "env_key"
         mock_settings.base_url = "https://env.com"
+        mock_settings.timeout = 10.0
         mock_get_settings.return_value = mock_settings
 
         mock_instance = Mock()
@@ -579,8 +589,8 @@ async def test_async_client_with_custom_params():
         # Call with custom base_url to override env settings
         result = get_async_client(base_url="https://custom.com")
 
-        # Should use custom base_url instead of env base_url
-        mock_async_lilypad.assert_called_once_with(api_key="env_key", base_url="https://custom.com")
+        # Should use custom base_url instead of env base_url, with default timeout
+        mock_async_lilypad.assert_called_once_with(api_key="env_key", base_url="https://custom.com", timeout=10.0)
         assert result == mock_instance
 
 
@@ -652,8 +662,8 @@ def test_sync_singleton_cache_different_base_urls():
         _sync_singleton.cache_clear()
 
         # Same key, different base URLs should create different instances
-        result1 = _sync_singleton("key1", "https://api1.com")
-        result2 = _sync_singleton("key1", "https://api2.com")
+        result1 = _sync_singleton("key1", "https://api1.com", 10.0)
+        result2 = _sync_singleton("key1", "https://api2.com", 10.0)
 
         assert result1 == mock_instance1
         assert result2 == mock_instance2
@@ -677,8 +687,8 @@ async def test_async_singleton_cache_different_loops():
         loop1_id = id(asyncio.get_running_loop())
 
         # Same key, same loop should return cached
-        result1 = _async_singleton("key1", loop1_id, "https://api.com")
-        result2 = _async_singleton("key1", loop1_id, "https://api.com")
+        result1 = _async_singleton("key1", loop1_id, "https://api.com", 10.0)
+        result2 = _async_singleton("key1", loop1_id, "https://api.com", 10.0)
 
         assert result1 == mock_instance1
         assert result2 == mock_instance1  # Should be cached
@@ -686,7 +696,7 @@ async def test_async_singleton_cache_different_loops():
 
         # Different loop ID should create new instance
         fake_loop_id = 999999
-        result3 = _async_singleton("key1", fake_loop_id, "https://api.com")
+        result3 = _async_singleton("key1", fake_loop_id, "https://api.com", 10.0)
 
         assert result3 == mock_instance2
         assert mock_async_lilypad.call_count == 2
@@ -727,7 +737,7 @@ def test_sync_singleton_creation_failure():
         _sync_singleton.cache_clear()
 
         with pytest.raises(RuntimeError, match="Failed to create cached client"):
-            _sync_singleton("test_key", "https://api.com")
+            _sync_singleton("test_key", "https://api.com", 10.0)
 
 
 @pytest.mark.asyncio
@@ -742,7 +752,7 @@ async def test_async_singleton_creation_failure():
         loop_id = id(asyncio.get_running_loop())
 
         with pytest.raises(RuntimeError, match="Failed to create cached async client"):
-            _async_singleton("test_key", loop_id, "https://api.com")
+            _async_singleton("test_key", loop_id, "https://api.com", 10.0)
 
 
 def test_async_lilypad_init_error_handling():
