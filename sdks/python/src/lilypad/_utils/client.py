@@ -261,12 +261,13 @@ class AsyncLilypad(_BaseAsyncLilypad):
 
 
 @lru_cache(maxsize=256)
-def _sync_singleton(api_key: str, base_url: str | None) -> Lilypad:
+def _sync_singleton(api_key: str, base_url: str | None, timeout: float | None) -> Lilypad:
     """Return (or create) the process‑wide synchronous client.
 
     Args:
         api_key: Lilypad API key used for authentication.
         base_url: Optional base URL override
+        timeout: Optional timeout override in seconds
 
     Returns:
         A memoized :class:`lilypad.Lilypad` instance tied to *api_key*.
@@ -275,13 +276,13 @@ def _sync_singleton(api_key: str, base_url: str | None) -> Lilypad:
         RuntimeError: If client creation fails
     """
     try:
-        return Lilypad(api_key=api_key, base_url=base_url)
+        return Lilypad(api_key=api_key, base_url=base_url, timeout=timeout)
     except Exception as e:
         logger.error("Failed to create singleton Lilypad client: %s", e)
         raise RuntimeError(f"Failed to create cached client: {e}") from e
 
 
-def get_sync_client(api_key: str | None = None, base_url: str | None = None) -> Lilypad:
+def get_sync_client(api_key: str | None = None, base_url: str | None = None, timeout: float | None = None) -> Lilypad:
     """Obtain a cached synchronous client.
 
     Args:
@@ -289,6 +290,8 @@ def get_sync_client(api_key: str | None = None, base_url: str | None = None) -> 
             provided.  If *None*, the environment variable is used.
         base_url: Overrides the ``LILYPAD_BASE_URL`` environment variable when
             provided.
+        timeout: Overrides the ``LILYPAD_TIMEOUT`` environment variable when
+            provided. If *None*, the environment variable is used (default 5.0 seconds).
 
     Returns:
         A cached :class:`lilypad.Lilypad`.
@@ -301,19 +304,25 @@ def get_sync_client(api_key: str | None = None, base_url: str | None = None) -> 
         raise RuntimeError("Lilypad API key not provided and LILYPAD_API_KEY is not set.")
 
     effective_base_url = base_url or get_settings().base_url
-    logger.debug("Creating sync client with api_key=*****, base_url=%s", effective_base_url)
+    effective_timeout = timeout if timeout is not None else get_settings().timeout
+    logger.debug(
+        "Creating sync client with api_key=*****, base_url=%s, timeout=%s", effective_base_url, effective_timeout
+    )
 
-    return _sync_singleton(key, effective_base_url)
+    return _sync_singleton(key, effective_base_url, effective_timeout)
 
 
 @lru_cache(maxsize=256)
-def _async_singleton(api_key: str, loop_id_for_cache: int, base_url: str | None = None) -> AsyncLilypad:
+def _async_singleton(
+    api_key: str, loop_id_for_cache: int, base_url: str | None = None, timeout: float | None = None
+) -> AsyncLilypad:
     """Return (or create) an asynchronous client bound to a specific loop.
 
     Args:
         api_key: Lilypad API key.
         loop_id_for_cache: ``id(asyncio.get_running_loop())`` identifying the event loop.
         base_url: Optional base URL override
+        timeout: Optional timeout override in seconds
 
     Returns:
         An AsyncLilypad instance bound to the current event loop
@@ -323,7 +332,7 @@ def _async_singleton(api_key: str, loop_id_for_cache: int, base_url: str | None 
     """
     try:
         loop = asyncio.get_running_loop()
-        client = AsyncLilypad(api_key=api_key, base_url=base_url)
+        client = AsyncLilypad(api_key=api_key, base_url=base_url, timeout=timeout)
         # Ensure the client is closed when the loop is closed.
         weakref.finalize(loop, _async_singleton.cache_clear)
         return client
@@ -332,7 +341,9 @@ def _async_singleton(api_key: str, loop_id_for_cache: int, base_url: str | None 
         raise RuntimeError(f"Failed to create cached async client: {e}") from e
 
 
-def get_async_client(api_key: str | None = None, base_url: str | None = None) -> AsyncLilypad:
+def get_async_client(
+    api_key: str | None = None, base_url: str | None = None, timeout: float | None = None
+) -> AsyncLilypad:
     """Obtain a cached asynchronous client for the current event loop.
 
     The cache key is the tuple ``(api_key, id(event_loop))`` so that each
@@ -343,6 +354,8 @@ def get_async_client(api_key: str | None = None, base_url: str | None = None) ->
             *None*, the environment variable value is used.
         base_url: Overrides the ``LILYPAD_BASE_URL`` environment variable when
             provided.
+        timeout: Overrides the ``LILYPAD_TIMEOUT`` environment variable when
+            provided. If *None*, the environment variable is used (default 5.0 seconds).
 
     Returns:
         A cached :class:`lilypad.AsyncLilypad` for the running event loop.
@@ -360,9 +373,12 @@ def get_async_client(api_key: str | None = None, base_url: str | None = None) ->
         raise RuntimeError("Lilypad API key not provided and LILYPAD_API_KEY is not set.")
 
     effective_base_url = base_url or get_settings().base_url
-    logger.debug("Creating async client with api_key=*****, base_url=%s", effective_base_url)
+    effective_timeout = timeout if timeout is not None else get_settings().timeout
+    logger.debug(
+        "Creating async client with api_key=*****, base_url=%s, timeout=%s", effective_base_url, effective_timeout
+    )
 
-    return _async_singleton(key, id(loop), effective_base_url)
+    return _async_singleton(key, id(loop), effective_base_url, effective_timeout)
 
 
 __all__ = ["AsyncLilypad", "Lilypad", "get_async_client", "get_sync_client"]

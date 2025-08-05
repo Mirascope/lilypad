@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     remote_client_url: str = Field(default=REMOTE_CLIENT_URL)
     api_key: str | None = None
     project_id: str | None = None
+    timeout: float = Field(
+        default=10.0, description="HTTP timeout in seconds for Lilypad API calls (OpenTelemetry OTLP standard)"
+    )
 
     def update(self, **kwargs: Any) -> None:  # noqa: D401
         """Update non-None fields in place."""

@@ -2500,3 +2500,337 @@ async def test_trace_async_versioning_manual_and_wrap_mode():
 
             # Verify _set_trace_context was called again
             mock_set_trace_context.assert_called_with({"span_id": 123456789, "function_uuid": None})
+
+
+@pytest.mark.asyncio
+async def test_async_trace_versioning_automatic_timeout_exception():
+    """Test that httpx.TimeoutException is caught when versioning='automatic' for async functions."""
+    import httpx
+    from opentelemetry.sdk.trace import TracerProvider
+    from contextlib import contextmanager
+
+    class MockSpan:
+        def __init__(self, name):
+            self.name = name
+            self.is_noop = False
+            self.span_id = 123456789
+            self.opentelemetry_span = Mock()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+    with (
+        patch("lilypad.traces.get_tracer_provider") as mock_get_tracer_provider,
+        patch("lilypad.traces.get_settings") as mock_get_settings,
+        patch("lilypad.traces.get_async_client"),
+        patch("lilypad.traces.Closure") as mock_closure_class,
+        patch("lilypad.traces.get_function_by_hash_async") as mock_get_function_by_hash,
+        patch("lilypad.traces.Span", MockSpan),
+        patch("lilypad.traces._construct_trace_attributes") as mock_construct_attrs,
+        patch("lilypad.traces._set_span_attributes") as mock_set_span_attrs,
+        patch("lilypad.traces._set_trace_context"),
+        patch("lilypad.traces.logger") as mock_logger,
+    ):
+        mock_provider_instance = TracerProvider()
+        mock_get_tracer_provider.return_value = mock_provider_instance
+
+        mock_get_settings.return_value = Mock(
+            api_key="test-key",
+            project_id="test-project",
+        )
+
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure.code = "test-code"
+        mock_closure.name = "test-func"
+        mock_closure.signature = "test-signature"
+        mock_closure.dependencies = []
+        mock_closure_class.from_fn.return_value = mock_closure
+
+        mock_construct_attrs.return_value = {}
+
+        @contextmanager
+        def mock_span_attributes_cm(*args, **kwargs):
+            result_holder = Mock()
+            yield result_holder
+
+        mock_set_span_attrs.side_effect = mock_span_attributes_cm
+
+        timeout_errors = [
+            httpx.TimeoutException("Request timeout"),
+            httpx.ConnectTimeout("Connection timeout"),
+            httpx.ReadTimeout("Read timeout"),
+            httpx.WriteTimeout("Write timeout"),
+            httpx.PoolTimeout("Pool timeout"),
+        ]
+
+        for timeout_error in timeout_errors:
+            mock_get_function_by_hash.side_effect = timeout_error
+            mock_logger.reset_mock()
+
+            @trace(versioning="automatic")
+            async def test_func(x: int) -> int:
+                return x * 2
+
+            result = await test_func(5)
+            assert result == 10
+
+            mock_logger.error.assert_called_once()
+            error_message = mock_logger.error.call_args[0][0]
+            assert "Failed to connect to Lilypad server for versioning" in error_message
+            assert "LLM calls will still work" in error_message
+
+
+def test_sync_trace_versioning_automatic_timeout_exception():
+    """Test that httpx.TimeoutException is caught when versioning='automatic' for sync functions."""
+    import httpx
+    from opentelemetry.sdk.trace import TracerProvider
+    from contextlib import contextmanager
+
+    class MockSpan:
+        def __init__(self, name):
+            self.name = name
+            self.is_noop = False
+            self.span_id = 123456789
+            self.opentelemetry_span = Mock()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+    with (
+        patch("lilypad.traces.get_tracer_provider") as mock_get_tracer_provider,
+        patch("lilypad.traces.get_settings") as mock_get_settings,
+        patch("lilypad.traces.get_sync_client"),
+        patch("lilypad.traces.Closure") as mock_closure_class,
+        patch("lilypad.traces.get_function_by_hash_sync") as mock_get_function_by_hash,
+        patch("lilypad.traces.Span", MockSpan),
+        patch("lilypad.traces._construct_trace_attributes") as mock_construct_attrs,
+        patch("lilypad.traces._set_span_attributes") as mock_set_span_attrs,
+        patch("lilypad.traces._set_trace_context"),
+        patch("lilypad.traces.logger") as mock_logger,
+    ):
+        mock_provider_instance = TracerProvider()
+        mock_get_tracer_provider.return_value = mock_provider_instance
+
+        mock_get_settings.return_value = Mock(
+            api_key="test-key",
+            project_id="test-project",
+        )
+
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure.code = "test-code"
+        mock_closure.name = "test-func"
+        mock_closure.signature = "test-signature"
+        mock_closure.dependencies = []
+        mock_closure_class.from_fn.return_value = mock_closure
+
+        mock_construct_attrs.return_value = {}
+
+        @contextmanager
+        def mock_span_attributes_cm(*args, **kwargs):
+            result_holder = Mock()
+            yield result_holder
+
+        mock_set_span_attrs.side_effect = mock_span_attributes_cm
+
+        timeout_errors = [
+            httpx.TimeoutException("Request timeout"),
+            httpx.ConnectTimeout("Connection timeout"),
+            httpx.ReadTimeout("Read timeout"),
+            httpx.WriteTimeout("Write timeout"),
+            httpx.PoolTimeout("Pool timeout"),
+        ]
+
+        for timeout_error in timeout_errors:
+            mock_get_function_by_hash.side_effect = timeout_error
+            mock_logger.reset_mock()
+
+            @trace(versioning="automatic")
+            def test_func(x: int) -> int:
+                return x * 2
+
+            result = test_func(5)
+            assert result == 10
+
+            mock_logger.error.assert_called_once()
+            error_message = mock_logger.error.call_args[0][0]
+            assert "Failed to connect to Lilypad server for versioning" in error_message
+            assert "LLM calls will still work" in error_message
+
+
+@pytest.mark.asyncio
+async def test_async_trace_versioning_automatic_mixed_exceptions():
+    """Test that both NetworkError and TimeoutException are handled for async functions."""
+    import httpx
+    from opentelemetry.sdk.trace import TracerProvider
+    from contextlib import contextmanager
+
+    class MockSpan:
+        def __init__(self, name):
+            self.name = name
+            self.is_noop = False
+            self.span_id = 123456789
+            self.opentelemetry_span = Mock()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+    with (
+        patch("lilypad.traces.get_tracer_provider") as mock_get_tracer_provider,
+        patch("lilypad.traces.get_settings") as mock_get_settings,
+        patch("lilypad.traces.get_async_client"),
+        patch("lilypad.traces.Closure") as mock_closure_class,
+        patch("lilypad.traces.get_function_by_hash_async") as mock_get_function_by_hash,
+        patch("lilypad.traces.Span", MockSpan),
+        patch("lilypad.traces._construct_trace_attributes") as mock_construct_attrs,
+        patch("lilypad.traces._set_span_attributes") as mock_set_span_attrs,
+        patch("lilypad.traces._set_trace_context"),
+        patch("lilypad.traces.logger") as mock_logger,
+    ):
+        mock_provider_instance = TracerProvider()
+        mock_get_tracer_provider.return_value = mock_provider_instance
+
+        mock_get_settings.return_value = Mock(
+            api_key="test-key",
+            project_id="test-project",
+        )
+
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure.code = "test-code"
+        mock_closure.name = "test-func"
+        mock_closure.signature = "test-signature"
+        mock_closure.dependencies = []
+        mock_closure_class.from_fn.return_value = mock_closure
+
+        mock_construct_attrs.return_value = {}
+
+        @contextmanager
+        def mock_span_attributes_cm(*args, **kwargs):
+            result_holder = Mock()
+            yield result_holder
+
+        mock_set_span_attrs.side_effect = mock_span_attributes_cm
+
+        exceptions = [
+            httpx.NetworkError("Network error"),
+            httpx.ConnectError("Connection error"),
+            httpx.TimeoutException("Timeout error"),
+            httpx.ReadTimeout("Read timeout"),
+            OSError("OS error"),
+        ]
+
+        for exc in exceptions:
+            mock_get_function_by_hash.side_effect = exc
+            mock_logger.reset_mock()
+
+            @trace(versioning="automatic")
+            async def test_func(x: int) -> int:
+                return x * 2
+
+            result = await test_func(5)
+            assert result == 10
+
+            mock_logger.error.assert_called_once()
+            assert "Failed to connect to Lilypad server for versioning" in mock_logger.error.call_args[0][0]
+
+
+def test_sync_trace_versioning_automatic_mixed_exceptions():
+    """Test that both NetworkError and TimeoutException are handled for sync functions."""
+    import httpx
+    from opentelemetry.sdk.trace import TracerProvider
+    from contextlib import contextmanager
+
+    class MockSpan:
+        def __init__(self, name):
+            self.name = name
+            self.is_noop = False
+            self.span_id = 123456789
+            self.opentelemetry_span = Mock()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+    with (
+        patch("lilypad.traces.get_tracer_provider") as mock_get_tracer_provider,
+        patch("lilypad.traces.get_settings") as mock_get_settings,
+        patch("lilypad.traces.get_sync_client"),
+        patch("lilypad.traces.Closure") as mock_closure_class,
+        patch("lilypad.traces.get_function_by_hash_sync") as mock_get_function_by_hash,
+        patch("lilypad.traces.Span", MockSpan),
+        patch("lilypad.traces._construct_trace_attributes") as mock_construct_attrs,
+        patch("lilypad.traces._set_span_attributes") as mock_set_span_attrs,
+        patch("lilypad.traces._set_trace_context"),
+        patch("lilypad.traces.logger") as mock_logger,
+    ):
+        mock_provider_instance = TracerProvider()
+        mock_get_tracer_provider.return_value = mock_provider_instance
+
+        mock_get_settings.return_value = Mock(
+            api_key="test-key",
+            project_id="test-project",
+        )
+
+        mock_closure = Mock()
+        mock_closure.hash = "test-hash"
+        mock_closure.code = "test-code"
+        mock_closure.name = "test-func"
+        mock_closure.signature = "test-signature"
+        mock_closure.dependencies = []
+        mock_closure_class.from_fn.return_value = mock_closure
+
+        mock_construct_attrs.return_value = {}
+
+        @contextmanager
+        def mock_span_attributes_cm(*args, **kwargs):
+            result_holder = Mock()
+            yield result_holder
+
+        mock_set_span_attrs.side_effect = mock_span_attributes_cm
+
+        exceptions = [
+            httpx.NetworkError("Network error"),
+            httpx.ConnectError("Connection error"),
+            httpx.TimeoutException("Timeout error"),
+            httpx.ReadTimeout("Read timeout"),
+            OSError("OS error"),
+        ]
+
+        for exc in exceptions:
+            mock_get_function_by_hash.side_effect = exc
+            mock_logger.reset_mock()
+
+            @trace(versioning="automatic")
+            def test_func(x: int) -> int:
+                return x * 2
+
+            result = test_func(5)
+            assert result == 10
+
+            mock_logger.error.assert_called_once()
+            assert "Failed to connect to Lilypad server for versioning" in mock_logger.error.call_args[0][0]
