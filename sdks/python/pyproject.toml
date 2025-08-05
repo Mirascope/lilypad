@@ -1,6 +1,6 @@
 [project]
 name = "lilypad-sdk"
-version = "0.10.2"
+version = "0.10.3"
 description = "The official Python library for the Lilypad API"
 dynamic = ["readme"]
 license = "Apache-2.0"

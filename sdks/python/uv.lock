@@ -1403,7 +1403,7 @@ wheels = [
 
 [[package]]
 name = "lilypad-sdk"
-version = "0.10.2"
+version = "0.10.3"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
