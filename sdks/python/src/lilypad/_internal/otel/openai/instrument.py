@@ -41,6 +41,10 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
     Args:
         client: The OpenAI client instance to instrument.
     """
+    if hasattr(client, "_lilypad_instrumented"):
+        logger.debug("Client already instrumented, skipping")
+        return
+
     try:
         lilypad_version = version("lilypad-sdk")
     except PackageNotFoundError:
@@ -101,3 +105,5 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
             logger.debug("Successfully wrapped Completions.parse")
         except Exception as e:
             logger.warning(f"Failed to wrap Completions.parse: {type(e).__name__}: {e}")
+
+    client._lilypad_instrumented = True  # pyright: ignore[reportAttributeAccessIssue]
