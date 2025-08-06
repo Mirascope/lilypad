@@ -1,0 +1,59 @@
+name: TypeScript SDK Tests
+
+on:
+  push:
+    branches: [main, v1]
+    paths:
+      - 'sdks/typescript/**'
+      - '.github/workflows/typescript-sdk-test.yml'
+  pull_request:
+    paths:
+      - 'sdks/typescript/**'
+      - '.github/workflows/typescript-sdk-test.yml'
+
+jobs:
+  test-typescript:
+    name: Test TypeScript SDK (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: ['20', '22', '24']
+
+    defaults:
+      run:
+        working-directory: sdks/typescript
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: sdks/typescript/node_modules
+          key: ${{ runner.os }}-typescript-sdk-node${{ matrix.node-version }}-${{ hashFiles('sdks/typescript/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-typescript-sdk-node${{ matrix.node-version }}-
+            ${{ runner.os }}-typescript-sdk-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+#      - name: Run tests with coverage
+#        run: npm run test:coverage
+#
+#      - name: Upload coverage to Codecov
+#        uses: codecov/codecov-action@v3
+#        with:
+#          token: ${{ secrets.CODECOV_TOKEN }}
+#          directory: ./sdks/typescript/coverage
+#          flags: typescript-sdk
+#          name: typescript-sdk-node${{ matrix.node-version }}
+#          fail_ci_if_error: false
