@@ -46,15 +46,15 @@ jobs:
 
       - name: Build TypeScript
         run: npm run build
-#
-#      - name: Run tests with coverage
-#        run: npm run test:coverage
-#
-#      - name: Upload coverage to Codecov
-#        uses: codecov/codecov-action@v3
-#        with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#          directory: ./sdks/typescript/coverage
-#          flags: typescript-sdk
-#          name: typescript-sdk-node${{ matrix.node-version }}
-#          fail_ci_if_error: false
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./sdks/typescript/coverage
+          flags: typescript-sdk
+          name: typescript-sdk-node${{ matrix.node-version }}
+          fail_ci_if_error: false
