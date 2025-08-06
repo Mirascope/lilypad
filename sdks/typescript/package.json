@@ -13,7 +13,14 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "prepare": "npm run build",
-    "example": "bun run example.ts"
+    "example": "tsx examples/instrument-openai-with-console.ts",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
@@ -23,8 +30,17 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
     "openai": "^4.0.0",
-    "typescript": "^5.0.0"
+    "prettier": "^3.0.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
   },
   "peerDependencies": {
     "openai": "^4.0.0"
