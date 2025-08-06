@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import orjson
 
-from lilypad._internal.utils import ORJSON_OPTS, json_dumps
+from lilypad._internal.utils import json_dumps
 
 
 def test_json_dumps_uses_correct_orjson_options() -> None:
