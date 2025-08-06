@@ -23,7 +23,7 @@ create OpenTelemetry spans for API calls.
 import logging
 from importlib.metadata import PackageNotFoundError, version
 
-from wrapt import FunctionWrapper, wrap_function_wrapper
+from wrapt import FunctionWrapper
 from openai import OpenAI, AsyncOpenAI
 from opentelemetry.trace import get_tracer
 from opentelemetry.semconv.schemas import Schemas
@@ -58,11 +58,6 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
 
     if isinstance(client, AsyncOpenAI):
         try:
-            wrap_function_wrapper(
-                module="openai.resources.chat.completions",
-                name="AsyncCompletions.create",
-                wrapper=_patch.chat_completions_create_async_patch_factory(tracer),
-            )
             client.chat.completions.create = FunctionWrapper(
                 client.chat.completions.create,
                 _patch.chat_completions_create_async_patch_factory(tracer),
