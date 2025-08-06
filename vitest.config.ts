@@ -27,7 +27,7 @@ export default defineConfig({
         },
       },
     },
-    exclude: ['node_modules', 'dist', '.git', '.cache'],
+    exclude: ['**/node_modules/**', 'dist', '.git', '.cache', 'sdks/**'],
   },
   resolve: {
     alias: {
