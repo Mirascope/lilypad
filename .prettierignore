@@ -6,3 +6,4 @@ build
 coverage
 .next
 src/routeTree.gen.ts
+sdks/

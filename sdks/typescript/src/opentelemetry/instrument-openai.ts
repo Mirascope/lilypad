@@ -1,6 +1,6 @@
 import type { Attributes, Span } from '@opentelemetry/api';
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import OpenAI from 'openai';
+import type { OpenAI } from 'openai';
 import { getTracer } from '../configure';
 import {
   ERROR_ATTRIBUTES,

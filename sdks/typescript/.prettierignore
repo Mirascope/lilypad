@@ -1,0 +1,10 @@
+dist/
+node_modules/
+coverage/
+*.d.ts
+*.js
+*.js.map
+package-lock.json
+tsconfig.json
+.eslintrc.json
+vitest.config.ts
