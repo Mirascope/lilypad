@@ -7,8 +7,29 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: Test
+  # Detect which paths changed
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.changes.outputs.app }}
+      python-sdk: ${{ steps.changes.outputs.python-sdk }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            app:
+              - '**'
+              - '!sdks/**'
+            python-sdk:
+              - 'sdks/python/**'
+              - '.github/workflows/test.yml'
+
+  test-app:
+    name: Test App
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -41,3 +62,51 @@ jobs:
 
       - name: Run tests
         run: bun run test:coverage
+
+  test-python-sdk:
+    name: Test Python SDK (Python ${{ matrix.python-version }})
+    needs: changes
+    if: ${{ needs.changes.outputs.python-sdk == 'true' }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+
+    defaults:
+      run:
+        working-directory: sdks/python
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: 'latest'
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev --group test --all-extras
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest tests/
+
+      # Coverage upload will be enabled once tests are added
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     files: ./sdks/python/coverage.xml
+      #     flags: python-sdk,python-${{ matrix.python-version }}
+      #     name: python-sdk-${{ matrix.python-version }}
+      #     fail_ci_if_error: false
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
