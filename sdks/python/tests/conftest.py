@@ -5,7 +5,15 @@ lilypad test suite, including VCR configuration for HTTP recording/playback.
 """
 
 import pytest
+from typing import Callable
 from typing_extensions import TypedDict
+
+
+class Response(TypedDict):
+    """Response from an HTTP request."""
+
+    headers: dict[str, str]
+    """Response headers."""
 
 
 class VCRConfig(TypedDict):
@@ -52,6 +60,34 @@ class VCRConfig(TypedDict):
     Useful for removing sensitive data from request bodies.
     """
 
+    before_record_response: Callable[[Response], Response]
+    """Callback to modify response before recording.
+    
+    This function is called with the response dictionary before it's saved
+    to the cassette. It can be used to filter out sensitive response headers
+    or modify response data. Returns the modified response dictionary.
+    """
+
+
+def _filter_response_headers(response: Response) -> Response:
+    """Filter sensitive headers from response before recording."""
+
+    sensitive_headers = {
+        "openai-organization",
+        "openai-project",
+        "cf-ray",
+        "x-request-id",
+        "set-cookie",
+    }
+
+    filtered_headers = {
+        k: v
+        for k, v in response["headers"].items()
+        if k.lower() not in sensitive_headers
+    }
+
+    return {**response, "headers": filtered_headers}
+
 
 @pytest.fixture(scope="session")
 def vcr_config() -> VCRConfig:
@@ -81,4 +117,5 @@ def vcr_config() -> VCRConfig:
             "set-cookie",
         ],
         "filter_post_data_parameters": [],
+        "before_record_response": _filter_response_headers,
     }

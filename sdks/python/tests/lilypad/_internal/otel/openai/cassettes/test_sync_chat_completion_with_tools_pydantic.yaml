@@ -1,7 +1,10 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"system","content":"You are a helpful assistant who
-      speaks like a pirate."},{"role":"user","content":"What is the capital of France?"}],"model":"gpt-4o-mini","max_tokens":100,"temperature":0.7}'
+    body: "{\"messages\":[{\"role\":\"user\",\"content\":\"What's the weather in Tokyo
+      today?\"}],\"model\":\"gpt-4o-mini\",\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"get_weather\",\"description\":\"Get
+      today's weather report\",\"parameters\":{\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\",\"description\":\"City
+      and country e.g. Bogot\xE1, Colombia\"},\"units\":{\"type\":\"string\",\"enum\":[\"celsius\",\"fahrenheit\"],\"description\":\"Units
+      the temperature will be returned in.\"}},\"required\":[\"location\",\"units\"],\"additionalProperties\":false}}}]}"
     headers:
       accept:
       - application/json
@@ -10,17 +13,17 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '214'
+      - '515'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 1.98.0
+      - OpenAI/Python 1.98.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
-      - async:asyncio
+      - 'false'
       x-stainless-lang:
       - python
       x-stainless-os:
@@ -34,21 +37,22 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.13.2
+      - 3.10.15
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
       string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jJLBbtswDIbvfgpGl13sIU0cNMmtWLFLNqAbdtg6FAYj0bY2WRIkZltQ
-        5N0H2Wnsbh2wiw78+FP8ST5mAEIrsQUhW2TZeVO8WX6+2xnu7m930qij/WDWcf7z/bsvH293RuRJ
-        4fbfSPKT6rV0nTfE2tkBy0DIlKpeXa/KzWpTLtc96Jwik2SN56J0RaetLhbzRVnMr4ur9VndOi0p
-        ii18zQAAHvs39WkV/RJbmOdPkY5ixIbE9pIEIIIzKSIwRh0ZLYt8hNJZJtu3fhNCyKFDpuMMPrUE
-        Er1mNOBqeBvQSoI9wR0GHWdwA01Aq0BqPoJ7BUY3LUdIoeC6lJyDZtjTbPpboPoQMTm2B2MmAK11
-        jGlivc+HMzldnBnX+OD28Q+pqLXVsa0CYXQ2uYjsvOjpKQN46Cd4eDYU4YPrPFfsvlP/3WIzlBPj
-        3iZwdYbsGM0YX5X5C9UqRYzaxMkGhETZkhqV47rwoLSbgGzi+e9mXqo9+Na2+Z/yI5CSPJOqfCCl
-        5XPDY1qgdNX/SrvMuG9YRAo/tKSKNYW0B0U1HsxwayIeI1NX1do2FHzQw8HVvlqWuCqRNkspslP2
-        GwAA//8DAMClSgZ+AwAA
+        H4sIAAAAAAAAAwAAAP//jFNda9swFH33rxD3OR5x4iyO39axLRTSdWUtg7kYVb52tMiSJsntQsh/
+        H1YS20k7mB+MuEfn3HM/tAsIAV5ASoCtqWO1FuHHKY5Zch3PlvOlWT3cLj/Jq69XP+z93TdTw6hl
+        qKdfyNyJ9Y6pWgt0XMkDzAxSh61qNJ/FiyROotgDtSpQtLRKuzBWYc0lDyfjSRyO52GUHNlrxRla
+        SMnPgBBCdv7f+pQF/oGUjEenSI3W0goh7S4RAkaJNgLUWm4dlQ5GPciUdChb67IRYgA4pUTOqBB9
+        4sO3G5z7ZlEh8pvftzcvSbIR2/df7m8/rJ6jh9Vnercc5DtIb7U3VDaSdU0a4F08vUhGCEhae26F
+        Ln9B6tZoLuiEADVVU6N0rXXYZSAUo61gBmkG39Vmq0bkmmoqMxhl0EjurIcYCssbm8EeziT3wVvn
+        x0G3DJaNpeJ1G6mUyvnkvo+PR2TfjUyoShv1ZC+oUHLJ7To3SK3vxHAgwcmItwDN2cxBG1Vrlzu1
+        QZ90vjiIQr+WPTiJjqBTjoo+Ho2PW3UulxfoKPc70a0ho2yNRU/t15E2BVcDIBiU/trNW9qH8rms
+        /ke+BxhD7bDItcGCs/OK+2sG21f7r2tdk71hsGieOcPccTTtOAosaSMObwns1jqs85LLCo023D8o
+        KHU+jekspriYMgj2wV8AAAD//wMA5Oz5R14EAAA=
     headers:
       Connection:
       - keep-alive
@@ -57,7 +61,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 12 Aug 2025 00:43:59 GMT
+      - Tue, 12 Aug 2025 07:46:55 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -73,11 +77,11 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       openai-processing-ms:
-      - '1026'
+      - '506'
       openai-version:
       - '2020-10-01'
       x-envoy-upstream-service-time:
-      - '1233'
+      - '599'
       x-ratelimit-limit-requests:
       - '5000'
       x-ratelimit-limit-tokens:
@@ -85,7 +89,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '4999'
       x-ratelimit-remaining-tokens:
-      - '3999976'
+      - '3999989'
       x-ratelimit-reset-requests:
       - 12ms
       x-ratelimit-reset-tokens:

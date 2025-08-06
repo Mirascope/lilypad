@@ -30,16 +30,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-openai = [
-    "openai>=1.98.0",
-]
+openai = ["openai>=1.98.0"]
 
 [dependency-groups]
-dev = [
-    "pyright>=1.1.403",
-    "ruff>=0.12.7",
-    "pre-commit>=3.5.0",
-]
+dev = ["pyright>=1.1.403", "ruff>=0.12.7", "pre-commit>=3.5.0"]
 test = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
@@ -49,9 +43,7 @@ test = [
     "inline-snapshot>=0.23.0",
     "python-dotenv>=1.1.1",
 ]
-examples = [
-    "openai>=1.98.0",
-]
+examples = ["openai>=1.98.0"]
 
 [build-system]
 requires = ["uv_build>=0.8.4,<0.9.0"]
@@ -166,16 +158,12 @@ include = ["src", "tests", "examples"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = [
-    "-v",
-]
+addopts = ["-v"]
 asyncio_mode = "auto"
-markers = [
-    "vcr: Mark test to use VCR.py for HTTP request recording/playback",
-]
+markers = ["vcr: Mark test to use VCR.py for HTTP request recording/playback"]
 
 [tool.coverage.run]
-branch = true
+branch = false
 source = ["src/lilypad"]
 
 [tool.coverage.report]
@@ -187,10 +175,6 @@ exclude_lines = [
     "pass",
     "except ImportError:",
 ]
-exclude_also = [
-    "@overload",
-    "@abstractmethod",
-    "if TYPE_CHECKING:",
-]
+exclude_also = ["@overload", "@abstractmethod", "if TYPE_CHECKING:"]
 precision = 2
 show_missing = true
