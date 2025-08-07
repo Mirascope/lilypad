@@ -257,8 +257,13 @@ async def test_get_current_user_with_api_key(mock_request, mock_session, mock_se
     mock_user.user_organizations = []
     mock_user.user_consents = None
 
+    from datetime import datetime, timedelta, timezone
+
     mock_api_key = Mock(spec=APIKeyTable)
     mock_api_key.user = mock_user
+    mock_api_key.expires_at = datetime.now(timezone.utc) + timedelta(
+        days=365
+    )  # Valid key
 
     mock_result = Mock()
     mock_result.first.return_value = mock_api_key
@@ -300,6 +305,42 @@ async def test_get_current_user_with_invalid_api_key(
 
     assert exc_info.value.status_code == 401
     assert "Invalid user" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_with_expired_api_key(
+    mock_request, mock_session, mock_settings
+):
+    """Test getting current user with expired API key."""
+    from datetime import datetime, timedelta, timezone
+
+    api_key = "expired_api_key"
+    user_uuid = uuid4()
+
+    # Mock user
+    mock_user = Mock(spec=UserTable)
+    mock_user.uuid = user_uuid
+
+    # Mock expired API key
+    mock_api_key = Mock(spec=APIKeyTable)
+    mock_api_key.user = mock_user
+    mock_api_key.expires_at = datetime.now(timezone.utc) - timedelta(days=1)  # Expired
+
+    mock_result = Mock()
+    mock_result.first.return_value = mock_api_key
+    mock_session.exec.return_value = mock_result
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_user(
+            request=mock_request,
+            token=None,  # type: ignore[arg-type]
+            api_key=api_key,
+            session=mock_session,
+            settings=mock_settings,
+        )
+
+    assert exc_info.value.status_code == 401
+    assert "API key has expired" in str(exc_info.value.detail)
 
 
 @pytest.mark.asyncio

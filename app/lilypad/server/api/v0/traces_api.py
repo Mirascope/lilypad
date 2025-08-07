@@ -190,7 +190,10 @@ async def traces(
         if "attributes" not in trace:
             trace["attributes"] = {}
         trace["attributes"]["lilypad.project.uuid"] = str(project_uuid)
-        trace["attributes"]["lilypad.environment.uuid"] = str(api_key.environment_uuid)
+        if api_key.environment_uuid:
+            trace["attributes"]["lilypad.environment.uuid"] = str(
+                api_key.environment_uuid
+            )
 
     # Extract unique trace IDs from spans
     trace_ids = list(

@@ -78,7 +78,7 @@ async def get_span(
     project_uuid: UUID,
     span_identifier: str,
     span_service: Annotated[SpanService, Depends(SpanService)],
-    environment_uuid: Annotated[UUID, Query()],
+    environment_uuid: Annotated[UUID | None, Query()] = None,
 ) -> SpanMoreDetails:
     """Get span by uuid or span_id."""
     # Try to parse as UUID first

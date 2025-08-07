@@ -40,6 +40,7 @@ class FunctionsClient:
         provider: Provider,
         model: str,
         prompt_template: str,
+        environment_uuid: typing.Optional[str] = None,
         arg_types: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
         call_params: typing.Optional[CommonCallParams] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -60,6 +61,8 @@ class FunctionsClient:
         model : str
 
         prompt_template : str
+
+        environment_uuid : typing.Optional[str]
 
         arg_types : typing.Optional[typing.Dict[str, typing.Optional[str]]]
 
@@ -98,6 +101,7 @@ class FunctionsClient:
             provider=provider,
             model=model,
             prompt_template=prompt_template,
+            environment_uuid=environment_uuid,
             arg_types=arg_types,
             call_params=call_params,
             request_options=request_options,
@@ -130,6 +134,7 @@ class AsyncFunctionsClient:
         provider: Provider,
         model: str,
         prompt_template: str,
+        environment_uuid: typing.Optional[str] = None,
         arg_types: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
         call_params: typing.Optional[CommonCallParams] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -150,6 +155,8 @@ class AsyncFunctionsClient:
         model : str
 
         prompt_template : str
+
+        environment_uuid : typing.Optional[str]
 
         arg_types : typing.Optional[typing.Dict[str, typing.Optional[str]]]
 
@@ -196,6 +203,7 @@ class AsyncFunctionsClient:
             provider=provider,
             model=model,
             prompt_template=prompt_template,
+            environment_uuid=environment_uuid,
             arg_types=arg_types,
             call_params=call_params,
             request_options=request_options,
