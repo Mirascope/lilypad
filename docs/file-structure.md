@@ -86,13 +86,21 @@ worker/
 │   ├── me.ts               # User info endpoint
 │   ├── router.ts           # Auth router configuration
 │   └── utils.ts            # Auth utilities
+├── app.ts                # Main application setup and configuration
+├── app.test.ts           # Application tests
 ├── environment.ts        # Environment configuration
-└── index.ts              # Main worker entry point
+├── index.ts              # Main worker entry point
+├── middleware.ts         # Global middleware configuration
+├── middleware.test.ts    # Middleware tests
+├── routes.ts             # OpenAPI route definitions
+└── schemas.ts            # Zod schemas for API validation
 ```
 
 **Tooling Choices**:
 
 - **Hono**: Lightweight web framework with excellent TypeScript support
+- **@hono/zod-openapi**: OpenAPI integration with Zod schema validation
+- **Zod**: TypeScript-first schema validation for API endpoints
 - **Cloudflare Workers**: Global edge deployment with automatic scaling
 - **OAuth Integration**: GitHub and Google authentication with production URLs
 
@@ -104,7 +112,9 @@ Shared database utilities, schema definitions, and operations used by both front
 db/
 ├── index.ts                         # Main database exports
 ├── middleware.ts                    # Hono middleware for database connections
+├── middleware.test.ts               # Database middleware tests
 ├── utils.ts                         # Database connection utilities
+├── utils.test.ts                    # Database utility tests
 ├── migrations/                      # Database migrations
 │   ├── 0000_users_organizations.sql   # Initial user/org tables
 │   ├── 0001_auth_sessions.sql         # Authentication sessions
@@ -118,13 +128,14 @@ db/
 │   ├── sessions.test.ts               # Session operations tests
 │   ├── users.ts                       # User-related operations
 │   └── users.test.ts                  # User operations tests
-└── schema/                          # Database schema definitions
-    ├── index.ts                       # Schema exports and types
-    ├── users.ts                       # User table schema
-    ├── organizations.ts               # Organization table schema
-    ├── organization-memberships.ts    # Membership table schema
-    ├── sessions.ts                    # Session table schema
-    └── user-consents.ts               # User consent table schema
+├── schema/                          # Database schema definitions
+│   ├── index.ts                       # Schema exports and types
+│   ├── users.ts                       # User table schema
+│   ├── organizations.ts               # Organization table schema
+│   ├── organization-memberships.ts    # Membership table schema
+│   ├── sessions.ts                    # Session table schema
+│   └── user-consents.ts               # User consent table schema
+└── types.ts                         # Database type definitions
 ```
 
 **Tooling Choices**:
@@ -135,6 +146,7 @@ db/
 - **Neon**: Serverless PostgreSQL hosting for production
 - **Schema-first design**: Organized table definitions with proper foreign key relationships
 - **Migration system**: Version-controlled database schema changes
+- **Vitest**: Test runner with comprehensive test coverage and isolated test environment
 
 ## Static Assets (`public/`)
 
@@ -183,7 +195,12 @@ Global test configuration and setup files.
 
 ```text
 tests/
-└── setup.ts                # Global test setup and configuration
+├── db/                      # Database-specific test utilities
+│   ├── global.ts              # Global database test setup
+│   ├── index.ts               # Database test exports
+│   ├── middleware.ts          # Database middleware test utilities
+│   └── setup.ts               # Database test setup
+└── setup.ts                 # Global test setup and configuration
 ```
 
 ## GitHub Actions (`.github/`)
@@ -215,6 +232,7 @@ CI/CD workflows and GitHub configuration.
 
 - **`wrangler.toml`**: Cloudflare Workers deployment configuration
 - **`vite.config.ts`**: Build tool configuration with path alias (`@` to project root)
+- **`vitest.config.ts`**: Test runner configuration with coverage and setup
 - **`tsconfig.json`**: TypeScript configuration
 - **`eslint.config.ts`**: Code quality rules
 - **`drizzle.config.ts`**: Database ORM configuration

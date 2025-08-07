@@ -16,8 +16,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['db/**/*.ts'],
-      exclude: ['**/index.ts', 'db/schema', ...coverageConfigDefaults.exclude],
+      include: ['db', 'worker'],
+      exclude: [
+        '**/index.ts',
+        '**/schemas.ts',
+        'db/schema',
+        'worker/api', // excluding while we work on migrating to OpenAPI + 100% coverage
+        'worker/auth', // excluding while we work on migrating to OpenAPI + 100% coverage
+        ...coverageConfigDefaults.exclude,
+      ],
       thresholds: {
         global: {
           branches: 100,
