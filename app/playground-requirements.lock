@@ -161,13 +161,13 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 libcst==1.7.0
     # via lilypad-sdk
-lilypad-sdk==0.1.0a14
+lilypad-sdk==0.10.3
     # via -r playground-requirements.txt
 litellm==1.65.1
     # via mirascope
 markupsafe==3.0.2
     # via jinja2
-mirascope==1.22.2
+mirascope==1.25.5
     # via
     #   -r playground-requirements.txt
     #   lilypad-sdk
@@ -191,9 +191,15 @@ opentelemetry-api==1.31.1
     # via
     #   lilypad-sdk
     #   opentelemetry-instrumentation
+    #   opentelemetry-propagator-b3
+    #   opentelemetry-propagator-jaeger
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
 opentelemetry-instrumentation==0.52b1
+    # via lilypad-sdk
+opentelemetry-propagator-b3==1.36.0
+    # via lilypad-sdk
+opentelemetry-propagator-jaeger==1.36.0
     # via lilypad-sdk
 opentelemetry-sdk==1.31.1
     # via lilypad-sdk
@@ -201,6 +207,8 @@ opentelemetry-semantic-conventions==0.52b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-sdk
+orjson==3.11.1
+    # via lilypad-sdk
 packaging==24.2
     # via
     #   huggingface-hub
@@ -214,7 +222,9 @@ propcache==0.3.1
     #   aiohttp
     #   yarl
 proto-plus==1.26.1
-    # via mirascope
+    # via
+    #   lilypad-sdk
+    #   mirascope
 protobuf==6.30.2
     # via proto-plus
 pyasn1==0.6.1
@@ -330,6 +340,7 @@ typing-extensions==4.13.0
     #   multidict
     #   mypy-boto3-bedrock-runtime
     #   openai
+    #   opentelemetry-propagator-b3
     #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core

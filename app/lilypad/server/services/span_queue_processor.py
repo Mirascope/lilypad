@@ -462,7 +462,7 @@ class SpanQueueProcessor:
 
     def _process_trace_sync(
         self, trace_id: str, ordered_spans: list[dict[str, Any]]
-    ) -> tuple[list[SpanTable], UUID, UUID, UUID, UUID] | None:
+    ) -> tuple[list[SpanTable], UUID, UUID, UUID, UUID | None] | None:
         """Synchronous database operations for processing a trace.
 
         This method runs in a separate thread to avoid blocking the event loop.
@@ -488,7 +488,7 @@ class SpanQueueProcessor:
             return None
 
         project_uuid = UUID(project_uuid_str)
-        environment_uuid = UUID(environment_uuid_str)
+        environment_uuid = UUID(environment_uuid_str) if environment_uuid_str else None
 
         # Extract user_id from first span
         user_id = first_span.get("user_id")
@@ -577,7 +577,7 @@ class SpanQueueProcessor:
             if result:
                 spans, org_uuid, user_uuid, project_uuid, environment_uuid = result
                 opensearch_service = OpenSearchService()
-                if opensearch_service.is_enabled:
+                if opensearch_service.is_enabled and environment_uuid is not None:
                     trace_dicts = [span.model_dump() for span in spans]
                     await index_traces_in_opensearch(
                         project_uuid, environment_uuid, trace_dicts, opensearch_service

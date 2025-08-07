@@ -13,7 +13,7 @@ def construct_function(
     import_line = "import lilypad" if include_import else ""
     func_def = f"""
     {import_line}
-    @lilypad.function(managed=True)
-    def {function_name}({", ".join(arg_list)}) -> lilypad.Message: ...
+    @lilypad.trace(versioning="automatic")
+    def {function_name}({", ".join(arg_list)}): ...
     """
     return run_ruff(dedent(func_def)).strip()

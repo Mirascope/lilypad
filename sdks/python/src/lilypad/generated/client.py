@@ -206,7 +206,7 @@ class Lilypad:
         project_uuid: str,
         span_identifier: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> SpanMoreDetails:
         """
@@ -218,7 +218,7 @@ class Lilypad:
 
         span_identifier : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -240,7 +240,6 @@ class Lilypad:
         client.get_span_projects_project_uuid_spans_span_identifier_get(
             project_uuid="project_uuid",
             span_identifier="span_identifier",
-            environment_uuid="environment_uuid",
         )
         """
         _response = self._raw_client.get_span_projects_project_uuid_spans_span_identifier_get(
@@ -501,7 +500,7 @@ class AsyncLilypad:
         project_uuid: str,
         span_identifier: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> SpanMoreDetails:
         """
@@ -513,7 +512,7 @@ class AsyncLilypad:
 
         span_identifier : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -540,7 +539,6 @@ class AsyncLilypad:
             await client.get_span_projects_project_uuid_spans_span_identifier_get(
                 project_uuid="project_uuid",
                 span_identifier="span_identifier",
-                environment_uuid="environment_uuid",
             )
 
 

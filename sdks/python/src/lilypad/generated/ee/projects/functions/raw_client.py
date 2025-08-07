@@ -39,6 +39,7 @@ class RawFunctionsClient:
         provider: Provider,
         model: str,
         prompt_template: str,
+        environment_uuid: typing.Optional[str] = None,
         arg_types: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
         call_params: typing.Optional[CommonCallParams] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -60,6 +61,8 @@ class RawFunctionsClient:
 
         prompt_template : str
 
+        environment_uuid : typing.Optional[str]
+
         arg_types : typing.Optional[typing.Dict[str, typing.Optional[str]]]
 
         call_params : typing.Optional[CommonCallParams]
@@ -75,6 +78,9 @@ class RawFunctionsClient:
         _response = self._client_wrapper.httpx_client.request(
             f"ee/projects/{jsonable_encoder(project_uuid)}/functions/{jsonable_encoder(function_uuid)}/playground",
             method="POST",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             json={
                 "arg_values": convert_and_respect_annotation_metadata(
                     object_=arg_values,
@@ -179,6 +185,7 @@ class AsyncRawFunctionsClient:
         provider: Provider,
         model: str,
         prompt_template: str,
+        environment_uuid: typing.Optional[str] = None,
         arg_types: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
         call_params: typing.Optional[CommonCallParams] = OMIT,
         request_options: typing.Optional[RequestOptions] = None,
@@ -200,6 +207,8 @@ class AsyncRawFunctionsClient:
 
         prompt_template : str
 
+        environment_uuid : typing.Optional[str]
+
         arg_types : typing.Optional[typing.Dict[str, typing.Optional[str]]]
 
         call_params : typing.Optional[CommonCallParams]
@@ -215,6 +224,9 @@ class AsyncRawFunctionsClient:
         _response = await self._client_wrapper.httpx_client.request(
             f"ee/projects/{jsonable_encoder(project_uuid)}/functions/{jsonable_encoder(function_uuid)}/playground",
             method="POST",
+            params={
+                "environment_uuid": environment_uuid,
+            },
             json={
                 "arg_values": convert_and_respect_annotation_metadata(
                     object_=arg_values,
