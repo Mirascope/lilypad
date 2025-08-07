@@ -6,16 +6,20 @@ import json
 import logging
 import os
 import re
+import secrets
 import subprocess
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from textwrap import dedent
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ....._utils import run_ruff
+from .....server._utils import create_api_key
+from .....server.models import APIKeyTable
 from .....server.schemas.functions import (
     AcceptedValue,
     PlaygroundErrorDetail,
@@ -297,6 +301,7 @@ def run_playground(
         UserExternalAPIKeyService, Depends(UserExternalAPIKeyService)
     ],
     span_service: Annotated[SpanService, Depends(SpanService)],
+    environment_uuid: Annotated[UUID | None, Query()] = None,
 ) -> PlaygroundSuccessResponse:
     """Run playground version of a function with enhanced security.
 
@@ -308,6 +313,7 @@ def run_playground(
         api_key_service: Service for API key management
         user_external_api_key_service: Service for external API key management
         span_service: Service for span management
+        environment_uuid: Optional UUID of the environment to use
 
     Returns:
         Result of the function execution
@@ -414,7 +420,6 @@ import sys
 import lilypad
 from mirascope import llm, prompt_template
 
-
 lilypad.configure(auto_llm=True)
 
 @lilypad.trace(versioning="automatic", mode="wrap")
@@ -438,7 +443,7 @@ lilypad.configure(auto_llm=True)
                 or ""
             )
         })
-def {function.name}(trace_ctx{arguments_str}) -> None:
+def {function.name}(trace_ctx{arguments_str}):
     trace_ctx.metadata({{"scope": "playground"}})
 
 """
@@ -450,10 +455,22 @@ def {function.name}(trace_ctx{arguments_str}) -> None:
 output_data = None
 try:
     response = {function.name}(**arg_values)
-
+    
+    span_id = getattr(response, 'formated_span_id', None)
+    
+    if hasattr(response, 'response'):
+        mirascope_response = response.response
+        
+        if hasattr(mirascope_response, 'content'):
+            result = mirascope_response.content
+        else:
+            result = str(mirascope_response) if mirascope_response is not None else None
+    else:
+        result = str(response) if response is not None else None
+    
     output_data = {{
-        "result": response.response.content,
-        "span_id": response.formated_span_id
+        "result": result,
+        "span_id": span_id
     }}
 except Exception as e:
     import traceback
@@ -532,35 +549,109 @@ finally:
                 },
             )
         settings = get_settings()
-        env_vars = {
-            **external_api_keys,
-            "LILYPAD_PROJECT_ID": str(project_uuid),
-            "LILYPAD_API_KEY": api_keys[0].key_hash,
-            "PATH": os.environ["PATH"],
-            "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
-            "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0",
-        }
 
-        execution_result = _run_playground(formatted_wrapper_code, env_vars)
+        session_id = secrets.token_hex(8)
+        temp_api_key, temp_key_hash = create_api_key("playground")
 
-        if "error" not in execution_result:
-            spand_id = execution_result.pop("span_id", None)
-            if isinstance(spand_id, str) and (
-                spand := span_service.get_record_by_span_id(project_uuid, spand_id)
-            ):
-                return PlaygroundSuccessResponse.model_validate(  # pragma: no cover
-                    {
-                        "trace_context": {"span_uuid": str(spand.uuid)},
-                        **execution_result,
-                    }
+        if not api_key_service.user.active_organization_uuid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": PlaygroundErrorDetail(
+                        type=PlaygroundErrorType.CONFIGURATION,
+                        reason="User has no active organization.",
+                        details="Please select an organization before using the playground.",
+                    ).model_dump()
+                },
+            )
+
+        temp_api_key_record = APIKeyTable(
+            name=f"Playground-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{session_id}",
+            key_hash=temp_key_hash,
+            user_uuid=api_key_service.user.uuid,
+            project_uuid=project_uuid,
+            organization_uuid=api_key_service.user.active_organization_uuid,
+            environment_uuid=environment_uuid,
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+        )
+
+        api_key_service.session.add(temp_api_key_record)
+        api_key_service.session.commit()
+
+        logger.info(
+            f"Created temporary playground API key '{temp_api_key_record.name}' "
+            f"for user {api_key_service.user.uuid}, environment {environment_uuid}, "
+            f"expires at {temp_api_key_record.expires_at}"
+        )
+
+        try:
+            env_vars = {
+                **external_api_keys,
+                "LILYPAD_PROJECT_ID": str(project_uuid),
+                "LILYPAD_API_KEY": temp_api_key,
+                "PATH": os.environ["PATH"],
+                "LILYPAD_REMOTE_API_URL": settings.remote_api_url,
+                "LILYPAD_BASE_URL": f"{settings.remote_api_url}/v0",
+            }
+
+            execution_result = _run_playground(formatted_wrapper_code, env_vars)
+        finally:
+            try:
+                api_key_service.session.delete(temp_api_key_record)
+                api_key_service.session.commit()
+                logger.info(
+                    f"Deleted temporary playground API key '{temp_api_key_record.name}'"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to delete temporary API key '{temp_api_key_record.name}': {e}"
                 )
 
-            logger.warning("Playground function did not return a span_id.")
+        if "error" not in execution_result:
+            span_id_hex = execution_result.pop("span_id", None)
+            if isinstance(span_id_hex, str):
+                import time
+
+                max_retries = 10
+                retry_delay = 0.5
+
+                span = None
+                logger.info(
+                    f"Searching for span - Project: {project_uuid}, "
+                    f"Span ID: {span_id_hex}, Environment: {environment_uuid}"
+                )
+                for retry in range(max_retries):
+                    span = span_service.get_record_by_span_id(
+                        project_uuid, span_id_hex, environment_uuid=environment_uuid
+                    )
+                    if span:
+                        break
+                    if retry < max_retries - 1:
+                        time.sleep(retry_delay)
+                        logger.debug(
+                            f"Waiting for span to be processed, retry {retry + 1}/{max_retries}"
+                        )
+
+                if span:
+                    logger.info(
+                        f"Found span - UUID: {span.uuid}, Span ID: {span.span_id}, "
+                        f"Original hex: {span_id_hex}"
+                    )
+                    return PlaygroundSuccessResponse.model_validate(
+                        {
+                            "trace_context": {"span_uuid": str(span.uuid)},
+                            **execution_result,
+                        }
+                    )
+
+            logger.warning(
+                f"Playground function did not return a span_id or span not found in database after retries. span_id_hex: {span_id_hex}"
+            )
             execution_result = {
                 "error": PlaygroundErrorDetail(
                     type=PlaygroundErrorType.INTERNAL,
                     reason="Missing span_id in response.",
-                    details="The function did not return a span_id.",
+                    details="The function did not return a span_id or the span was not found in the database after waiting.",
                 ).model_dump()
             }
 

@@ -5,6 +5,7 @@ import hashlib
 import json
 import secrets
 from collections.abc import Callable, Coroutine
+from datetime import datetime, timezone
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -122,6 +123,14 @@ async def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user"
             )
+
+        if api_key_row.expires_at and api_key_row.expires_at < datetime.now(
+            timezone.utc
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has expired"
+            )
+
         user_public = UserPublic.model_validate(api_key_row.user)
         user_public.scopes = DEFAULT_SCOPES  # type: ignore[misc]
         request.state.user = user_public

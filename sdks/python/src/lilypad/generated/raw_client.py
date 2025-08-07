@@ -151,7 +151,7 @@ class RawLilypad:
         project_uuid: str,
         span_identifier: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> HttpResponse[SpanMoreDetails]:
         """
@@ -163,7 +163,7 @@ class RawLilypad:
 
         span_identifier : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.
@@ -400,7 +400,7 @@ class AsyncRawLilypad:
         project_uuid: str,
         span_identifier: str,
         *,
-        environment_uuid: str,
+        environment_uuid: typing.Optional[str] = None,
         request_options: typing.Optional[RequestOptions] = None,
     ) -> AsyncHttpResponse[SpanMoreDetails]:
         """
@@ -412,7 +412,7 @@ class AsyncRawLilypad:
 
         span_identifier : str
 
-        environment_uuid : str
+        environment_uuid : typing.Optional[str]
 
         request_options : typing.Optional[RequestOptions]
             Request-specific configuration.

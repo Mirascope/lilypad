@@ -190,7 +190,6 @@ client = Lilypad(
 client.get_span_projects_project_uuid_spans_span_identifier_get(
     project_uuid="project_uuid",
     span_identifier="span_identifier",
-    environment_uuid="environment_uuid",
 )
 
 ```
@@ -223,7 +222,7 @@ client.get_span_projects_project_uuid_spans_span_identifier_get(
 <dl>
 <dd>
 
-**environment_uuid:** `str` 
+**environment_uuid:** `typing.Optional[str]` 
     
 </dd>
 </dl>
@@ -4313,6 +4312,14 @@ client.ee.projects.functions.run_playground(
 <dd>
 
 **prompt_template:** `str` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**environment_uuid:** `typing.Optional[str]` 
     
 </dd>
 </dl>

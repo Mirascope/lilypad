@@ -932,6 +932,9 @@ def test_playground_api_success_without_span_id():
             mock_api_key_service.find_keys_by_user_and_project.return_value = [
                 mock_api_key
             ]
+            mock_api_key_service.user.uuid = uuid4()
+            mock_api_key_service.user.active_organization_uuid = uuid4()
+            mock_api_key_service.session = Mock()
             mock_user_external_api_key_service = Mock()
             mock_user_external_api_key_service.list_api_keys.return_value = {
                 "openai": "test"
@@ -996,6 +999,9 @@ def test_playground_api_invalid_error_structure():
             mock_api_key_service.find_keys_by_user_and_project.return_value = [
                 mock_api_key
             ]
+            mock_api_key_service.user.uuid = uuid4()
+            mock_api_key_service.user.active_organization_uuid = uuid4()
+            mock_api_key_service.session = Mock()
             mock_user_external_api_key_service = Mock()
             mock_user_external_api_key_service.list_api_keys.return_value = {
                 "openai": "test"
@@ -1066,6 +1072,9 @@ def test_playground_api_timeout_error():
             mock_api_key_service.find_keys_by_user_and_project.return_value = [
                 mock_api_key
             ]
+            mock_api_key_service.user.uuid = uuid4()
+            mock_api_key_service.user.active_organization_uuid = uuid4()
+            mock_api_key_service.session = Mock()
             mock_user_external_api_key_service = Mock()
             mock_user_external_api_key_service.list_api_keys.return_value = {
                 "openai": "test"
@@ -1135,6 +1144,9 @@ def test_playground_api_configuration_error():
             mock_api_key_service.find_keys_by_user_and_project.return_value = [
                 mock_api_key
             ]
+            mock_api_key_service.user.uuid = uuid4()
+            mock_api_key_service.user.active_organization_uuid = uuid4()
+            mock_api_key_service.session = Mock()
             mock_user_external_api_key_service = Mock()
             mock_user_external_api_key_service.list_api_keys.return_value = {
                 "openai": "test"
