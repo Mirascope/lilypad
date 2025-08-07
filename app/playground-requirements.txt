@@ -1,2 +1,2 @@
-lilypad-sdk[openai,anthropic,azure,bedrock,google,mistral]==0.10.3
+lilypad-sdk[openai,anthropic,azure,bedrock,google,mistral]==0.10.4
 mirascope[anthropic,azure,bedrock,cohere,google,groq,litellm,mistral,openai,xai]==1.25.5

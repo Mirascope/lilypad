@@ -161,7 +161,7 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 libcst==1.7.0
     # via lilypad-sdk
-lilypad-sdk==0.10.3
+lilypad-sdk==0.10.4
     # via -r playground-requirements.txt
 litellm==1.65.1
     # via mirascope
