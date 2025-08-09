@@ -42,6 +42,7 @@ export default [
       '*.js',
       '**/coverage/',
       '**/.wrangler/',
+      'sdks/python/**',
     ],
   },
   prettier,

@@ -6,3 +6,6 @@ build
 coverage
 .next
 src/routeTree.gen.ts
+.venv
+sdks/**/.venv
+**/*.map
