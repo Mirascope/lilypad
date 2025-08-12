@@ -21,15 +21,14 @@ create OpenTelemetry spans for API calls.
 # Modifications copyright (C) 2025 Mirascope
 
 import logging
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
-from wrapt import wrap_function_wrapper, FunctionWrapper
+from wrapt import FunctionWrapper, wrap_function_wrapper
+from openai import OpenAI, AsyncOpenAI
 from opentelemetry.trace import get_tracer
 from opentelemetry.semconv.schemas import Schemas
 
 from . import _patch
-
-from openai import OpenAI, AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,10 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
     Args:
         client: The OpenAI client instance to instrument.
     """
+    if hasattr(client, "_lilypad_instrumented"):
+        logger.debug(f"{type(client).__name__} already instrumented, skipping")
+        return
+
     try:
         lilypad_version = version("lilypad-sdk")
     except PackageNotFoundError:
@@ -101,3 +104,5 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
             logger.debug("Successfully wrapped Completions.parse")
         except Exception as e:
             logger.warning(f"Failed to wrap Completions.parse: {type(e).__name__}: {e}")
+
+    client._lilypad_instrumented = True  # pyright: ignore[reportAttributeAccessIssue]
