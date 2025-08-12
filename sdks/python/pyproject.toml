@@ -38,6 +38,15 @@ openai = [
 dev = [
     "pyright>=1.1.403",
     "ruff>=0.12.7",
+    "pre-commit>=3.5.0",
+]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+]
+examples = [
+    "openai>=1.98.0",
 ]
 
 [build-system]
@@ -149,8 +158,14 @@ known-first-party = ["lilypad", "tests"]
 pythonVersion = "3.10"
 venvPath = "."
 venv = ".venv"
+include = ["src", "tests", "examples"]
 
-exclude = [".venv"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "-v",
+]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true
@@ -160,14 +175,15 @@ source = ["src/lilypad"]
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
     "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-    "@overload",
+    "raise NotImplementedError",
+    "pass",
+    "except ImportError:",
 ]
+exclude_also = [
+    "@overload",
+    "@abstractmethod",
+    "if TYPE_CHECKING:",
+]
+precision = 2
+show_missing = true

@@ -19,15 +19,23 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:python-sdk": "cd sdks/python && uv run pytest",
+    "test:python-sdk:coverage": "cd sdks/python && uv run pytest --cov --cov-config=.coveragerc --cov-report=term-missing",
+    "test:python-sdk:watch": "cd sdks/python && uv run pytest-watch",
+    "test:ci": "bun run test:coverage && bun run test:python-sdk",
     "codespell": "uvx codespell --skip node_modules,bun.lock",
     "typecheck": "bun x tsc --build ./tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "format:python-sdk": "cd sdks/python && uv run ruff format .",
     "lint:eslint": "eslint .",
     "lint:eslint:fix": "eslint . --fix",
     "lint": "bun run typecheck; bun run lint:eslint; bun run format:check",
-    "lint:ci": "bun run codespell; bun run lint",
+    "lint:python-sdk": "cd sdks/python && uv run ruff format --check . && uv run ruff check . && uv run pyright",
+    "lint:python-sdk:fix": "cd sdks/python && uv run ruff check --fix .",
+    "lint:ci": "bun run codespell; bun run lint; bun run lint:python-sdk",
     "fix": "bun run format; bun run lint:eslint:fix",
+    "fix:python-sdk": "cd sdks/python && uv run ruff check --fix . && uv run ruff format .",
     "prepare": "husky",
     "pre-commit": "lint-staged"
   },
@@ -90,6 +98,10 @@
     ],
     "*.{ts,tsx}": [
       "bun run scripts/lint-staged.ts"
+    ],
+    "sdks/python/**/*.py": [
+      "cd sdks/python && uv run ruff check --fix",
+      "cd sdks/python && uv run ruff format"
     ]
   }
 }
