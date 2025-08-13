@@ -366,7 +366,7 @@ def set_server_address_and_port(
 ) -> None:
     """Extract and set server address and port attributes from client instance."""
     base_client = getattr(client, "_client", None)
-    base_url = getattr(base_client, "base_url", None)
+    base_url = getattr(base_client, "base_url", None) if base_client else None
     if not isinstance(base_url, URL):
         return
 

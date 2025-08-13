@@ -420,7 +420,7 @@ async def test_async_stream_wrapper_iteration_with_exception() -> None:
                 raise RuntimeError("Stream error")
 
         async def aclose(self) -> None:
-            pass
+            pass  # pragma: no cover
 
     stream = AsyncStreamWithError()
 

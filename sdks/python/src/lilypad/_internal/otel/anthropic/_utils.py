@@ -7,6 +7,7 @@ response data for telemetry purposes.
 import json
 from typing import Any, Literal, Iterable, TypedDict
 
+from anthropic import Anthropic, AsyncAnthropic
 from anthropic.types import (
     Message,
     TextBlock,
@@ -272,7 +273,7 @@ def set_response_attributes(span: Span, response: Message) -> None:
 
 def get_llm_request_attributes(
     kwargs: dict[str, Any],
-    client_instance: Any,
+    client: Anthropic | AsyncAnthropic,
     operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
 ) -> dict[str, AttributeValue]:
     """Extract OpenTelemetry attributes from Anthropic API request parameters."""
@@ -294,5 +295,5 @@ def get_llm_request_attributes(
     if stop_sequences := kwargs.get("stop_sequences"):
         attributes[gen_ai_attributes.GEN_AI_REQUEST_STOP_SEQUENCES] = stop_sequences
 
-    set_server_address_and_port(client_instance, attributes)
+    set_server_address_and_port(client, attributes)
     return {k: v for k, v in attributes.items() if v is not None}
