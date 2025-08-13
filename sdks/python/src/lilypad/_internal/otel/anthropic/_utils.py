@@ -86,23 +86,14 @@ class AnthropicChunkHandler(ChunkHandler[MessageStreamEvent, AnthropicMetadata])
                     )
 
         elif isinstance(chunk, RawContentBlockDeltaEvent):
-            while len(buffers) <= chunk.index:
-                buffers.append(ChoiceBuffer(len(buffers)))
-
             if chunk.delta.type == "text_delta":
                 buffers[chunk.index].append_text_content(chunk.delta.text)
             elif chunk.delta.type == "input_json_delta":
                 if chunk.index < len(buffers):
                     buffer = buffers[chunk.index]
-                    if not buffer.tool_calls_buffers:
-                        buffer.tool_calls_buffers.append(None)
-                    if buffer.tool_calls_buffers[0]:
+                    if buffer.tool_calls_buffers and buffer.tool_calls_buffers[0]:
                         buffer.tool_calls_buffers[0].append_arguments(
                             chunk.delta.partial_json
-                        )
-                    else:
-                        buffer.tool_calls_buffers[0] = ToolCallBuffer(
-                            chunk.index, "", ""
                         )
 
         elif isinstance(chunk, RawMessageDeltaEvent):
@@ -127,10 +118,6 @@ def default_anthropic_cleanup(
 
     if stop_reason := metadata.get("stop_reason"):
         attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = [stop_reason]
-    elif finish_reasons := tuple(
-        buffer.finish_reason for buffer in buffers if buffer.finish_reason is not None
-    ):
-        attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = finish_reasons
 
     span.set_attributes(attributes)
     for index, choice in enumerate(buffers):
@@ -201,8 +188,6 @@ def set_message_event(span: Span, message: MessageParam | SystemMessageParam) ->
                 attributes["content"] = "\n".join(text_parts)
             if tool_calls:
                 attributes["tool_calls"] = json_dumps(tool_calls)
-        else:
-            attributes["content"] = json_dumps(content)
 
     span.add_event(
         f"gen_ai.{role}.message",
@@ -257,9 +242,9 @@ def set_response_attributes(span: Span, response: Message) -> None:
                 "gen_ai.choice",
                 attributes=choice_attributes,
             )
-        attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = [
-            response.stop_reason or "error"
-        ]
+        attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = (
+            response.stop_reason or "error",
+        )
 
     if response.id:
         attributes[gen_ai_attributes.GEN_AI_RESPONSE_ID] = response.id

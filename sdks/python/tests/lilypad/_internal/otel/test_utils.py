@@ -1,3 +1,5 @@
+"""Common test utilities for OpenTelemetry instrumentation tests."""
+
 from typing import Any, Iterator, AsyncIterator
 from unittest.mock import Mock
 
@@ -5,6 +7,7 @@ import httpx
 import pytest
 from inline_snapshot import snapshot
 from opentelemetry.trace import Span, Status, StatusCode
+from opentelemetry.sdk.trace import ReadableSpan
 
 from lilypad._internal.otel.utils import (
     BaseMetadata,
@@ -17,6 +20,55 @@ from lilypad._internal.otel.utils import (
     AsyncStreamProtocol,
     set_server_address_and_port,
 )
+
+
+class ReadOnlyPropertyMock:
+    """Mock object with read-only properties for testing wrapping failures."""
+
+    @property
+    def create(self):
+        return Mock()
+
+    @property
+    def parse(self):
+        return Mock()
+
+
+class PartialReadOnlyPropertyMock:
+    """Mock object with mixed writable and read-only properties."""
+
+    def __init__(self):
+        self.create = Mock()
+
+    @property
+    def parse(self):
+        return Mock()
+
+
+def extract_span_data(span: ReadableSpan) -> dict[str, Any]:
+    """Extract serializable data from a span for snapshot testing.
+
+    Args:
+        span: The span to extract data from
+
+    Returns:
+        Dictionary containing span name, attributes, status, and events
+    """
+    return {
+        "name": span.name,
+        "attributes": dict(span.attributes) if span.attributes else {},
+        "status": {
+            "status_code": span.status.status_code.name,
+            "description": span.status.description,
+        },
+        "events": [
+            {
+                "name": event.name,
+                "attributes": dict(event.attributes) if event.attributes else {},
+            }
+            for event in span.events
+        ],
+    }
 
 
 class MockMetadata(BaseMetadata): ...

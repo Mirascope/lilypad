@@ -1,0 +1,96 @@
+interactions:
+- request:
+    body: '{"max_tokens":200,"messages":[{"role":"user","content":"Use the calculator
+      to add 2+2, then explain the result"}],"model":"claude-3-haiku-20240307","tools":[{"name":"calculator","description":"A
+      simple calculator","input_schema":{"type":"object","properties":{"operation":{"type":"string","enum":["add","subtract"]},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"]}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '397'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.63.0
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-package-version:
+      - 0.63.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//ZFBdSwMxEPwv85zC9c5qmzcfrKA+FLFKFQkxWdrYXHLNx1E5+t8lJwXF
+        l4Wdmd2Z3QFGg6ONW1FN759r83Bol7eLY02rWbfefK58D4b01VFRUYxyS2AI3hZAxmhiki6BofWa
+        LDiUlVnTpJnspNnnSV3VF1VTXYFBeZfIJfC34bwxeW9FjmXlmKP0WVTTzVI3Rzd9Wc+f+v5R3rze
+        +fp6AQYn2zKnpFXZyuRDmXRdTuADJHjN8DFW31GQyXhXYmqN0+mdISbfiUAyjvAv85GIdMjkFIG7
+        bC1DHo/lw4+BSH5PLoI3lwsGJdWOhAo0eoi/iurMB5L6P+dz+o3MZwyRQm8UiWQogKP8VMtQUn8D
+        AAD//wMAMsLxoaEBAAA=
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 13 Aug 2025 09:08:19 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Robots-Tag:
+      - none
+      anthropic-ratelimit-input-tokens-limit:
+      - '400000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '400000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-13T09:08:18Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '80000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '80000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-13T09:08:19Z'
+      anthropic-ratelimit-requests-limit:
+      - '4000'
+      anthropic-ratelimit-requests-remaining:
+      - '3999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-13T09:08:18Z'
+      anthropic-ratelimit-tokens-limit:
+      - '480000'
+      anthropic-ratelimit-tokens-remaining:
+      - '480000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-13T09:08:18Z'
+      cf-cache-status:
+      - DYNAMIC
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      via:
+      - 1.1 google
+    status:
+      code: 200
+      message: OK
+version: 1

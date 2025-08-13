@@ -23,7 +23,7 @@
     "test:python-sdk:coverage": "cd sdks/python && uv run pytest --cov --cov-config=.coveragerc --cov-report=term-missing",
     "test:python-sdk:watch": "cd sdks/python && uv run pytest-watch",
     "test:ci": "bun run test:coverage && bun run test:python-sdk",
-    "codespell": "uvx codespell --skip node_modules,bun.lock",
+    "codespell": "uvx codespell --skip node_modules,bun.lock,dist,coverage,**/cassettes/**,htmlcov",
     "typecheck": "bun x tsc --build ./tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
