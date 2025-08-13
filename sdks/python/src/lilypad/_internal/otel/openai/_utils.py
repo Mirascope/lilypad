@@ -34,6 +34,7 @@ from opentelemetry.util.types import AttributeValue
 from openai.types.chat.chat_completion import Choice
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
+from ..types import LLMOpenTelemetryMessage
 from ..utils import BaseMetadata, ChoiceBuffer, ChunkHandler
 from ...utils import json_dumps
 
@@ -104,7 +105,7 @@ def default_openai_cleanup(
         attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = finish_reasons
 
     span.set_attributes(attributes)
-    for idx, choice in enumerate(buffers):
+    for index, choice in enumerate(buffers):
         message: dict[str, str | dict[str, str] | list[str]] = {"role": "assistant"}
         if choice.text_content:
             message["content"] = "".join(choice.text_content)
@@ -126,7 +127,7 @@ def default_openai_cleanup(
 
         event_attributes: dict[str, AttributeValue] = {
             gen_ai_attributes.GEN_AI_SYSTEM: "openai",
-            "index": idx,
+            "index": index,
             "finish_reason": choice.finish_reason or "none",
             "message": json.dumps(message),
         }
@@ -206,7 +207,7 @@ def get_choice_event(choice: Choice) -> dict[str, AttributeValue]:
     }
 
     if message := choice.message:
-        message_dict: ChatCompletionMessageParam = {
+        message_dict: LLMOpenTelemetryMessage = {
             "role": message.role,
         }
         if content := message.content:
