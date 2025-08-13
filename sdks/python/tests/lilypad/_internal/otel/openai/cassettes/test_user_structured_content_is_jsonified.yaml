@@ -1,7 +1,7 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"system","content":"You are a helpful assistant who
-      speaks like a pirate."},{"role":"user","content":"What is the capital of France?"}],"model":"gpt-4o-mini","max_tokens":100,"temperature":0.7}'
+    body: '{"messages":[{"role":"user","content":[{"type":"text","text":"Reply with
+      OK"}]}],"model":"gpt-4o-mini","max_tokens":5}'
     headers:
       accept:
       - application/json
@@ -10,17 +10,17 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '214'
+      - '118'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 1.98.0
+      - OpenAI/Python 1.98.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
-      - async:asyncio
+      - 'false'
       x-stainless-lang:
       - python
       x-stainless-os:
@@ -34,21 +34,20 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.13.2
+      - 3.10.15
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
       string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jJLBbtswDIbvfgpGl13sIU0cNMmtWLFLNqAbdtg6FAYj0bY2WRIkZltQ
-        5N0H2Wnsbh2wiw78+FP8ST5mAEIrsQUhW2TZeVO8WX6+2xnu7m930qij/WDWcf7z/bsvH293RuRJ
-        4fbfSPKT6rV0nTfE2tkBy0DIlKpeXa/KzWpTLtc96Jwik2SN56J0RaetLhbzRVnMr4ur9VndOi0p
-        ii18zQAAHvs39WkV/RJbmOdPkY5ixIbE9pIEIIIzKSIwRh0ZLYt8hNJZJtu3fhNCyKFDpuMMPrUE
-        Er1mNOBqeBvQSoI9wR0GHWdwA01Aq0BqPoJ7BUY3LUdIoeC6lJyDZtjTbPpboPoQMTm2B2MmAK11
-        jGlivc+HMzldnBnX+OD28Q+pqLXVsa0CYXQ2uYjsvOjpKQN46Cd4eDYU4YPrPFfsvlP/3WIzlBPj
-        3iZwdYbsGM0YX5X5C9UqRYzaxMkGhETZkhqV47rwoLSbgGzi+e9mXqo9+Na2+Z/yI5CSPJOqfCCl
-        5XPDY1qgdNX/SrvMuG9YRAo/tKSKNYW0B0U1HsxwayIeI1NX1do2FHzQw8HVvlqWuCqRNkspslP2
-        GwAA//8DAMClSgZ+AwAA
+        H4sIAAAAAAAAAwAAAP//jJJPb9swDMXv/hQCz/EQO1ma5tiiwIZt2GHNaSgMVaIdJbIoSHSRosh3
+        H+T8sbNuQC8+8MdHvUfzLRMCjIaVALWRrFpv8/tZ87o3v74+6uWXu5f1er8g//B9XT7+2BY7mCQF
+        PW9R8Vn1SVHrLbIhd8QqoGRMU4ubz/Pb20U5n/WgJY02yRrP+Zzy1jiTl9Nynk9v8mJ5Um/IKIyw
+        Er8zIYR467/Jp9O4h5WYTs6VFmOUDcLq0iQEBLKpAjJGE1k6hskAFTlG11v/+W0MAtZdlMmc66wd
+        AekcsUzhektPJ3K4mLDU+EDP8S8p1MaZuKkCykguPRiZPPT0kAnx1IftrvyDD9R6rph22D9XnLLC
+        sOIRPDEmlnZUPtevhlUaWRobR7sCJdUG9aAcFis7bWgEslHk917+NfsY27jmI+MHoBR6Rl35gNqo
+        67xDW8B0f/9ru6y4NwwRw4tRWLHBkH6Dxlp29ngVEF8jY1vVxjUYfDDH06h9tShlOZPLAmvIDtkf
+        AAAA//8DANXasPQoAwAA
     headers:
       Connection:
       - keep-alive
@@ -57,7 +56,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 12 Aug 2025 00:43:59 GMT
+      - Tue, 12 Aug 2025 10:57:23 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -73,11 +72,11 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       openai-processing-ms:
-      - '1026'
+      - '529'
       openai-version:
       - '2020-10-01'
       x-envoy-upstream-service-time:
-      - '1233'
+      - '626'
       x-ratelimit-limit-requests:
       - '5000'
       x-ratelimit-limit-tokens:
@@ -85,7 +84,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '4999'
       x-ratelimit-remaining-tokens:
-      - '3999976'
+      - '3999994'
       x-ratelimit-reset-requests:
       - 12ms
       x-ratelimit-reset-tokens:

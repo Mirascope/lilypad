@@ -1,7 +1,10 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"system","content":"You are a helpful assistant who
-      speaks like a pirate."},{"role":"user","content":"What is the capital of France?"}],"model":"gpt-4o-mini","max_tokens":100,"temperature":0.7}'
+    body: "{\"messages\":[{\"role\":\"user\",\"content\":\"What's the weather in Tokyo
+      today?\"}],\"model\":\"gpt-4o-mini\",\"tools\":[{\"type\":\"function\",\"function\":{\"name\":\"get_weather\",\"description\":\"Get
+      today's weather report\",\"parameters\":{\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\",\"description\":\"City
+      and country e.g. Bogot\xE1, Colombia\"},\"units\":{\"type\":\"string\",\"enum\":[\"celsius\",\"fahrenheit\"],\"description\":\"Units
+      the temperature will be returned in.\"}},\"required\":[\"location\",\"units\"],\"additionalProperties\":false}}}]}"
     headers:
       accept:
       - application/json
@@ -10,17 +13,17 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '214'
+      - '515'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 1.98.0
+      - OpenAI/Python 1.98.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
-      - async:asyncio
+      - 'false'
       x-stainless-lang:
       - python
       x-stainless-os:
@@ -40,15 +43,16 @@ interactions:
   response:
     body:
       string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jJLBbtswDIbvfgpGl13sIU0cNMmtWLFLNqAbdtg6FAYj0bY2WRIkZltQ
-        5N0H2Wnsbh2wiw78+FP8ST5mAEIrsQUhW2TZeVO8WX6+2xnu7m930qij/WDWcf7z/bsvH293RuRJ
-        4fbfSPKT6rV0nTfE2tkBy0DIlKpeXa/KzWpTLtc96Jwik2SN56J0RaetLhbzRVnMr4ur9VndOi0p
-        ii18zQAAHvs39WkV/RJbmOdPkY5ixIbE9pIEIIIzKSIwRh0ZLYt8hNJZJtu3fhNCyKFDpuMMPrUE
-        Er1mNOBqeBvQSoI9wR0GHWdwA01Aq0BqPoJ7BUY3LUdIoeC6lJyDZtjTbPpboPoQMTm2B2MmAK11
-        jGlivc+HMzldnBnX+OD28Q+pqLXVsa0CYXQ2uYjsvOjpKQN46Cd4eDYU4YPrPFfsvlP/3WIzlBPj
-        3iZwdYbsGM0YX5X5C9UqRYzaxMkGhETZkhqV47rwoLSbgGzi+e9mXqo9+Na2+Z/yI5CSPJOqfCCl
-        5XPDY1qgdNX/SrvMuG9YRAo/tKSKNYW0B0U1HsxwayIeI1NX1do2FHzQw8HVvlqWuCqRNkspslP2
-        GwAA//8DAMClSgZ+AwAA
+        H4sIAAAAAAAAAwAAAP//jFPLbtswELzrK4g9W4VfqmPdDB+KtECbNO7DrQKBoVYSY4pkSKqNa/jf
+        C9G2JDspUB0EYoczO/vgLiAEeAYxAVZSxyotwuXke/nxQ1Gtlp+j8m64vBPR02LF/9zeXM3WMGgY
+        6uERmTux3jBVaYGOK3mAmUHqsFEdzaLp/O0wimYeqFSGoqEV2oVTFVZc8nA8HE/D4SwcXR3ZpeIM
+        LcTkZ0AIITv/b3zKDJ8hJsPBKVKhtbRAiNtLhIBRookAtZZbR6WDQQcyJR3KxrqshegBTimRMipE
+        l/jw7XrnrllUiPTW5k9fs8Xi+t2jXlTffnzarN3Nl+t1L99Bequ9obyWrG1SD2/j8UUyQkDSynML
+        dOlvpK5Ec0EnBKgp6gqla6zDLgGhGG0EE4gTWKnNVg3Ie6qpTGCQQC25sx5iKCyvbQJ7OJPcB6+d
+        73vdMpjXloqXbaRSKueT+z7eH5F9OzKhCm3Ug72gQs4lt2VqkFrfif5AgpMRbwHqs5mDNqrSLnVq
+        gz7pbH4QhW4tO3A8OoJOOSq6+Gh43KpzuTRDR7nfiXYNGWUlZh21W0daZ1z1gKBX+ks3r2kfyuey
+        +B/5DmAMtcMs1QYzzs4r7q4ZbF7tv661TfaGwaL5xRmmjqNpxpFhTmtxeEtgt9ZhleZcFmi04f5B
+        Qa7TyZRGU4rzCYNgH/wFAAD//wMAwzZf514EAAA=
     headers:
       Connection:
       - keep-alive
@@ -57,7 +61,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 12 Aug 2025 00:43:59 GMT
+      - Tue, 12 Aug 2025 01:02:37 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -73,11 +77,11 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       openai-processing-ms:
-      - '1026'
+      - '537'
       openai-version:
       - '2020-10-01'
       x-envoy-upstream-service-time:
-      - '1233'
+      - '661'
       x-ratelimit-limit-requests:
       - '5000'
       x-ratelimit-limit-tokens:
@@ -85,7 +89,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '4999'
       x-ratelimit-remaining-tokens:
-      - '3999976'
+      - '3999989'
       x-ratelimit-reset-requests:
       - 12ms
       x-ratelimit-reset-tokens:

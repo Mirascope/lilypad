@@ -39,13 +39,7 @@ from opentelemetry.semconv._incubating.attributes import (
     gen_ai_attributes,
 )
 
-from .utils import (
-    OpenAIMetadata,
-    OpenAIChunkHandler,
-    set_message_event,
-    default_openai_cleanup,
-    set_response_attributes,
-)
+from . import _utils
 from ..utils import (
     StreamWrapper,
     StreamProtocol,
@@ -79,7 +73,7 @@ class SyncStreamHandler(Protocol[P]):
         client: OpenAI,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
-    ) -> StreamWrapper[ChatCompletionChunk, OpenAIMetadata]: ...
+    ) -> StreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata]: ...
 
 
 class AsyncCompletionHandler(Protocol[P]):
@@ -103,7 +97,7 @@ class AsyncStreamHandler(Protocol[P]):
         client: AsyncOpenAI,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
-    ) -> AsyncStreamWrapper[ChatCompletionChunk, OpenAIMetadata]: ...
+    ) -> AsyncStreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata]: ...
 
 
 def get_llm_request_attributes(
@@ -192,11 +186,11 @@ def _sync_wrapper(
             with _span(tracer, kwargs, client) as span:
                 if span.is_recording():
                     for message in kwargs.get("messages", []):
-                        set_message_event(span, message)
+                        _utils.set_message_event(span, message)
                 try:
                     result = wrapped(*args, **kwargs)
                     if span.is_recording():
-                        set_response_attributes(span, result)
+                        _utils.set_response_attributes(span, result)
                     span.end()
                     return result
                 except Exception as error:
@@ -216,26 +210,27 @@ def _sync_wrapper(
             client: OpenAI,
             args: tuple[Any, ...],
             kwargs: dict[str, Any],
-        ) -> StreamWrapper[ChatCompletionChunk, OpenAIMetadata]:
+        ) -> StreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata]:
             with _span(tracer, kwargs, client) as span:
                 if span.is_recording():
                     for message in kwargs.get("messages", []):
-                        set_message_event(span, message)
+                        _utils.set_message_event(span, message)
                 try:
                     if kwargs.get("stream", False):
                         return StreamWrapper(
                             span=span,
                             stream=wrapped(*args, **kwargs),
-                            metadata=OpenAIMetadata(),
-                            chunk_handler=OpenAIChunkHandler(),
-                            cleanup_handler=default_openai_cleanup,
+                            metadata=_utils.OpenAIMetadata(),
+                            chunk_handler=_utils.OpenAIChunkHandler(),
+                            cleanup_handler=_utils.default_openai_cleanup,
                         )
                     result = cast(ChatCompletion, wrapped(*args, **kwargs))
                     if span.is_recording():
-                        set_response_attributes(span, result)
+                        _utils.set_response_attributes(span, result)
                     span.end()
                     return cast(
-                        StreamWrapper[ChatCompletionChunk, OpenAIMetadata], result
+                        StreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata],
+                        result,
                     )
                 except Exception as error:
                     span.set_status(Status(StatusCode.ERROR, str(error)))
@@ -277,11 +272,11 @@ def _async_wrapper(
             with _span(tracer, kwargs, client) as span:
                 if span.is_recording():
                     for message in kwargs.get("messages", []):
-                        set_message_event(span, message)
+                        _utils.set_message_event(span, message)
                 try:
                     result = await wrapped(*args, **kwargs)
                     if span.is_recording():
-                        set_response_attributes(span, result)
+                        _utils.set_response_attributes(span, result)
                     span.end()
                     return result
                 except Exception as error:
@@ -301,26 +296,27 @@ def _async_wrapper(
             client: AsyncOpenAI,
             args: tuple[Any, ...],
             kwargs: dict[str, Any],
-        ) -> AsyncStreamWrapper[ChatCompletionChunk, OpenAIMetadata]:
+        ) -> AsyncStreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata]:
             with _span(tracer, kwargs, client) as span:
                 if span.is_recording():
                     for message in kwargs.get("messages", []):
-                        set_message_event(span, message)
+                        _utils.set_message_event(span, message)
                 try:
                     if kwargs.get("stream", False):
                         return AsyncStreamWrapper(
                             span=span,
                             stream=await wrapped(*args, **kwargs),
-                            metadata=OpenAIMetadata(),
-                            chunk_handler=OpenAIChunkHandler(),
-                            cleanup_handler=default_openai_cleanup,
+                            metadata=_utils.OpenAIMetadata(),
+                            chunk_handler=_utils.OpenAIChunkHandler(),
+                            cleanup_handler=_utils.default_openai_cleanup,
                         )
                     result = cast(ChatCompletion, await wrapped(*args, **kwargs))
                     if span.is_recording():
-                        set_response_attributes(span, result)
+                        _utils.set_response_attributes(span, result)
                     span.end()
                     return cast(
-                        AsyncStreamWrapper[ChatCompletionChunk, OpenAIMetadata], result
+                        AsyncStreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata],
+                        result,
                     )
                 except Exception as error:
                     span.set_status(Status(StatusCode.ERROR, str(error)))

@@ -62,16 +62,11 @@ class OpenAIChunkHandler(ChunkHandler[ChatCompletionChunk, OpenAIMetadata]):
                 metadata["prompt_tokens"] = chunk.usage.prompt_tokens
 
     def process_chunk(
-        self, chunk: "ChatCompletionChunk", buffers: list[ChoiceBuffer]
+        self, chunk: ChatCompletionChunk, buffers: list[ChoiceBuffer]
     ) -> None:
         """Process a streaming chunk and update the choice buffers with content."""
-        if not hasattr(chunk, "choices"):
-            return
 
         for choice in chunk.choices:
-            if not choice.delta:
-                continue
-
             # Ensure enough choice buffers
             while len(buffers) <= choice.index:
                 buffers.append(ChoiceBuffer(len(buffers)))
@@ -102,7 +97,10 @@ def default_openai_cleanup(
         attributes[gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS] = completion_tokens
     if service_tier := metadata.get("service_tier"):
         attributes[gen_ai_attributes.GEN_AI_OPENAI_RESPONSE_SERVICE_TIER] = service_tier
-    if finish_reasons := metadata.get("finish_reasons"):
+
+    if finish_reasons := tuple(
+        buffer.finish_reason for buffer in buffers if buffer.finish_reason is not None
+    ):
         attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = finish_reasons
 
     span.set_attributes(attributes)
@@ -113,18 +111,17 @@ def default_openai_cleanup(
         if choice.tool_calls_buffers:
             tool_calls = []
             for tool_call in choice.tool_calls_buffers:
-                if tool_call is None:
-                    continue
-                function = {
-                    "name": tool_call.function_name,
-                    "arguments": "".join(tool_call.arguments),
-                }
-                tool_call_dict = {
-                    "id": tool_call.tool_call_id,
-                    "type": "function",
-                    "function": function,
-                }
-                tool_calls.append(tool_call_dict)
+                if tool_call:
+                    function = {
+                        "name": tool_call.function_name,
+                        "arguments": "".join(tool_call.arguments),
+                    }
+                    tool_call_dict = {
+                        "id": tool_call.tool_call_id,
+                        "type": "function",
+                        "function": function,
+                    }
+                    tool_calls.append(tool_call_dict)
             message["tool_calls"] = tool_calls
 
         event_attributes: dict[str, AttributeValue] = {
@@ -178,25 +175,20 @@ def get_tool_calls(
     return calls
 
 
-def set_message_event(
-    span: Span, message: ChatCompletionMessage | ChatCompletionMessageParam
-) -> None:
+def set_message_event(span: Span, message: ChatCompletionMessageParam) -> None:
     """Add a message event to the span with appropriate attributes."""
     attributes = {
         gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.OPENAI.value
     }
-    if isinstance(message, ChatCompletionMessage):
-        role = message.role
-        content = message.content
-        if role == "assistant" and (tool_calls := get_tool_calls(message)):
-            attributes["tool_calls"] = json_dumps(tool_calls)
-    else:
-        role = message["role"]
-        content = message.get("content")
-        if role == "tool" and (tool_call_id := message.get("tool_call_id")):
-            attributes["id"] = tool_call_id
+    role = message["role"]
 
-    if content:
+    if role == "assistant" and (tool_calls := get_tool_calls(message)):
+        attributes["tool_calls"] = json_dumps(tool_calls)
+
+    if role == "tool" and (tool_call_id := message.get("tool_call_id")):
+        attributes["id"] = tool_call_id
+
+    if content := message.get("content"):
         if not isinstance(content, str):
             content = json_dumps(content)
         attributes["content"] = content

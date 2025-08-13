@@ -18,7 +18,6 @@
 from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Any, Generic, TypeVar, Protocol, TypedDict
-from urllib.parse import urlparse
 from collections.abc import Callable, Iterator, AsyncIterator
 
 from httpx import URL
@@ -38,7 +37,6 @@ class BaseMetadata(TypedDict, total=False):
 
     response_id: str | None
     response_model: str | None
-    finish_reasons: list[str]
     prompt_tokens: int | None
     completion_tokens: int | None
 
@@ -369,17 +367,11 @@ def set_server_address_and_port(
     """Extract and set server address and port attributes from client instance."""
     base_client = getattr(client, "_client", None)
     base_url = getattr(base_client, "base_url", None)
-    if not base_url:
+    if not isinstance(base_url, URL):
         return
 
-    port = -1
-    if isinstance(base_url, URL):
-        attributes[server_attributes.SERVER_ADDRESS] = base_url.host
-        port = base_url.port
-    elif isinstance(base_url, str):
-        url = urlparse(base_url)
-        attributes[server_attributes.SERVER_ADDRESS] = url.hostname
-        port = url.port
+    attributes[server_attributes.SERVER_ADDRESS] = base_url.host
+    port = base_url.port
 
     if port and port != 443 and port > 0:
         attributes[server_attributes.SERVER_PORT] = port
