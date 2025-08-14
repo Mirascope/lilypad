@@ -27,9 +27,12 @@ from opentelemetry.semconv._incubating.attributes import (
     server_attributes,
 )
 
+from lilypad._internal.otel.types import ToolCallProtocol
+
 T = TypeVar("T")
-ChunkType = TypeVar("ChunkType")
-MetadataType = TypeVar("MetadataType", bound="BaseMetadata")
+ChunkT = TypeVar("ChunkT")
+ChunkCovariantT = TypeVar("ChunkCovariantT", covariant=True)
+MetadataT = TypeVar("MetadataT", bound="BaseMetadata")
 
 
 class BaseMetadata(TypedDict, total=False):
@@ -41,70 +44,33 @@ class BaseMetadata(TypedDict, total=False):
     completion_tokens: int | None
 
 
-class StreamProtocol(Generic[ChunkType], ABC):
+class StreamProtocol(Protocol[ChunkCovariantT]):
     """Protocol for synchronous stream objects."""
 
-    @abstractmethod
-    def __iter__(self) -> Iterator[ChunkType]:
+    def __iter__(self) -> Iterator[ChunkCovariantT]:
         """Returns an iterator for the stream."""
         ...
 
-    @abstractmethod
-    def __next__(self) -> ChunkType:
+    def __next__(self) -> ChunkCovariantT:
         """Get the next item from the stream."""
         ...
 
-    @abstractmethod
-    def close(self) -> None:
-        """Close the stream and release resources."""
-        ...
 
-
-class AsyncStreamProtocol(ABC, Generic[ChunkType]):
+class AsyncStreamProtocol(Protocol[ChunkCovariantT]):
     """Protocol for asynchronous stream objects."""
 
-    @abstractmethod
-    def __aiter__(self) -> AsyncIterator[ChunkType]:
+    def __aiter__(self) -> AsyncIterator[ChunkCovariantT]:
         """Returns an async iterator for the stream."""
         ...
 
-    @abstractmethod
-    async def __anext__(self) -> ChunkType:
+    async def __anext__(self) -> ChunkCovariantT:
         """Get the next item from the async stream."""
-        ...
-
-    @abstractmethod
-    async def aclose(self) -> None:
-        """Close the async stream and release resources."""
         ...
 
 
 SyncAsyncStreamProtocol = TypeVar(
     "SyncAsyncStreamProtocol", bound=StreamProtocol | AsyncStreamProtocol
 )
-
-
-class ToolCallFunctionProtocol(Protocol):
-    """Protocol for tool call function objects."""
-
-    @property
-    def name(self) -> str | None: ...
-
-    @property
-    def arguments(self) -> str | None: ...
-
-
-class ToolCallProtocol(Protocol):
-    """Protocol for tool call objects."""
-
-    @property
-    def id(self) -> str | None: ...
-
-    @property
-    def index(self) -> int: ...
-
-    @property
-    def function(self) -> ToolCallFunctionProtocol | None: ...
 
 
 class ChoiceBuffer:
@@ -154,25 +120,25 @@ class ChoiceBuffer:
                 buffer.append_arguments(arguments)
 
 
-class ChunkHandler(ABC, Generic[ChunkType, MetadataType]):
+class ChunkHandler(ABC, Generic[ChunkT, MetadataT]):
     @abstractmethod
-    def extract_metadata(self, chunk: ChunkType, metadata: MetadataType) -> None:
+    def extract_metadata(self, chunk: ChunkT, metadata: MetadataT) -> None:
         """Extract metadata from chunk and update StreamMetadata"""
         ...
 
     @abstractmethod
-    def process_chunk(self, chunk: ChunkType, buffers: list[ChoiceBuffer]) -> None:
+    def process_chunk(self, chunk: ChunkT, buffers: list[ChoiceBuffer]) -> None:
         """Process chunk and update choice buffers"""
         ...
 
 
-class BaseStreamWrapper(ABC, Generic[ChunkType, MetadataType]):
+class BaseStreamWrapper(ABC, Generic[ChunkT, MetadataT]):
     """Base wrapper for handling streaming responses with telemetry."""
 
     span: Span
-    metadata: MetadataType
-    chunk_handler: ChunkHandler[ChunkType, MetadataType]
-    cleanup_handler: Callable[[Span, MetadataType, list[ChoiceBuffer]], None] | None
+    metadata: MetadataT
+    chunk_handler: ChunkHandler[ChunkT, MetadataT]
+    cleanup_handler: Callable[[Span, MetadataT, list[ChoiceBuffer]], None] | None
     choice_buffers: list[ChoiceBuffer]
     _span_started: bool
 
@@ -181,7 +147,7 @@ class BaseStreamWrapper(ABC, Generic[ChunkType, MetadataType]):
         if not self._span_started:
             self._span_started = True
 
-    def process_chunk(self, chunk: ChunkType) -> None:
+    def process_chunk(self, chunk: ChunkT) -> None:
         """Process a single chunk from the stream."""
         self.chunk_handler.extract_metadata(chunk, self.metadata)
         self.chunk_handler.process_chunk(chunk, self.choice_buffers)
@@ -195,20 +161,18 @@ class BaseStreamWrapper(ABC, Generic[ChunkType, MetadataType]):
             self._span_started = False
 
 
-class StreamWrapper(
-    BaseStreamWrapper[ChunkType, MetadataType], Generic[ChunkType, MetadataType]
-):
+class StreamWrapper(BaseStreamWrapper[ChunkT, MetadataT], Generic[ChunkT, MetadataT]):
     """Synchronous stream wrapper with context manager support."""
 
-    stream: StreamProtocol[ChunkType]
+    stream: StreamProtocol[ChunkT]
 
     def __init__(
         self,
         span: Span,
-        stream: StreamProtocol[ChunkType],
-        metadata: MetadataType,
-        chunk_handler: ChunkHandler[ChunkType, MetadataType],
-        cleanup_handler: Callable[[Span, MetadataType, list[ChoiceBuffer]], None]
+        stream: StreamProtocol[ChunkT],
+        metadata: MetadataT,
+        chunk_handler: ChunkHandler[ChunkT, MetadataT],
+        cleanup_handler: Callable[[Span, MetadataT, list[ChoiceBuffer]], None]
         | None = None,
     ) -> None:
         """Initialize the stream wrapper with telemetry components."""
@@ -221,7 +185,7 @@ class StreamWrapper(
         self._span_started = False
         self.setup()
 
-    def __enter__(self) -> "StreamWrapper[ChunkType, MetadataType]":
+    def __enter__(self) -> "StreamWrapper[ChunkT, MetadataT]":
         """Enter the context manager."""
         self.setup()
         return self
@@ -245,14 +209,15 @@ class StreamWrapper(
 
     def close(self) -> None:
         """Close the stream and perform cleanup."""
-        self.stream.close()
+        if close := getattr(self.stream, "close", None):
+            close()
         self.cleanup()
 
-    def __iter__(self) -> Iterator[ChunkType]:
+    def __iter__(self) -> Iterator[ChunkT]:
         """Returns self as an iterator."""
         return self
 
-    def __next__(self) -> ChunkType:
+    def __next__(self) -> ChunkT:
         """Get and process the next chunk from the stream."""
         try:
             chunk = next(self.stream)
@@ -271,19 +236,19 @@ class StreamWrapper(
 
 
 class AsyncStreamWrapper(
-    BaseStreamWrapper[ChunkType, MetadataType], Generic[ChunkType, MetadataType]
+    BaseStreamWrapper[ChunkT, MetadataT], Generic[ChunkT, MetadataT]
 ):
     """Asynchronous stream wrapper with async context manager support."""
 
-    stream: AsyncStreamProtocol[ChunkType]
+    stream: AsyncStreamProtocol[ChunkT]
 
     def __init__(
         self,
         span: Span,
-        stream: AsyncStreamProtocol[ChunkType],
-        metadata: MetadataType,
-        chunk_handler: ChunkHandler[ChunkType, MetadataType],
-        cleanup_handler: Callable[[Span, MetadataType, list[ChoiceBuffer]], None]
+        stream: AsyncStreamProtocol[ChunkT],
+        metadata: MetadataT,
+        chunk_handler: ChunkHandler[ChunkT, MetadataT],
+        cleanup_handler: Callable[[Span, MetadataT, list[ChoiceBuffer]], None]
         | None = None,
     ) -> None:
         """Initialize the stream wrapper with telemetry components."""
@@ -296,7 +261,7 @@ class AsyncStreamWrapper(
         self._span_started = False
         self.setup()
 
-    async def __aenter__(self) -> "AsyncStreamWrapper[ChunkType, MetadataType]":
+    async def __aenter__(self) -> "AsyncStreamWrapper[ChunkT, MetadataT]":
         """Enter the async context manager."""
         self.setup()
         return self
@@ -320,14 +285,15 @@ class AsyncStreamWrapper(
 
     async def close(self) -> None:
         """Close the async stream and perform cleanup."""
-        await self.stream.aclose()
+        if aclose := getattr(self.stream, "aclose", None):
+            await aclose()
         self.cleanup()
 
-    def __aiter__(self) -> "AsyncStreamWrapper[ChunkType, MetadataType]":
+    def __aiter__(self) -> "AsyncStreamWrapper[ChunkT, MetadataT]":
         """Returns self as an async iterator."""
         return self
 
-    async def __anext__(self) -> ChunkType:
+    async def __anext__(self) -> ChunkT:
         """Get and process the next chunk from the async stream."""
         try:
             chunk = await self.stream.__anext__()

@@ -32,6 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 openai = ["openai>=1.98.0"]
 anthropic = ["anthropic>=0.63.0"]
+google = ["google-genai>=1.30.0,<2", "pillow>=10.4.0,<12", "proto-plus>=1.26.1"]
 
 [dependency-groups]
 dev = ["pyright>=1.1.403", "ruff>=0.12.7", "pre-commit>=3.5.0"]
@@ -44,7 +45,7 @@ test = [
     "inline-snapshot>=0.23.0",
     "python-dotenv>=1.1.1",
 ]
-examples = ["openai>=1.98.0", "anthropic>=0.63.0"]
+examples = ["openai>=1.98.0", "anthropic>=0.63.0", "google-genai>=1.7.0,<2"]
 
 [build-system]
 requires = ["uv_build>=0.8.4,<0.9.0"]

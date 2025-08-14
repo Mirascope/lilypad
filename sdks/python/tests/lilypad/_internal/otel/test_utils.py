@@ -1,7 +1,7 @@
 """Common test utilities for OpenTelemetry instrumentation tests."""
 
 from typing import Any, Iterator, AsyncIterator
-from unittest.mock import Mock
+from unittest.mock import Mock, AsyncMock
 
 import httpx
 import pytest
@@ -500,7 +500,7 @@ async def test_async_stream_wrapper_iteration_with_exception() -> None:
 async def test_async_stream_wrapper_close() -> None:
     span = Mock(spec=Span)
     stream = Mock(spec=AsyncStreamProtocol)
-
+    stream.aclose = AsyncMock()
     metadata = MockMetadata()
     chunk_handler = Mock(spec=ChunkHandler)
     cleanup_handler = Mock()

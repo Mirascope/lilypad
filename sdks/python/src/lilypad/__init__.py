@@ -11,4 +11,13 @@ with suppress(ImportError):
 with suppress(ImportError):
     from ._internal.otel import instrument_anthropic
 
-__all__ = ["configuration", "configure", "instrument_anthropic", "instrument_openai"]
+with suppress(ImportError):
+    from ._internal.otel import instrument_google
+
+__all__ = [
+    "configuration",
+    "configure",
+    "instrument_anthropic",
+    "instrument_google",
+    "instrument_openai",
+]
