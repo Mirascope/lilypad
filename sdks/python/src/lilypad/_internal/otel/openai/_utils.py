@@ -21,7 +21,9 @@ response data for telemetry purposes.
 # Modifications copyright (C) 2025 Mirascope
 
 import json
+from typing import Any
 
+from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -35,7 +37,12 @@ from openai.types.chat.chat_completion import Choice
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
 from ..types import LLMOpenTelemetryMessage
-from ..utils import BaseMetadata, ChoiceBuffer, ChunkHandler
+from ..utils import (
+    BaseMetadata,
+    ChoiceBuffer,
+    ChunkHandler,
+    set_server_address_and_port,
+)
 from ...utils import json_dumps
 
 
@@ -248,3 +255,43 @@ def set_response_attributes(span: Span, response: ChatCompletion) -> None:
             usage.completion_tokens
         )
     span.set_attributes(attributes)
+
+
+def get_llm_request_attributes(
+    kwargs: dict[str, Any],
+    client: OpenAI | AsyncOpenAI,
+    operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
+) -> dict[str, AttributeValue]:
+    """Extract OpenTelemetry attributes from OpenAI API request parameters."""
+    response_format = kwargs.get("response_format", {})
+    response_format = (
+        response_format.get("type")
+        if isinstance(response_format, dict)
+        else response_format.__name__
+    )
+    attributes = {
+        gen_ai_attributes.GEN_AI_OPERATION_NAME: operation_name,
+        gen_ai_attributes.GEN_AI_REQUEST_MODEL: kwargs.get("model"),
+        gen_ai_attributes.GEN_AI_REQUEST_TEMPERATURE: kwargs.get("temperature"),
+        gen_ai_attributes.GEN_AI_REQUEST_TOP_P: kwargs.get("p") or kwargs.get("top_p"),
+        gen_ai_attributes.GEN_AI_REQUEST_MAX_TOKENS: kwargs.get("max_tokens"),
+        gen_ai_attributes.GEN_AI_REQUEST_PRESENCE_PENALTY: kwargs.get(
+            "presence_penalty"
+        ),
+        gen_ai_attributes.GEN_AI_REQUEST_FREQUENCY_PENALTY: kwargs.get(
+            "frequency_penalty"
+        ),
+        gen_ai_attributes.GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT: response_format,
+        gen_ai_attributes.GEN_AI_OPENAI_REQUEST_SEED: kwargs.get("seed"),
+    }
+    set_server_address_and_port(client, attributes)
+    attributes[gen_ai_attributes.GEN_AI_SYSTEM] = (
+        gen_ai_attributes.GenAiSystemValues.OPENAI.value
+    )
+
+    service_tier = kwargs.get("service_tier")
+    attributes[gen_ai_attributes.GEN_AI_OPENAI_RESPONSE_SERVICE_TIER] = (
+        service_tier if service_tier != "auto" else None
+    )
+
+    return {k: v for k, v in attributes.items() if v is not None}
