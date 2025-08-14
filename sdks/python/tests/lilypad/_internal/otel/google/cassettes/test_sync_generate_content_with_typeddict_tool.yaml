@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "The weather in London is 65 degrees
+      fahrenheit. Summarize this."}], "role": "user"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '120'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/7VRy07DMBC85ytWPpOqaUSScuMpIbWiohVCPA5Ls01cHDuy3VJU9d9xEtKmwBUf
+        LGtnvLM7s/UA2BxlylO0ZNgZPLsKwLa+K0xJS9I6oC25YonaHrjN2XbejmJpU31is5zgg9DmpIFL
+        GCmZKgncQMFFCk4YSkFoUFpAC9EppJRpIgM3mGuSOXHbe5Gs03y3f7+eHEbSSlClV6iUREvftQS2
+        4JKb/N4pKVnRprO7CdujuM5GKiu1equ28vu9IIqDMAyGcZAkYRyHidcq15psZTCjMVl0ruHeG+Y6
+        FKWdqXeSl2pVuxZEjUrH5L9xqyyKIygcnPxqa66cKBdd8zu5uOVRcPtZG3/9OGMdg+yxauuQ1zHy
+        54z/JOZ9B9Nk9UDa8CaUjAoXkz/o9f2FQJP7tCnrrkyTKZU0dJtWvKWeEo6X4fhpfRENk4lOBiY5
+        nzNv530ByEsRWtACAAA=
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 04:16:15 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=453
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

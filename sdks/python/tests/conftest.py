@@ -60,6 +60,13 @@ class VCRConfig(TypedDict):
     Useful for removing sensitive data from request bodies.
     """
 
+    filter_query_parameters: list[str]
+    """Query parameters to filter out from recordings.
+    
+    Filters out specified query parameters from the URL.
+    Useful for removing API keys that are passed as query parameters.
+    """
+
     before_record_response: Callable[[Response], Response]
     """Callback to modify response before recording.
     
@@ -101,7 +108,7 @@ def vcr_config() -> VCRConfig:
     Uses session scope since VCR configuration is static and can be shared
     across all test modules in a session. This covers all major LLM providers:
     - OpenAI (authorization header)
-    - Google/Gemini (x-goog-api-key header)
+    - Google/Gemini (x-goog-api-key header, key query parameter)
     - Anthropic (x-api-key, anthropic-organization-id headers)
 
     Returns:
@@ -126,5 +133,6 @@ def vcr_config() -> VCRConfig:
             "x-stainless-runtime-version",
         ],
         "filter_post_data_parameters": [],
+        "filter_query_parameters": ["key"],
         "before_record_response": _filter_response_headers,
     }

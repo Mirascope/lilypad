@@ -1,0 +1,67 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Search for AI news"}], "role": "user"}],
+      "tools": [{"functionDeclarations": [{"description": "Search for information
+      in database", "name": "search_database", "parameters": {"properties": {"query":
+      {"type": "STRING"}, "limit": {"type": "INTEGER"}}, "required": ["query"], "type":
+      "OBJECT"}}, {"description": "Get user information", "name": "get_user_info",
+      "parameters": {"properties": {"user_id": {"type": "STRING"}}, "required": ["user_id"],
+      "type": "OBJECT"}}]}], "generationConfig": {"temperature": 0.5}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '542'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/61R0U6DMBR95ytIn8fSCTLnm5k+LHFuOmJMjDF348IaS4ttmZpl/26BscHUN/vQ
+        lHsO59x7z9ZxXbICEbMYDGpy6T7biutuq7vEpDAojAWaki3moMyRW59t620pSSFWhkkxBs47P+9x
+        ARnaOtEIarV+te6wBI2kd0oElepfBCzyXqD6KjWuJq7AD01OKDvnr6/j++XoR5TkVUuZjJE3YruG
+        QBImmF4/IGgpStoims0P7RLYpLcyzZVclt16tE8pPR9SnwYXwZAOBqPQD0ZOY17ZkkJDilM0UE5/
+        mJFYkSw3kXxDMZZFtXs/qI1aUXXwcA8baYB3kID2fqjqa+vJeDvBVrh2fODMVJuNbp6iViRWv9NU
+        syOntcrTFv/JLOx6Oftk6rAeUWlWp5JiZnPyzvrUSzjotYefeSVKFOpcCo2TuORdrGYIU/TvChaL
+        TToX4SJJ7ylxds43KZK9CRQDAAA=
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 05:21:54 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=639
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

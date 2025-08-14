@@ -1,0 +1,63 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Test content without parts wrapper"}],
+      "role": "user"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '91'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/61SwW7bMAy9+ysInZPAdZfM2aWHbRg6dGjWBu2AdhjYiLGFKJIh0WmDIP9eOq5T
+        Z7vOMAyZ74mPek+7BEAt0GmjkSmqT/AgFYDd4dtg3jE5FqArSbHCwO/c9tn11kJhemk2qesVbgdw
+        CbXTFCKL0kj+no21EChW3mnQJtCC7VaqXPqaoQokmtq4Arg0EeRtFMEvAcFiKCiA9ot6LYOBD8AY
+        VyOA+xJZ6rD1NTgiffHoVG+o/XH9e/B+lOAtNXOuvSbb0fcdQS2NM7G8IYzeNbTb+fVMHVHcFFe+
+        qIJ/atwYpqPJx2ycTtLxdHo2TfMP+TjplA+aqo5Y0A9iFLfx6KmSDuuK535F7rOvD26PW5FeNidw
+        lr/h7BntCXR+Pvina/wimsb2M+vFKWdHa3jbHHD+9ddc9fzhk6E6f5KejX+P+J+0svxULHmLpU3q
+        Ti6TaSMpaC0hDbNROlxajOWQXqpDV9VesEiXuuGFfEL4ne6vNuHJbYrZn9m3ZfbzWSX75BX3+cVf
+        BgMAAA==
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 06:07:44 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=765
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

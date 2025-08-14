@@ -1,0 +1,82 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Explain quantum computing in simple
+      terms"}], "role": "user"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '98'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        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
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 05:21:06 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=4449
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

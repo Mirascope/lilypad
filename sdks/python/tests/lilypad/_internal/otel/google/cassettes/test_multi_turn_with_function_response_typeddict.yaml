@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What''s the weather in Paris?"}], "role":
+      "user"}, {"parts": [{"functionCall": {"args": {"location": "Paris"}, "name":
+      "get_weather"}}], "role": "model"}, {"parts": [{"functionResponse": {"name":
+      "get_weather", "response": {"temperature": "15C", "conditions": "sunny"}}}],
+      "role": "user"}], "tools": [{"functionDeclarations": [{"description": "Get the
+      weather", "name": "get_weather", "parameters": {"properties": {"location": {"type":
+      "STRING"}}, "required": ["location"], "type": "OBJECT"}}]}], "generationConfig":
+      {}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '554'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/61R0U6DMBR95yuaPo8FJjDim3E+aDQuG1ET9eE67qARWmyL27Ls3y0wtqKvNk3T
+        3HN6z+05e4cQugKeshQ0KnpJXk2FkH17NpjgGrk2QF8yxQqkPnO7tbfuhqJx2zyiSY5kg6BzlIRx
+        MgfJFDFb1ZzvyIbpnADRWFYoQdcSiVgTP7wev3FqNTyc7u+j8xhSFNholCLFoqcfegJdM85UvkBQ
+        gje0ZfI4pycUvrN7kVVSfDQ/cb2x53l+EEzDKPaiMIijOIgDpxdvZWmtIMMH1GDMgpMl1DQpK52I
+        T+TXom7Nuph0Qpa3A9yPjrgWGooBFMSjP23VzIiywvbcisP8Hwqmd63fNy8JtTzSw6l6kxzLy98z
+        /pOYHw3FnGM2XVxPKBXrcsmwNEm5k7HnrgtQuYvbqu1KJapKcIW3acPj0yXCfFFGX8/oXrl34WqS
+        zzLqHJwfDJ+nU8YCAAA=
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 04:16:31 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=495
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1
