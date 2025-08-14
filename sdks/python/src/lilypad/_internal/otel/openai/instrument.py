@@ -33,6 +33,7 @@ from . import _patch
 logger = logging.getLogger(__name__)
 
 
+# TODO: see if we can refactor this with other providers in a way that makes sense
 def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
     """
     Instrument the OpenAI client with OpenTelemetry tracing.

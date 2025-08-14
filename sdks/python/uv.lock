@@ -16,6 +16,24 @@ wheels = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.63.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/80/6e/3bedbd1c932cce98495e007b6d8007a139cf46adc5c889d700ec75ddd7f3/anthropic-0.63.0.tar.gz", hash = "sha256:d75ecfff17a0b96d845be3cbd93e06a48ea95aaa27add586748772fa5b926994", size = 427391, upload-time = "2025-08-12T16:59:58.079Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/a1/83bdb1a8be76fbb3ceedae9dfe1b515cff56dcfbbc388b53070a27ce341f/anthropic-0.63.0-py3-none-any.whl", hash = "sha256:d1849fe1635ae4277f45a0e4365979ed69e6264b73350ce8a99fee701d347745", size = 296637, upload-time = "2025-08-12T16:59:56.841Z" },
+]
+
+[[package]]
 name = "anyio"
 version = "4.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -392,6 +410,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+anthropic = [
+    { name = "anthropic" },
+]
 openai = [
     { name = "openai" },
 ]
@@ -403,6 +424,7 @@ dev = [
     { name = "ruff" },
 ]
 examples = [
+    { name = "anthropic" },
     { name = "openai" },
 ]
 test = [
@@ -417,6 +439,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic", marker = "extra == 'anthropic'", specifier = ">=0.63.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.98.0" },
     { name = "opentelemetry-api", specifier = ">=1.36.0" },
@@ -426,7 +449,7 @@ requires-dist = [
     { name = "rich", specifier = ">=13.0.0" },
     { name = "wrapt", specifier = ">=1.17.2" },
 ]
-provides-extras = ["openai"]
+provides-extras = ["openai", "anthropic"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -434,7 +457,10 @@ dev = [
     { name = "pyright", specifier = ">=1.1.403" },
     { name = "ruff", specifier = ">=0.12.7" },
 ]
-examples = [{ name = "openai", specifier = ">=1.98.0" }]
+examples = [
+    { name = "anthropic", specifier = ">=0.63.0" },
+    { name = "openai", specifier = ">=1.98.0" },
+]
 test = [
     { name = "inline-snapshot", specifier = ">=0.23.0" },
     { name = "pytest", specifier = ">=8.0.0" },

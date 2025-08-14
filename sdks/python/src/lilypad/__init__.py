@@ -1,7 +1,14 @@
 """Lilypad SDK - The official Python library for the Lilypad API."""
 
+from contextlib import suppress
+
 from . import configuration
 from .configuration import configure
-from ._internal.otel import instrument_openai
 
-__all__ = ["configuration", "configure", "instrument_openai"]
+with suppress(ImportError):
+    from ._internal.otel import instrument_openai
+
+with suppress(ImportError):
+    from ._internal.otel import instrument_anthropic
+
+__all__ = ["configuration", "configure", "instrument_anthropic", "instrument_openai"]
