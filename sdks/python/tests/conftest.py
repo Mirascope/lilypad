@@ -75,9 +75,14 @@ def _filter_response_headers(response: Response) -> Response:
     sensitive_headers = {
         "openai-organization",
         "openai-project",
+        "anthropic-organization-id",
         "cf-ray",
         "x-request-id",
+        "request-id",
         "set-cookie",
+        "x-stainless-arch",
+        "x-stainless-os",
+        "x-stainless-runtime-version",
     }
 
     filtered_headers = {
@@ -114,7 +119,11 @@ def vcr_config() -> VCRConfig:
             "openai-project",
             "cf-ray",
             "x-request-id",
+            "request-id",
             "set-cookie",
+            "x-stainless-arch",
+            "x-stainless-os",
+            "x-stainless-runtime-version",
         ],
         "filter_post_data_parameters": [],
         "before_record_response": _filter_response_headers,

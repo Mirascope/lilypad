@@ -2,7 +2,6 @@
 
 import os
 import inspect
-from typing import Any, Generator
 from unittest.mock import Mock, patch
 from importlib.metadata import PackageNotFoundError
 
@@ -18,108 +17,36 @@ from openai import (
     APIConnectionError,
 )
 from pydantic import BaseModel
-from opentelemetry import trace
 from inline_snapshot import snapshot
 from openai.types.chat import ChatCompletion
-from opentelemetry.trace import ProxyTracerProvider
-from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from lilypad._internal.otel.openai.instrument import instrument_openai
 
-
-class ReadOnlyCompletions:
-    """Mock completions object with read-only properties."""
-
-    @property
-    def create(self):
-        return Mock()
-
-    @property
-    def parse(self):
-        return Mock()
-
-
-class PartialReadOnlyCompletions:
-    """Mock completions object with writable create and read-only parse."""
-
-    def __init__(self):
-        self.create = Mock()
-
-    @property
-    def parse(self):
-        return Mock()
+from ..test_utils import (
+    extract_span_data,
+)
 
 
 @pytest.fixture
-def readonly_completions():
-    """Fixture providing a completions mock with all read-only properties."""
-    return ReadOnlyCompletions()
-
-
-@pytest.fixture
-def partial_readonly_completions():
-    """Fixture providing a completions mock with writable create and read-only parse."""
-    return PartialReadOnlyCompletions()
-
-
-def extract_span_data(span: ReadableSpan) -> dict[str, Any]:
-    """Extract serializable data from a span for snapshot testing."""
-    return {
-        "name": span.name,
-        "attributes": dict(span.attributes) if span.attributes else {},
-        "status": {
-            "status_code": span.status.status_code.name,
-            "description": span.status.description,
-        },
-        "events": [
-            {
-                "name": event.name,
-                "attributes": dict(event.attributes) if event.attributes else {},
-            }
-            for event in span.events
-        ],
-    }
-
-
-@pytest.fixture
-def api_key() -> str:
-    """Get API key from environment or return dummy key."""
+def openai_api_key() -> str:
+    """Get OpenAI API key from environment or return dummy key."""
     load_dotenv()
     return os.getenv("OPENAI_API_KEY", "test-api-key")
 
 
 @pytest.fixture
-def span_exporter() -> Generator[InMemorySpanExporter, None, None]:
-    """Set up InMemorySpanExporter for testing span content."""
-    current_provider = trace.get_tracer_provider()
-    if isinstance(current_provider, ProxyTracerProvider):
-        provider = TracerProvider()
-        trace.set_tracer_provider(provider)
-    else:
-        provider = current_provider
-    exporter = InMemorySpanExporter()
-    processor = SimpleSpanProcessor(exporter)
-    provider.add_span_processor(processor)  # type: ignore[attr-defined]
-
-    exporter.clear()
-    yield exporter
-    exporter.clear()
-
-
-@pytest.fixture
-def client(api_key: str) -> OpenAI:
+def client(openai_api_key: str) -> OpenAI:
     """Create an instrumented OpenAI client."""
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=openai_api_key)
     instrument_openai(client)
     return client
 
 
 @pytest.fixture
-def async_client(api_key: str) -> AsyncOpenAI:
+def async_client(openai_api_key: str) -> AsyncOpenAI:
     """Create an instrumented AsyncOpenAI client."""
-    client = AsyncOpenAI(api_key=api_key)
+    client = AsyncOpenAI(api_key=openai_api_key)
     instrument_openai(client)
     return client
 
@@ -724,11 +651,11 @@ def test_preserves_method_signatures() -> None:
     )
 
 
-def test_multiple_clients_independent(api_key: str) -> None:
+def test_multiple_clients_independent(openai_api_key: str) -> None:
     """Test that multiple clients can be instrumented independently."""
 
-    client1 = OpenAI(api_key=api_key)
-    client2 = OpenAI(api_key=api_key)
+    client1 = OpenAI(api_key=openai_api_key)
+    client2 = OpenAI(api_key=openai_api_key)
 
     assert not isinstance(client1.chat.completions.create, FunctionWrapper)
     assert not isinstance(client1.chat.completions.parse, FunctionWrapper)
@@ -1206,11 +1133,11 @@ def test_sync_streaming_api_status_error(span_exporter: InMemorySpanExporter) ->
 
 def test_sync_wrapping_failure_create(
     caplog: pytest.LogCaptureFixture,
-    readonly_completions: Mock,
+    readonly_mock: Mock,
 ) -> None:
     """Test sync client when wrapping create method fails."""
     mock_client = Mock(spec=OpenAI)
-    mock_client.chat.completions = readonly_completions
+    mock_client.chat.completions = readonly_mock
 
     with caplog.at_level("WARNING"):
         instrument_openai(mock_client)
@@ -1222,11 +1149,11 @@ def test_sync_wrapping_failure_create(
 
 def test_sync_wrapping_failure_parse(
     caplog: pytest.LogCaptureFixture,
-    partial_readonly_completions: Mock,
+    partial_readonly_mock: Mock,
 ) -> None:
     """Test sync client when wrapping parse method fails."""
     mock_client = Mock(spec=OpenAI)
-    mock_client.chat.completions = partial_readonly_completions
+    mock_client.chat.completions = partial_readonly_mock
 
     with caplog.at_level("WARNING"):
         instrument_openai(mock_client)
@@ -1239,11 +1166,11 @@ def test_sync_wrapping_failure_parse(
 @pytest.mark.asyncio
 async def test_async_wrapping_failure_create(
     caplog: pytest.LogCaptureFixture,
-    readonly_completions: Mock,
+    readonly_mock: Mock,
 ) -> None:
     """Test async client when wrapping create method fails."""
     mock_client = Mock(spec=AsyncOpenAI)
-    mock_client.chat.completions = readonly_completions
+    mock_client.chat.completions = readonly_mock
 
     with caplog.at_level("WARNING"):
         instrument_openai(mock_client)
@@ -1256,11 +1183,11 @@ async def test_async_wrapping_failure_create(
 @pytest.mark.asyncio
 async def test_async_wrapping_failure_parse(
     caplog: pytest.LogCaptureFixture,
-    partial_readonly_completions: Mock,
+    partial_readonly_mock: Mock,
 ) -> None:
     """Test async client when wrapping parse method fails."""
     mock_client = Mock(spec=AsyncOpenAI)
-    mock_client.chat.completions = partial_readonly_completions
+    mock_client.chat.completions = partial_readonly_mock
 
     with caplog.at_level("WARNING"):
         instrument_openai(mock_client)
@@ -1272,11 +1199,11 @@ async def test_async_wrapping_failure_parse(
 
 def test_sync_partial_wrapping_failure(
     caplog: pytest.LogCaptureFixture,
-    partial_readonly_completions: Mock,
+    partial_readonly_mock: Mock,
 ) -> None:
     """Test sync client when only parse wrapping fails, create should still be wrapped."""
     mock_client = Mock(spec=OpenAI)
-    mock_client.chat.completions = partial_readonly_completions
+    mock_client.chat.completions = partial_readonly_mock
 
     with caplog.at_level("WARNING"):
         instrument_openai(mock_client)
