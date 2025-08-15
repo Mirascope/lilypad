@@ -95,7 +95,7 @@ def _create_sync_stream_wrapper(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[Any],
-    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT],
+    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT] | None,
 ) -> SyncStreamHandler[P, StreamChunkT, MetadataT, ClientT]:
     """Returns a synchronous streaming wrapper for LLM API calls."""
 
@@ -110,7 +110,7 @@ def _create_sync_stream_wrapper(
             if span.is_recording():
                 process_messages(span, kwargs)
             try:
-                if kwargs.get("stream", False):
+                if create_stream_wrapper and kwargs.get("stream", False):
                     return create_stream_wrapper(span, wrapped(*args, **kwargs))
                 result = wrapped(*args, **kwargs)
                 if span.is_recording():
@@ -170,7 +170,8 @@ def _create_async_stream_handler(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[Any],
-    create_async_stream_wrapper_func: CreateAsyncStreamWrapper[StreamChunkT, MetadataT],
+    create_async_stream_wrapper_func: CreateAsyncStreamWrapper[StreamChunkT, MetadataT]
+    | None,
 ) -> AsyncStreamHandler[P, StreamChunkT, MetadataT, ClientT]:
     """Returns an asynchronous streaming wrapper for LLM API calls."""
 
@@ -185,7 +186,7 @@ def _create_async_stream_handler(
             if span.is_recording():
                 process_messages(span, kwargs)
             try:
-                if kwargs.get("stream", False):
+                if create_async_stream_wrapper_func and kwargs.get("stream", False):
                     stream = await wrapped(*args, **kwargs)
                     return await create_async_stream_wrapper_func(span, stream)
                 result = await wrapped(*args, **kwargs)
@@ -211,7 +212,7 @@ def create_sync_wrapper(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[ResponseT],
-    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT],
+    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT] | None,
     handle_stream: Literal[False],
 ) -> SyncCompletionHandler[P, ResponseT, ClientT]: ...
 
@@ -222,7 +223,7 @@ def create_sync_wrapper(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[ResponseT],
-    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT],
+    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT] | None,
     handle_stream: Literal[True],
 ) -> SyncStreamHandler[P, StreamChunkT, MetadataT, ClientT]: ...
 
@@ -232,7 +233,7 @@ def create_sync_wrapper(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[ResponseT],
-    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT],
+    create_stream_wrapper: CreateStreamWrapper[StreamChunkT, MetadataT] | None,
     handle_stream: bool,
 ) -> (
     SyncCompletionHandler[P, ResponseT, ClientT]
@@ -259,7 +260,8 @@ def create_async_wrapper(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[ResponseT],
-    create_async_stream_wrapper: CreateAsyncStreamWrapper[StreamChunkT, MetadataT],
+    create_async_stream_wrapper: CreateAsyncStreamWrapper[StreamChunkT, MetadataT]
+    | None,
     handle_stream: Literal[False],
 ) -> AsyncCompletionHandler[P, ResponseT, ClientT]: ...
 
@@ -270,7 +272,8 @@ def create_async_wrapper(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[ResponseT],
-    create_async_stream_wrapper: CreateAsyncStreamWrapper[StreamChunkT, MetadataT],
+    create_async_stream_wrapper: CreateAsyncStreamWrapper[StreamChunkT, MetadataT]
+    | None,
     handle_stream: Literal[True],
 ) -> AsyncStreamHandler[P, StreamChunkT, MetadataT, ClientT]: ...
 
@@ -280,7 +283,8 @@ def create_async_wrapper(
     get_span_attributes: GetSpanAttributes[ClientT],
     process_messages: ProcessMessages,
     process_response: ProcessResponse[ResponseT],
-    create_async_stream_wrapper: CreateAsyncStreamWrapper[StreamChunkT, MetadataT],
+    create_async_stream_wrapper: CreateAsyncStreamWrapper[StreamChunkT, MetadataT]
+    | None,
     handle_stream: bool,
 ) -> (
     AsyncCompletionHandler[P, ResponseT, ClientT]
