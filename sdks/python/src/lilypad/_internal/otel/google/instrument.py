@@ -14,7 +14,9 @@ from wrapt import FunctionWrapper
 
 from ._patch import (
     async_generate_content_patch_factory,
+    async_generate_content_stream_patch_factory,
     generate_content_patch_factory,
+    generate_content_stream_patch_factory,
 )
 from opentelemetry.semconv.schemas import Schemas
 
@@ -52,7 +54,15 @@ def instrument_google(client: Models | AsyncModels) -> None:
         except AttributeError as e:
             logger.warning(f"Failed to wrap generate_content: {type(e).__name__}")
 
-        # TODO: add support for generate_content_stream after refactoring
+        try:
+            client.generate_content_stream = FunctionWrapper(
+                client.generate_content_stream,
+                generate_content_stream_patch_factory(tracer),
+            )
+        except AttributeError as e:
+            logger.warning(
+                f"Failed to wrap generate_content_stream: {type(e).__name__}"
+            )
     elif class_name == "AsyncModels":
         try:
             client.generate_content = FunctionWrapper(
@@ -62,7 +72,15 @@ def instrument_google(client: Models | AsyncModels) -> None:
         except AttributeError as e:
             logger.warning(f"Failed to wrap generate_content: {type(e).__name__}")
 
-        # TODO: add support for generate_content_stream after refactoring
+        try:
+            client.generate_content_stream = FunctionWrapper(
+                client.generate_content_stream,
+                async_generate_content_stream_patch_factory(tracer),
+            )
+        except AttributeError as e:
+            logger.warning(
+                f"Failed to wrap generate_content_stream: {type(e).__name__}"
+            )
     else:
         logger.warning(f"Unknown Google GenAI client class: {module_name}.{class_name}")
         return
