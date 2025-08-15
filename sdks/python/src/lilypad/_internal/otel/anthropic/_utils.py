@@ -258,14 +258,20 @@ def set_response_attributes(span: Span, response: Message) -> None:
 
 def get_llm_request_attributes(
     kwargs: dict[str, Any],
-    client: Anthropic | AsyncAnthropic,
+    client: Anthropic | AsyncAnthropic | None,
     operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
+    stream: bool | None = None,
 ) -> dict[str, AttributeValue]:
     """Extract OpenTelemetry attributes from Anthropic API request parameters."""
     attributes: dict[str, AttributeValue] = {
         gen_ai_attributes.GEN_AI_OPERATION_NAME: operation_name,
         gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.ANTHROPIC.value,
     }
+
+    if stream is not None:
+        attributes["gen_ai.request.stream"] = stream
+    elif "stream" in kwargs:
+        attributes["gen_ai.request.stream"] = kwargs["stream"]
 
     if model := kwargs.get("model"):
         attributes[gen_ai_attributes.GEN_AI_REQUEST_MODEL] = model
