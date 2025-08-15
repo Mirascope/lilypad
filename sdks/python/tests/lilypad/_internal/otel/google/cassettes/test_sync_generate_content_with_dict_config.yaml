@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Say hello"}], "role": "user"}], "systemInstruction":
+      {"parts": [{"text": "You are a helpful assistant."}], "role": "user"}, "generationConfig":
+      {"temperature": 0.5, "topP": 0.9, "topK": 30.0, "maxOutputTokens": 50}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '250'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/61RwU7DMAy99ytCznTKGFs3LggBYhMgCqsQEnAI1OsCWVw1KWxM+3eSdt1SzuQQ
+        WX7PfvbzOiCEvnOVipQb0PSEPNsMIevqdxgqA8pYoEnZZM4Ls+fWb+3FlmJg6YroGKTEAzLGb2Jl
+        yITMQeZkhSUxmPLV6YuiXuFmF78e7uUKlOB6LTAF2dA3DYHOhBJ6/gBco3K0aXIX0x3Kv7IbzPIC
+        39zEIeuwPhsNelG/dzzoDntRFAWNcqVJS80zuAXDrSN8tze1HRa5SfAT1DmWlSPDWsTzrwV32RY3
+        aLhsQ02p11VfWE0hfV89y+3uXAqzcgsml08J9fwxraEafwLPxr8j/pNWl7XFgu1Z6ks9QqFFfZIM
+        FvZI4VGHhTPJ9TyEZV51pQXoHJWGSep4H9EUeBzfX12r0WA0jFkofsozpMEm+AUV80RdqgIAAA==
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 04:16:15 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=465
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

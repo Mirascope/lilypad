@@ -1,0 +1,63 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is in this image?"}, {"inlineData":
+      {"data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "mimeType": "image/png"}}], "role": "user"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '230'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/61RUWvCMBB+768IebYyO211b2MTERTdVsZgjBHttYaluZJE5xD/+9LWanT4tjwc
+        4e6777v7bucRQpdMJjxhBjS9I+82Q8iuimUNpQFpbKFJ2WTBlDlh67dz/hZiYFs20XgFhOcss1ET
+        RjQKnpCFWANZokDVpk7b/vj/aJ3EFAoomXJMQDTwfQOgKZdcr56BaZQl7CWezemxyjbZBLNC4aKc
+        179p3/Y6UdgddKNO1BtEg7DjNcqVJl1rO+sUDLN+sOPW1DLkhYnxC+QDris/grBbyzj+nQH6h7JB
+        w8R5axS0/vDqR6vKheurY7ndnglufipPh28xdRwyLnd46dAVkvH0fjS8yhL0+g2P5xzkctV/mvlC
+        yztMX5/8FZTm9W0zyO21/aB946eC6ZUP26IipQp0gVLDOClx/ekM2CxNJhu1kJts/jkfpcHTN/X2
+        3i9QujuY8QIAAA==
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 05:21:53 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=1027
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

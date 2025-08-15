@@ -164,6 +164,9 @@ addopts = ["-v"]
 asyncio_mode = "auto"
 markers = ["vcr: Mark test to use VCR.py for HTTP request recording/playback"]
 
+[tool.inline-snapshot]
+format-command="ruff check --fix-only --stdin-filename {filename} | ruff format --stdin-filename {filename}"
+
 [tool.coverage.run]
 branch = false
 source = ["src/lilypad"]

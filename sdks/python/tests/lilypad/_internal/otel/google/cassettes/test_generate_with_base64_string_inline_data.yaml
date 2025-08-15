@@ -1,0 +1,70 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Analyze this base64 encoded image"},
+      {"inlineData": {"data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "mimeType": "image/png"}}], "role": "user"}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '241'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/41U227bMAx9z1cQftkWOFmXJVnRt/WCNsCKZW2wDViHgrYZW6gsGZKcC4r++ygr
+        TtwOHRYkjiEeHV4OycceQJSiykSGjmx0Ar/4BOCxeXqbVo6UY0N7xIcVGnfAhs9j550hjjb+UnRF
+        ht5YQMVflFsrLOgluIJAlJjTyZ26U/3+OdnUiMoJrU76fX+2aBHANxCsliKLoVZiqU0JiawJUi21
+        GQIjDQHyT2mo0DkyysZgC6yI/7WBFRqBntuCUO21mdsxi7KSFMNSogs2WAophyGwM3/QCSkAsKoI
+        jQWnIWHXkBiRF459oqsN1zFrAhzCD+EKXTuwFaViKdLd9RWy1cLbm8vTGK5oEwO5dPguBuG4VByP
+        tlYkkjx/RkuhuAgOKsMkluQ2hoQ5G6wUD3zAEVSGi2W2wW8Ifd6yzFhBw7ddqMH7My/pxu2y6rNa
+        DJaYUqFlRj5bX5zSpxTSqw7GVhOWE9aUWOEIQkGkSBt+WDd6eIUxdTXKg4yl4IhUPmydnmL6kBtd
+        q8z7PCie6lpm3nVtuZToVUr20F0NmwgysiJXe77bNbq0aOPHLRjitC23L2PDNdtAurd9+MFWoSTu
+        nj3dgqyDWdOlgXIfV9s14DwkBM1apQWlDzuyTFgu29azB3tldEpN/rCsVdpIsVNqpsDWpdcvPkxG
+        6M4VeVHRcu+shPXVJEklZ3TSDkWYBe4NhyqXNPSqRp1ZfNq//44PE2y0JD+epc5ItvCnFhBxzwlb
+        3BBarTzsdvF1Hu2tuMq/6JwTSvwSGBwNJ8fj8Xg6PZ6OxqOjD+OPk17rufEZ1ZYTuuYG5CWD+1US
+        MUNZuYV+IHXG0vp9MZpOgpvOUnoOOPq4AzjtUD6zjafH8V/M9pz9CtldV51NxvmjFG7rk5xdf768
+        iDpFcs8cT45flukVnsXFz8WrNJ9akl5HkpfJ/n/M//TFtXrurbcLPsj+nYwVQd+cSlZ8MBoeDXgP
+        2mJAm6qhjXh+Ku5UmmUed2EHhNclnd2bRK3y+f38cjn6to56T70/VupNfEoGAAA=
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 06:09:23 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=2012
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1
