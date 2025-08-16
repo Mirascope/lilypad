@@ -1,6 +1,30 @@
 # Lilypad TypeScript SDK
 
-Coming soon...
+The official TypeScript library for the Lilypad API, providing OpenTelemetry instrumentation for LLM observability.
 
-Note 1: the `package.json` is a stub and needs to be properly fleshed out before release.
-Note 2: this is not yet individually licensed and current falls under the top-level enterprise license.
+## Installation
+
+```bash
+npm install @mirascope/lilypad-sdk
+```
+
+## Usage
+
+```typescript
+import lilypad from '@mirascope/lilypad-sdk';
+import OpenAI from 'openai';
+
+lilypad.configure({ mode: 'debug' });
+
+const client = new OpenAI();
+lilypad.instrument_openai(client);
+
+const completion = await client.chat.completions.create({
+  model: 'gpt-4o-mini',
+  messages: [{ role: 'user', content: 'Hello!' }],
+});
+```
+
+When configured in debug mode, telemetry data will be output to the console.
+
+Note: This SDK is currently in alpha and falls under the top-level enterprise license.
