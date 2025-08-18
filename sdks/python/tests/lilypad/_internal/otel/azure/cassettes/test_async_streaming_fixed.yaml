@@ -1,0 +1,144 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": "Count to 2"}], "stream": true,
+      "max_tokens": 20, "model": "Ministral-3B-hgtva"}'
+    headers:
+      Accept:
+      - application/json
+      Content-Length:
+      - '122'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-ai-inference/1.0.0b9 Python/3.10.15 (macOS-15.1.1-arm64-arm-64bit)
+    method: POST
+    uri: https://ministral-3b-hgtva.westus.models.ai.azure.com/chat/completions?api-version=2024-05-01-preview
+  response:
+    body:
+      string: 'data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":"Sure"},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":","},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":"
+        here"},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":"
+        it"},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":"
+        is"},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":":\n\n"},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":","},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":"
+        "},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":"2"},"finish_reason":null}]}
+
+
+
+
+
+
+        data: {"id":"517c399f02a74982b46d79c15d9e92cb","object":"chat.completion.chunk","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":7,"total_tokens":18,"completion_tokens":11}}
+
+
+
+
+
+
+        data: [DONE]
+
+
+
+
+        '
+    headers:
+      Content-Type:
+      - text/event-stream; charset=utf-8
+      Date:
+      - Mon, 18 Aug 2025 07:25:10 GMT
+      Request-Context:
+      - appId=cid-v1:f4216435-fbeb-4bc1-837c-c734f59621ec
+      Transfer-Encoding:
+      - chunked
+      azureml-destination-deployment:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-destination-endpoint:
+      - mistral-eus2-3b-sgl-ep
+      azureml-destination-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-destination-region:
+      - eastus2
+      azureml-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-model-session:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-ms-model-error-comprehensive:
+      - --
+      x-endpoint-type:
+      - vllm
+      x-engine-name:
+      - ministral-3b-2410
+      x-ms-rai-invoked:
+      - 'false'
+    status:
+      code: 200
+      message: OK
+version: 1

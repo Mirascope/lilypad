@@ -1,0 +1,116 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": "What''s the weather in London?"}],
+      "max_tokens": 150, "model": "Ministral-3B-hgtva", "tools": [{"function": {"name":
+      "get_weather", "description": "Get weather information", "parameters": {"type":
+      "object", "properties": {"location": {"type": "string"}}, "required": ["location"]}},
+      "type": "function"}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '346'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-ai-inference/1.0.0b9 Python/3.10.15 (macOS-15.1.1-arm64-arm-64bit)
+    method: POST
+    uri: https://ministral-3b-hgtva.westus.models.ai.azure.com/chat/completions?api-version=2024-05-01-preview
+  response:
+    body:
+      string: '{"id":"aa62e47f1bd44b38a46b88539e4d8672","object":"chat.completion","created":1755501908,"model":"ministral-3b-2410","choices":[{"index":0,"message":{"role":"assistant","content":"","tool_calls":[{"id":"NeU7s4lpv","type":"function","function":{"name":"get_weather","arguments":"{\"location\":
+        \"London\"}","call_id":null},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":67,"total_tokens":88,"completion_tokens":21}}'
+    headers:
+      Content-Length:
+      - '436'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 18 Aug 2025 07:25:08 GMT
+      Request-Context:
+      - appId=cid-v1:f4216435-fbeb-4bc1-837c-c734f59621ec
+      azureml-destination-deployment:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-destination-endpoint:
+      - mistral-eus2-3b-sgl-ep
+      azureml-destination-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-destination-region:
+      - eastus2
+      azureml-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-model-session:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-ms-model-error-comprehensive:
+      - --
+      prompt_token_len:
+      - '67'
+      sampling_token_len:
+      - '21'
+      x-ms-rai-invoked:
+      - 'false'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages": [{"role": "user", "content": "What''s the weather?"}, {"role":
+      "assistant", "content": "", "tool_calls": [{"id": "NeU7s4lpv", "type": "function",
+      "function": {"name": "get_weather", "arguments": "{\"location\": \"London\"}"}}]},
+      {"role": "tool", "content": "20\u00b0C and sunny", "tool_call_id": "NeU7s4lpv"}],
+      "max_tokens": 50, "model": "Ministral-3B-hgtva"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '371'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-ai-inference/1.0.0b9 Python/3.10.15 (macOS-15.1.1-arm64-arm-64bit)
+    method: POST
+    uri: https://ministral-3b-hgtva.westus.models.ai.azure.com/chat/completions?api-version=2024-05-01-preview
+  response:
+    body:
+      string: "{\"id\":\"e66584aa5ccd41b3a4898e00c0d6d6af\",\"object\":\"chat.completion\",\"created\":1755501909,\"model\":\"ministral-3b-2410\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"The
+        weather in London is 20\xB0C and sunny.\",\"tool_calls\":null},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":66,\"total_tokens\":79,\"completion_tokens\":13}}"
+    headers:
+      Content-Length:
+      - '337'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 18 Aug 2025 07:25:08 GMT
+      Request-Context:
+      - appId=cid-v1:f4216435-fbeb-4bc1-837c-c734f59621ec
+      azureml-destination-deployment:
+      - dep-mis-eus2-3b-sgl-250714231359
+      azureml-destination-endpoint:
+      - mistral-eus2-3b-sgl-ep
+      azureml-destination-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-destination-region:
+      - eastus2
+      azureml-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-model-session:
+      - dep-mis-eus2-3b-sgl-250714231359
+      azureml-ms-model-error-comprehensive:
+      - --
+      prompt_token_len:
+      - '66'
+      sampling_token_len:
+      - '13'
+      x-ms-rai-invoked:
+      - 'false'
+    status:
+      code: 200
+      message: OK
+version: 1

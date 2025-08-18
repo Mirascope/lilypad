@@ -1,0 +1,61 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": "What''s the weather in Tokyo?"}],
+      "max_tokens": 150, "model": "Ministral-3B-hgtva", "tools": [{"function": {"name":
+      "get_weather", "description": "Get the weather for a location", "parameters":
+      {"type": "object", "properties": {"location": {"type": "string", "description":
+      "The city and country, e.g. San Francisco, USA"}, "unit": {"type": "string",
+      "enum": ["celsius", "fahrenheit"], "description": "The temperature unit"}},
+      "required": ["location"]}}, "type": "function"}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '518'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-ai-inference/1.0.0b9 Python/3.10.15 (macOS-15.1.1-arm64-arm-64bit)
+    method: POST
+    uri: https://ministral-3b-hgtva.westus.models.ai.azure.com/chat/completions?api-version=2024-05-01-preview
+  response:
+    body:
+      string: '{"id":"385ce50d5d8a4f1d83c5469c25b889f2","object":"chat.completion","created":1755501905,"model":"ministral-3b-2410","choices":[{"index":0,"message":{"role":"assistant","content":"","tool_calls":[{"id":"vGs4fEYR8","type":"function","function":{"name":"get_weather","arguments":"{\"location\":
+        \"Tokyo, Japan\"}","call_id":null},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":115,"total_tokens":138,"completion_tokens":23}}'
+    headers:
+      Content-Length:
+      - '444'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 18 Aug 2025 07:25:05 GMT
+      Request-Context:
+      - appId=cid-v1:f4216435-fbeb-4bc1-837c-c734f59621ec
+      azureml-destination-deployment:
+      - dep-mis-eus2-3b-sgl-250714231359
+      azureml-destination-endpoint:
+      - mistral-eus2-3b-sgl-ep
+      azureml-destination-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-destination-region:
+      - eastus2
+      azureml-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-model-session:
+      - dep-mis-eus2-3b-sgl-250714231359
+      azureml-ms-model-error-comprehensive:
+      - --
+      prompt_token_len:
+      - '115'
+      sampling_token_len:
+      - '23'
+      x-ms-rai-invoked:
+      - 'false'
+    status:
+      code: 200
+      message: OK
+version: 1
