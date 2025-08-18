@@ -14,10 +14,14 @@ with suppress(ImportError):
 with suppress(ImportError):
     from ._internal.otel import instrument_google
 
+with suppress(ImportError):
+    from ._internal.otel import instrument_azure
+
 __all__ = [
     "configuration",
     "configure",
     "instrument_anthropic",
+    "instrument_azure",
     "instrument_google",
     "instrument_openai",
 ]

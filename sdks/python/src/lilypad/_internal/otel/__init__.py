@@ -11,8 +11,12 @@ with suppress(ImportError):
 with suppress(ImportError):
     from .google import instrument_google as instrument_google
 
+with suppress(ImportError):
+    from .azure import instrument_azure as instrument_azure
+
 __all__ = [
     "instrument_anthropic",
+    "instrument_azure",
     "instrument_google",
     "instrument_openai",
 ]
