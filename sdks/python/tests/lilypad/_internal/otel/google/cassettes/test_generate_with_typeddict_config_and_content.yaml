@@ -1,0 +1,63 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is 1+1?"}], "role": "user"}], "systemInstruction":
+      {"parts": [{"text": "You are a helpful assistant"}], "role": "user"}, "generationConfig":
+      {"temperature": 0.7, "topP": 0.9, "topK": 40.0, "maxOutputTokens": 100, "stopSequences":
+      ["END"], "presencePenalty": 0.1, "frequencyPenalty": 0.2}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '328'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/61Ry26DMBC8+yssXxsiIIBopV76OETqI21QVamtKqdsCArYFJsoKOLfa0Mgpr3W
+        B8vaGe/szB4QxuSLsjiNqQRBLvCbqmB8aG+NcSaBSQX0JVUsaClP3O4cjLeiSNjrT8TBZ9jBl9h9
+        Z8RgNMP7Y3LqW/IM9Kecx5D19KYnkHXKUrF5Bio407Rl9LggA0p3yR1PipKv9GjW+TTwPDsIg5lr
+        e649832wbB/14q0sqQRN4B4kVe7p4JGoJnkhI74Fds2r1r3jdkJGWCM8PMKSS5qNENee/OkqbpRm
+        mpkZGvEq+zRLZa09RrevETEikuOh+oyQEeXvEf9JLBxroeNmumW9QCnSbisJ5GpPlju1rXVGxcaC
+        fdE2JSWIgjMB81jz2GoJdF5VD5/BN9sli5rXV9snQVCDfgBEu319lgIAAA==
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 04:16:30 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=412
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

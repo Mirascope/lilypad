@@ -234,6 +234,14 @@ class StreamWrapper(BaseStreamWrapper[ChunkT, MetadataT], Generic[ChunkT, Metada
             self.cleanup()
             raise
 
+    def __getattr__(self, name: str) -> Any:
+        """Proxy attribute access to the underlying stream.
+
+        This allows access to stream-specific attributes like text_stream
+        for Anthropic's MessageStream.
+        """
+        return getattr(self.stream, name)
+
 
 class AsyncStreamWrapper(
     BaseStreamWrapper[ChunkT, MetadataT], Generic[ChunkT, MetadataT]
@@ -309,6 +317,14 @@ class AsyncStreamWrapper(
             )
             self.cleanup()
             raise
+
+    def __getattr__(self, name: str) -> Any:
+        """Proxy attribute access to the underlying stream.
+
+        This allows access to stream-specific attributes like text_stream
+        for Anthropic's MessageStream.
+        """
+        return getattr(self.stream, name)
 
 
 class ToolCallBuffer:

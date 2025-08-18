@@ -1,0 +1,67 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What''s the weather in Tokyo today?"}],
+      "role": "user"}], "tools": [{"functionDeclarations": [{"description": "Get the
+      weather for a location", "name": "get_weather", "parameters": {"properties":
+      {"location": {"description": "City and country", "type": "STRING"}, "units":
+      {"description": "Temperature units", "enum": ["celsius", "fahrenheit"], "type":
+      "STRING"}}, "required": ["location", "units"], "type": "OBJECT"}}]}], "generationConfig":
+      {}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '480'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+      x-goog-api-client:
+      - google-genai-sdk/1.30.0 gl-python/3.10.15
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAC/61STU/CQBC991c0e6ZkaSsFbwQ9SDCgEDUxxoztUDZud5vuViWE/+72C1rUmz00
+        7bw3897O271l2yQEEbEINCpyaT+bim3vy3eBSaFRaAM0JVNMIdMnbvXsW9+GsslFqJkUU+C801zj
+        AhI0dRKjfv1E0FvMSO+cBFmsfmk2SC5Y6YCEyBXL1Y9ew+EyhMJCQVvL953s2TNIQZAz6sH66+/0
+        /XKaTzLJS+uJjJA3ww4NgWyYYGp7j6Aq6dV6sTzaI/ARz2WcZvKtsO/QPqXU9dzApzRwLzzPH43c
+        wGrES1mSK4jxFjWYjOC4D2KGJKk2J0MxlXmZkedXQq1IO/iA1riWGngH8pvW1lh1ZUQZb0fdugXm
+        /MCZ3pX7vX5atzIw8zuumiVZrV2ee/wnsQHtill1NlVcD5ip+krEmJikHLdPnQ0HtXXwKy2nkgxV
+        KoXCm6jg3QUrhNnwcRKy8XA8Wur5QsiJT6yD9Q3EKf5dPgMAAA==
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 15 Aug 2025 04:14:59 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=561
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1
