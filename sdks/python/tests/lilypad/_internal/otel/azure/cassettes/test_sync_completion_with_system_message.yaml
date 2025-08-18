@@ -1,0 +1,56 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "system", "content": "You are a mathematician"},
+      {"role": "user", "content": "What is 2+2?"}], "max_tokens": 50, "model": "Ministral-3B-hgtva"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '166'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-ai-inference/1.0.0b9 Python/3.10.15 (macOS-15.1.1-arm64-arm-64bit)
+    method: POST
+    uri: https://ministral-3b-hgtva.westus.models.ai.azure.com/chat/completions?api-version=2024-05-01-preview
+  response:
+    body:
+      string: '{"id":"eea60b280f7f4b5d99eb8cdc5d8313ca","object":"chat.completion","created":1755501902,"model":"ministral-3b-2410","choices":[{"index":0,"message":{"role":"assistant","content":"The
+        sum of 2 and 2 is 4.","tool_calls":null},"finish_reason":"stop"}],"usage":{"prompt_tokens":15,"total_tokens":28,"completion_tokens":13}}'
+    headers:
+      Content-Length:
+      - '320'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 18 Aug 2025 07:25:02 GMT
+      Request-Context:
+      - appId=cid-v1:f4216435-fbeb-4bc1-837c-c734f59621ec
+      azureml-destination-deployment:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-destination-endpoint:
+      - mistral-eus2-3b-sgl-ep
+      azureml-destination-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-destination-region:
+      - eastus2
+      azureml-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-model-session:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-ms-model-error-comprehensive:
+      - --
+      prompt_token_len:
+      - '15'
+      sampling_token_len:
+      - '13'
+      x-ms-rai-invoked:
+      - 'false'
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -2,33 +2,26 @@ interactions:
 - request:
     body: '{"contents": [{"parts": [{"text": "Say hello back to me"}], "role": "user"}]}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '77'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
       - google-genai-sdk/1.30.0 gl-python/3.10.15
       x-goog-api-client:
       - google-genai-sdk/1.30.0 gl-python/3.10.15
-    method: POST
+    method: post
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61R0U6DMBR95yuwz2NBYI756kzUbBEcWUzUh07uoLG0hHZkhuzfbWGwoq/2oWnu
-        Ob3nnnMby7bRJ2YpSbEEgW7tN1Wx7aa9NcaZBCYV0JdUscSVvHC70xhvRZFw1J/QA1DKr94ZMuDT
-        8P6YXJpWnIL+UfAUaE8/9QS0J4yI/AWw4EzTNslzhAYU19mKZ2XFd3oux51e++F8vvA8b3Ez8wI3
-        CK1eudVEB4EzWIPEyjce3CHVoShlwr+A3fFD63vWiRgpjWD/DEsuMR0h4eRPT7FUioSa2RmxKueY
-        Evmt7SX3rwky0pGjkfp0LCPE3wP+k5Y/1rLOO+nWtIVKkG4fGRRqQ443dZ09xSJ34Fi2TVEFouRM
-        wGOqefFuA3i9jJ8ip2Z1FpFolQexQNbJ+gH8SzBHjQIAAA==
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Hello!\\n\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
+        \     \"avgLogprobs\": -1.2218677997589111\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 5,\n    \"candidatesTokenCount\": 3,\n    \"totalTokenCount\":
+        8,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 5\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 3\n      }\n
+        \   ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-exp\",\n  \"responseId\":
+        \"_9eiaNvzCfKonvgPm4qiIQ\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -37,11 +30,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Fri, 15 Aug 2025 04:14:57 GMT
+      - Mon, 18 Aug 2025 07:36:31 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=526
+      - gfet4t7; dur=460
       Transfer-Encoding:
       - chunked
       Vary:

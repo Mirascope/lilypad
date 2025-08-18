@@ -85,6 +85,8 @@ def _filter_response_headers(response: Response) -> Response:
         "anthropic-organization-id",
         "cf-ray",
         "x-request-id",
+        "x-ms-client-request-id",
+        "x-ms-request-id",
         "request-id",
         "set-cookie",
         "x-stainless-arch",
@@ -110,6 +112,7 @@ def vcr_config() -> VCRConfig:
     - OpenAI (authorization header)
     - Google/Gemini (x-goog-api-key header, key query parameter)
     - Anthropic (x-api-key, anthropic-organization-id headers)
+    - Azure AI Inference (api-key header)
 
     Returns:
         VCRConfig: Dictionary with VCR.py configuration settings
@@ -120,12 +123,14 @@ def vcr_config() -> VCRConfig:
         "filter_headers": [
             "authorization",
             "x-api-key",
+            "api-key",
             "x-goog-api-key",
             "anthropic-organization-id",
             "openai-organization",
             "openai-project",
             "cf-ray",
             "x-request-id",
+            "x-ms-client-request-id",
             "request-id",
             "set-cookie",
             "x-stainless-arch",

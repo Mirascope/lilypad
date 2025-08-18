@@ -147,7 +147,7 @@ async def test_async_generate_content_simple(
                 "gen_ai.request.model": "gemini-2.0-flash-exp",
                 "gen_ai.system": "google_genai",
                 "gen_ai.response.model": "gemini-2.0-flash-exp",
-                "gen_ai.response.id": "QbSeaMDQJP-vnvgPiPLh4Qs",
+                "gen_ai.response.id": "_9eiaNvzCfKonvgPm4qiIQ",
                 "gen_ai.response.finish_reasons": ("STOP",),
                 "gen_ai.usage.input_tokens": 5,
                 "gen_ai.usage.output_tokens": 3,

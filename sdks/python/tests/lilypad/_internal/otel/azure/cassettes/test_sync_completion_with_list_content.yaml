@@ -1,0 +1,57 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": "Hello, please respond with a
+      greeting"}, {"role": "assistant", "content": "Hello! How can I help you today?"},
+      {"role": "user", "content": "Thanks!"}], "max_tokens": 50, "model": "Ministral-3B-hgtva"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '243'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-ai-inference/1.0.0b9 Python/3.10.15 (macOS-15.1.1-arm64-arm-64bit)
+    method: POST
+    uri: https://ministral-3b-hgtva.westus.models.ai.azure.com/chat/completions?api-version=2024-05-01-preview
+  response:
+    body:
+      string: '{"id":"29d533979b0f4672a5759ddbc3df0dfb","object":"chat.completion","created":1755501910,"model":"ministral-3b-2410","choices":[{"index":0,"message":{"role":"assistant","content":"You''re
+        welcome! How are you doing?","tool_calls":null},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":34,"completion_tokens":10}}'
+    headers:
+      Content-Length:
+      - '330'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 18 Aug 2025 07:25:10 GMT
+      Request-Context:
+      - appId=cid-v1:f4216435-fbeb-4bc1-837c-c734f59621ec
+      azureml-destination-deployment:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-destination-endpoint:
+      - mistral-eus2-3b-sgl-ep
+      azureml-destination-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-destination-region:
+      - eastus2
+      azureml-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-model-session:
+      - dep-mis-eus2-3b-sgl-250714224614
+      azureml-ms-model-error-comprehensive:
+      - --
+      prompt_token_len:
+      - '24'
+      sampling_token_len:
+      - '10'
+      x-ms-rai-invoked:
+      - 'false'
+    status:
+      code: 200
+      message: OK
+version: 1

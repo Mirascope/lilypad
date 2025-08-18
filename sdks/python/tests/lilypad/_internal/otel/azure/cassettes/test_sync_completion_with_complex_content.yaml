@@ -1,0 +1,58 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": {"text": "Hello", "metadata":
+      {"key": "value"}}}], "max_tokens": 50, "model": "Ministral-3B-hgtva"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '141'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - azsdk-python-ai-inference/1.0.0b9 Python/3.10.15 (macOS-15.1.1-arm64-arm-64bit)
+    method: POST
+    uri: https://ministral-3b-hgtva.westus.models.ai.azure.com/chat/completions?api-version=2024-05-01-preview
+  response:
+    body:
+      string: '{"error":{"code":"Invalid input","status":422,"message":"invalid input
+        error","details":[{"type":"string_type","loc":["body","messages",0,"content","str"],"msg":"Input
+        should be a valid string","input":{"metadata":{"key":"value"},"text":"Hello"}},{"type":"list_type","loc":["body","messages",0,"content","list[function-after[validate_content_part(),
+        ContentPart]]"],"msg":"Input should be a valid list","input":{"metadata":{"key":"value"},"text":"Hello"}}]}}'
+    headers:
+      Content-Length:
+      - '458'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 18 Aug 2025 07:25:12 GMT
+      Request-Context:
+      - appId=cid-v1:f4216435-fbeb-4bc1-837c-c734f59621ec
+      azureml-destination-deployment:
+      - dep-mis-eus2-3b-sgl-250714231359
+      azureml-destination-endpoint:
+      - mistral-eus2-3b-sgl-ep
+      azureml-destination-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-destination-region:
+      - eastus2
+      azureml-model-group:
+      - offer-3b-2410-paygo-sgl
+      azureml-model-session:
+      - dep-mis-eus2-3b-sgl-250714231359
+      azureml-ms-model-error-comprehensive:
+      - model_error-422-
+      ms-azureml-model-error-reason:
+      - model_error
+      ms-azureml-model-error-statuscode:
+      - '422'
+      x-ms-rai-invoked:
+      - 'false'
+    status:
+      code: 422
+      message: Unprocessable Entity
+version: 1
