@@ -28,7 +28,7 @@ from openai import OpenAI, AsyncOpenAI
 from opentelemetry.trace import get_tracer
 from opentelemetry.semconv.schemas import Schemas
 
-from . import _patch
+from . import _wrappers
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +57,13 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
         schema_url=Schemas.V1_28_0.value,
     )
 
+    wrappers = _wrappers.OpenAIWrappers(tracer=tracer)
+
     if isinstance(client, AsyncOpenAI):
         try:
             client.chat.completions.create = FunctionWrapper(
                 client.chat.completions.create,
-                _patch.chat_completions_create_async_patch_factory(tracer),
+                wrappers.traced_async_stream,
             )
             logger.debug("Successfully wrapped AsyncCompletions.create")
         except Exception as e:
@@ -72,7 +74,7 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
         try:
             client.chat.completions.parse = FunctionWrapper(
                 client.chat.completions.parse,
-                _patch.chat_completions_parse_async_patch_factory(tracer),
+                wrappers.traced_async_response,
             )
             logger.debug("Successfully wrapped AsyncCompletions.parse")
         except Exception as e:
@@ -84,7 +86,7 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
         try:
             client.chat.completions.create = FunctionWrapper(
                 client.chat.completions.create,
-                _patch.chat_completions_create_patch_factory(tracer),
+                wrappers.traced_stream,
             )
             logger.debug("Successfully wrapped Completions.create")
         except Exception as e:
@@ -95,7 +97,7 @@ def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
         try:
             client.chat.completions.parse = FunctionWrapper(
                 client.chat.completions.parse,
-                _patch.chat_completions_parse_patch_factory(tracer),
+                wrappers.traced_response,
             )
             logger.debug("Successfully wrapped Completions.parse")
         except Exception as e:
