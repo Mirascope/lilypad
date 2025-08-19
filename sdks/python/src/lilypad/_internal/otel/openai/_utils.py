@@ -21,7 +21,7 @@ response data for telemetry purposes.
 # Modifications copyright (C) 2025 Mirascope
 
 import json
-from typing import Any
+from typing import Any, ParamSpec
 
 from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import (
@@ -31,19 +31,35 @@ from openai.types.chat import (
     ChatCompletionMessageParam,
     ChatCompletionMessageToolCallParam,
 )
-from opentelemetry.trace import Span
+from opentelemetry.trace import Span, Tracer
 from opentelemetry.util.types import AttributeValue
 from openai.types.chat.chat_completion import Choice
 from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
+from . import _utils
+from ..base import (
+    BaseWrappers,
+    create_sync_wrapper,
+    create_async_wrapper,
+)
 from ..types import LLMOpenTelemetryMessage
 from ..utils import (
     BaseMetadata,
     ChoiceBuffer,
     ChunkHandler,
+    StreamWrapper,
+    StreamProtocol,
+    AsyncStreamWrapper,
+    AsyncStreamProtocol,
     set_server_address_and_port,
 )
 from ...utils import json_dumps
+from ..base.protocols import (
+    SyncStreamHandler,
+    AsyncStreamHandler,
+    SyncCompletionHandler,
+    AsyncCompletionHandler,
+)
 
 
 class OpenAIMetadata(BaseMetadata, total=False):
@@ -88,6 +104,25 @@ class OpenAIChunkHandler(ChunkHandler[ChatCompletionChunk, OpenAIMetadata]):
             if choice.delta.tool_calls is not None:
                 for tool_call in choice.delta.tool_calls:
                     buffers[choice.index].append_tool_call(tool_call)
+
+
+def process_messages(span: Span, kwargs: dict[str, Any]) -> None:
+    """Process and record input messages."""
+    for message in kwargs.get("messages", []):
+        set_message_event(span, message)
+
+
+async def create_async_stream_wrapper(
+    span: Span, stream: AsyncStreamProtocol[ChatCompletionChunk]
+) -> AsyncStreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata]:
+    """Create OpenAI-specific async stream wrapper."""
+    return AsyncStreamWrapper(
+        span=span,
+        stream=stream,
+        metadata=_utils.OpenAIMetadata(),
+        chunk_handler=_utils.OpenAIChunkHandler(),
+        cleanup_handler=_utils.default_openai_cleanup,
+    )
 
 
 def default_openai_cleanup(
@@ -204,6 +239,19 @@ def set_message_event(span: Span, message: ChatCompletionMessageParam) -> None:
     span.add_event(
         f"gen_ai.{role}.message",
         attributes=attributes,
+    )
+
+
+def create_stream_wrapper(
+    span: Span, stream: StreamProtocol[ChatCompletionChunk]
+) -> StreamWrapper[ChatCompletionChunk, _utils.OpenAIMetadata]:
+    """Create OpenAI-specific stream wrapper."""
+    return StreamWrapper(
+        span=span,
+        stream=stream,
+        metadata=_utils.OpenAIMetadata(),
+        chunk_handler=_utils.OpenAIChunkHandler(),
+        cleanup_handler=_utils.default_openai_cleanup,
     )
 
 
