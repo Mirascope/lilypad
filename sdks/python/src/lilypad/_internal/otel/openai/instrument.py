@@ -20,85 +20,340 @@ create OpenTelemetry spans for API calls.
 #
 # Modifications copyright (C) 2025 Mirascope
 
+from typing import Any
+
 import logging
-from importlib.metadata import PackageNotFoundError, version
+import json
 
-from wrapt import FunctionWrapper
+
 from openai import OpenAI, AsyncOpenAI
-from opentelemetry.trace import get_tracer
-from opentelemetry.semconv.schemas import Schemas
+from openai.types.chat import ChatCompletionMessage
+from opentelemetry.trace import Span
+from opentelemetry.util.types import AttributeValue
+from opentelemetry.semconv._incubating.attributes import gen_ai_attributes
 
-from . import _patch
+from ..base import BaseInstrumentor
+
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionMessageParam,
+    ChatCompletionMessageToolCallParam,
+)
+from openai.types.chat.chat_completion import Choice
+
+from ..base.instrument import WrapTarget
+from ..types import LLMOpenTelemetryMessage
+from ..utils import (
+    BaseMetadata,
+    ChoiceBuffer,
+    set_server_address_and_port,
+)
+from ...utils import json_dumps
+from ..base.protocols import (
+    ClientT,
+)
 
 logger = logging.getLogger(__name__)
 
 
-# TODO: see if we can refactor this with other providers in a way that makes sense
-def instrument_openai(client: OpenAI | AsyncOpenAI) -> None:
-    """
-    Instrument the OpenAI client with OpenTelemetry tracing.
+def _get_tool_calls(
+    message: ChatCompletionMessage | ChatCompletionMessageParam,
+) -> list[ChatCompletionMessageToolCallParam] | None:
+    """Returns tool calls extracted from a message object or dictionary."""
 
-    Args:
-        client: The OpenAI client instance to instrument.
-    """
-    if hasattr(client, "_lilypad_instrumented"):
-        logger.debug(f"{type(client).__name__} already instrumented, skipping")
-        return
+    if isinstance(message, dict):
+        tool_calls = message.get("tool_calls")
+    else:
+        tool_calls = message.tool_calls
 
-    try:
-        lilypad_version = version("lilypad-sdk")
-    except PackageNotFoundError:
-        lilypad_version = "unknown"
-        logger.debug("Could not determine lilypad-sdk version")
+    if tool_calls is None:
+        return None
 
-    tracer = get_tracer(
-        __name__,
-        lilypad_version,
-        schema_url=Schemas.V1_28_0.value,
+    calls = []
+    for tool_call in tool_calls:
+        tool_call_dict = {}
+        if isinstance(tool_call, dict):
+            call_id = tool_call.get("id")
+            tool_type = tool_call.get("type")
+            if func := tool_call.get("function"):
+                tool_call_dict["function"] = {}
+
+                if name := func.get("name"):
+                    tool_call_dict["function"]["name"] = name
+
+                if arguments := func.get("arguments"):
+                    tool_call_dict["function"]["arguments"] = arguments
+        else:
+            call_id = tool_call.id
+            tool_type = tool_call.type
+            if tool_type == "function" and hasattr(tool_call, "function"):
+                function_attribute = getattr(tool_call, "function", None)
+                if function_attribute:
+                    tool_call_dict["function"] = function_attribute.model_dump(
+                        mode="python"
+                    )
+        tool_call_dict["id"] = call_id
+        tool_call_dict["type"] = tool_type
+        calls.append(tool_call_dict)
+    return calls
+
+
+def _set_message_event(span: Span, message: ChatCompletionMessageParam) -> None:
+    """Add a message event to the span with appropriate attributes."""
+    attributes = {
+        gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.OPENAI.value
+    }
+    role = message["role"]
+
+    if role == "assistant" and (tool_calls := _get_tool_calls(message)):
+        attributes["tool_calls"] = json_dumps(tool_calls)
+
+    if role == "tool" and (tool_call_id := message.get("tool_call_id")):
+        attributes["id"] = tool_call_id
+
+    if content := message.get("content"):
+        if not isinstance(content, str):
+            content = json_dumps(content)
+        attributes["content"] = content
+
+    span.add_event(
+        f"gen_ai.{role}.message",
+        attributes=attributes,
     )
 
-    if isinstance(client, AsyncOpenAI):
-        try:
-            client.chat.completions.create = FunctionWrapper(
-                client.chat.completions.create,
-                _patch.chat_completions_create_async_patch_factory(tracer),
+
+def _get_choice_event(choice: Choice) -> dict[str, AttributeValue]:
+    """Returns event attributes extracted from a completion choice."""
+    attributes: dict[str, AttributeValue] = {
+        gen_ai_attributes.GEN_AI_SYSTEM: gen_ai_attributes.GenAiSystemValues.OPENAI.value
+    }
+
+    if message := choice.message:
+        message_dict: LLMOpenTelemetryMessage = {
+            "role": message.role,
+        }
+        if content := message.content:
+            message_dict["content"] = content
+        if tool_calls := _get_tool_calls(message):
+            message_dict["tool_calls"] = tool_calls
+
+        attributes["message"] = json_dumps(message_dict)
+        attributes["index"] = choice.index
+        attributes["finish_reason"] = choice.finish_reason or "error"
+    return attributes
+
+
+class OpenAIMetadata(BaseMetadata, total=False):
+    """OpenAI-specific metadata extending BaseMetadata."""
+
+    service_tier: str | None
+
+
+class OpenAIInstrumentor(
+    BaseInstrumentor[
+        OpenAI | AsyncOpenAI, ChatCompletion, ChatCompletionChunk, OpenAIMetadata
+    ]
+):
+    def _get_async_targets(self, client: AsyncOpenAI) -> list[WrapTarget]:
+        return [
+            WrapTarget(
+                method=client.chat.completions.create, wrapper=self.traced_async_create
+            ),
+            WrapTarget(
+                method=client.chat.completions.parse, wrapper=self.traced_async_create
+            ),
+        ]
+
+    def _get_sync_targets(self, client: OpenAI) -> list[WrapTarget]:
+        return [
+            WrapTarget(
+                method=client.chat.completions.create, wrapper=self.traced_create
+            ),
+            WrapTarget(
+                method=client.chat.completions.parse, wrapper=self.traced_create
+            ),
+        ]
+
+    def _is_async_client(self, client: ClientT) -> bool:
+        return isinstance(client, AsyncOpenAI)
+
+    @staticmethod
+    def _get_span_attributes(
+        kwargs: dict[str, Any],
+        client: OpenAI | AsyncOpenAI,
+        operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
+    ) -> dict[str, AttributeValue]:
+        """Extract OpenTelemetry attributes from OpenAI API request parameters."""
+        response_format = kwargs.get("response_format", {})
+        response_format = (
+            response_format.get("type")
+            if isinstance(response_format, dict)
+            else response_format.__name__
+        )
+        attributes = {
+            gen_ai_attributes.GEN_AI_OPERATION_NAME: operation_name,
+            gen_ai_attributes.GEN_AI_REQUEST_MODEL: kwargs.get("model"),
+            gen_ai_attributes.GEN_AI_REQUEST_TEMPERATURE: kwargs.get("temperature"),
+            gen_ai_attributes.GEN_AI_REQUEST_TOP_P: kwargs.get("p")
+            or kwargs.get("top_p"),
+            gen_ai_attributes.GEN_AI_REQUEST_MAX_TOKENS: kwargs.get("max_tokens"),
+            gen_ai_attributes.GEN_AI_REQUEST_PRESENCE_PENALTY: kwargs.get(
+                "presence_penalty"
+            ),
+            gen_ai_attributes.GEN_AI_REQUEST_FREQUENCY_PENALTY: kwargs.get(
+                "frequency_penalty"
+            ),
+            gen_ai_attributes.GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT: response_format,
+            gen_ai_attributes.GEN_AI_OPENAI_REQUEST_SEED: kwargs.get("seed"),
+        }
+        set_server_address_and_port(client, attributes)
+        attributes[gen_ai_attributes.GEN_AI_SYSTEM] = (
+            gen_ai_attributes.GenAiSystemValues.OPENAI.value
+        )
+
+        service_tier = kwargs.get("service_tier")
+        attributes[gen_ai_attributes.GEN_AI_OPENAI_RESPONSE_SERVICE_TIER] = (
+            service_tier if service_tier != "auto" else None
+        )
+
+        return {k: v for k, v in attributes.items() if v is not None}
+
+    @staticmethod
+    def _process_response(span: Span, response: ChatCompletion) -> None:
+        """Set span attributes from a completion response object."""
+        attributes: dict[str, AttributeValue] = {
+            gen_ai_attributes.GEN_AI_RESPONSE_MODEL: response.model
+        }
+        if choices := getattr(response, "choices", None):
+            finish_reasons = []
+            for choice in choices:
+                choice_attributes = _get_choice_event(choice)
+                span.add_event(
+                    "gen_ai.choice",
+                    attributes=choice_attributes,
+                )
+                finish_reasons.append(choice.finish_reason)
+            attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = (
+                finish_reasons
             )
-            logger.debug("Successfully wrapped AsyncCompletions.create")
-        except Exception as e:
-            logger.warning(
-                f"Failed to wrap AsyncCompletions.create: {type(e).__name__}: {e}"
+        if id := getattr(response, "id", None):
+            attributes[gen_ai_attributes.GEN_AI_RESPONSE_ID] = id
+
+        if service_tier := getattr(response, "service_tier", None):
+            attributes[gen_ai_attributes.GEN_AI_OPENAI_REQUEST_SERVICE_TIER] = (
+                service_tier
             )
 
-        try:
-            client.chat.completions.parse = FunctionWrapper(
-                client.chat.completions.parse,
-                _patch.chat_completions_parse_async_patch_factory(tracer),
+        if usage := getattr(response, "usage", None):
+            attributes[gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS] = (
+                usage.prompt_tokens
             )
-            logger.debug("Successfully wrapped AsyncCompletions.parse")
-        except Exception as e:
-            logger.warning(
-                f"Failed to wrap AsyncCompletions.parse: {type(e).__name__}: {e}"
+            attributes[gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS] = (
+                usage.completion_tokens
+            )
+        span.set_attributes(attributes)
+
+    @staticmethod
+    def _process_messages(span: Span, kwargs: dict[str, Any]) -> None:
+        """Process and record input messages."""
+        for message in kwargs.get("messages", []):
+            _set_message_event(span, message)
+
+    def extract_metadata(
+        self, chunk: "ChatCompletionChunk", metadata: OpenAIMetadata
+    ) -> None:
+        """Extract metadata from a streaming chunk and update the metadata dictionary."""
+        if not metadata.get("response_model") and hasattr(chunk, "model"):
+            metadata["response_model"] = chunk.model
+        if not metadata.get("response_id") and hasattr(chunk, "id"):
+            metadata["response_id"] = chunk.id
+        if not metadata.get("service_tier") and hasattr(chunk, "service_tier"):
+            metadata["service_tier"] = chunk.service_tier
+        if hasattr(chunk, "usage") and chunk.usage:
+            if hasattr(chunk.usage, "completion_tokens"):
+                metadata["completion_tokens"] = chunk.usage.completion_tokens
+            if hasattr(chunk.usage, "prompt_tokens"):
+                metadata["prompt_tokens"] = chunk.usage.prompt_tokens
+
+    def process_chunk(
+        self, chunk: ChatCompletionChunk, buffers: list[ChoiceBuffer]
+    ) -> None:
+        """Process a streaming chunk and update the choice buffers with content."""
+
+        for choice in chunk.choices:
+            # Ensure enough choice buffers
+            while len(buffers) <= choice.index:
+                buffers.append(ChoiceBuffer(len(buffers)))
+
+            if choice.finish_reason:
+                buffers[choice.index].finish_reason = choice.finish_reason
+
+            if choice.delta.content is not None:
+                buffers[choice.index].append_text_content(choice.delta.content)
+
+            if choice.delta.tool_calls is not None:
+                for tool_call in choice.delta.tool_calls:
+                    buffers[choice.index].append_tool_call(tool_call)
+
+    def create_metadata(self) -> OpenAIMetadata:
+        return OpenAIMetadata()
+
+    def cleanup_stream_handler(
+        self, span: Span, metadata: OpenAIMetadata, buffers: list[ChoiceBuffer]
+    ) -> None:
+        """Set final span attributes and events from accumulated metadata and buffers."""
+        attributes: dict[str, AttributeValue] = {}
+        if response_model := metadata.get("response_model"):
+            attributes[gen_ai_attributes.GEN_AI_RESPONSE_MODEL] = response_model
+        if response_id := metadata.get("response_id"):
+            attributes[gen_ai_attributes.GEN_AI_RESPONSE_ID] = response_id
+        if prompt_tokens := metadata.get("prompt_tokens"):
+            attributes[gen_ai_attributes.GEN_AI_USAGE_INPUT_TOKENS] = prompt_tokens
+        if completion_tokens := metadata.get("completion_tokens"):
+            attributes[gen_ai_attributes.GEN_AI_USAGE_OUTPUT_TOKENS] = completion_tokens
+        if service_tier := metadata.get("service_tier"):
+            attributes[gen_ai_attributes.GEN_AI_OPENAI_RESPONSE_SERVICE_TIER] = (
+                service_tier
             )
 
-    else:
-        try:
-            client.chat.completions.create = FunctionWrapper(
-                client.chat.completions.create,
-                _patch.chat_completions_create_patch_factory(tracer),
-            )
-            logger.debug("Successfully wrapped Completions.create")
-        except Exception as e:
-            logger.warning(
-                f"Failed to wrap Completions.create: {type(e).__name__}: {e}"
+        if finish_reasons := tuple(
+            buffer.finish_reason
+            for buffer in buffers
+            if buffer.finish_reason is not None
+        ):
+            attributes[gen_ai_attributes.GEN_AI_RESPONSE_FINISH_REASONS] = (
+                finish_reasons
             )
 
-        try:
-            client.chat.completions.parse = FunctionWrapper(
-                client.chat.completions.parse,
-                _patch.chat_completions_parse_patch_factory(tracer),
-            )
-            logger.debug("Successfully wrapped Completions.parse")
-        except Exception as e:
-            logger.warning(f"Failed to wrap Completions.parse: {type(e).__name__}: {e}")
+        span.set_attributes(attributes)
+        for index, choice in enumerate(buffers):
+            message: dict[str, str | dict[str, str] | list[str]] = {"role": "assistant"}
+            if choice.text_content:
+                message["content"] = "".join(choice.text_content)
+            if choice.tool_calls_buffers:
+                tool_calls = []
+                for tool_call in choice.tool_calls_buffers:
+                    if tool_call:
+                        function = {
+                            "name": tool_call.function_name,
+                            "arguments": "".join(tool_call.arguments),
+                        }
+                        tool_call_dict = {
+                            "id": tool_call.tool_call_id,
+                            "type": "function",
+                            "function": function,
+                        }
+                        tool_calls.append(tool_call_dict)
+                message["tool_calls"] = tool_calls
 
-    client._lilypad_instrumented = True  # pyright: ignore[reportAttributeAccessIssue]
+            event_attributes: dict[str, AttributeValue] = {
+                gen_ai_attributes.GEN_AI_SYSTEM: "openai",
+                "index": index,
+                "finish_reason": choice.finish_reason or "none",
+                "message": json.dumps(message),
+            }
+            span.add_event("gen_ai.choice", attributes=event_attributes)
+
+
+instrument_openai = OpenAIInstrumentor.instrument

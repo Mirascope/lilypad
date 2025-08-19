@@ -19,87 +19,61 @@ P = ParamSpec("P")
 ResponseT = TypeVar("ResponseT")
 ContravariantResponseT = TypeVar("ContravariantResponseT", contravariant=True)
 StreamChunkT = TypeVar("StreamChunkT")
+ContravariantStreamChunkT = TypeVar("ContravariantStreamChunkT", contravariant=True)
 MetadataT = TypeVar("MetadataT", bound=BaseMetadata)
-ClientT = TypeVar("ClientT", contravariant=True)
+ContravariantMetadataT = TypeVar(
+    "ContravariantMetadataT", bound=BaseMetadata, contravariant=True
+)
+ClientT = TypeVar("ClientT")
+ContravariantClientT = TypeVar("ContravariantClientT", contravariant=True)
 
 
-class SyncCompletionHandler(Protocol[P, ResponseT, ClientT]):
+class SyncCompletionHandler(Protocol[P, ResponseT, ContravariantClientT]):
     """Protocol for synchronous non-streaming completion handlers."""
 
     def __call__(
         self,
         wrapped: Callable[P, ResponseT],
-        client: ClientT,
+        client: ContravariantClientT,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> ResponseT: ...
 
 
-class SyncStreamHandler(Protocol[P, StreamChunkT, MetadataT, ClientT]):
+class SyncStreamHandler(Protocol[P, StreamChunkT, MetadataT, ContravariantClientT]):
     """Protocol for synchronous streaming handlers."""
 
     def __call__(
         self,
         wrapped: Callable[P, StreamProtocol[StreamChunkT]],
-        client: ClientT,
+        client: ContravariantClientT,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> StreamWrapper[StreamChunkT, MetadataT]: ...
 
 
-class AsyncCompletionHandler(Protocol[P, ResponseT, ClientT]):
+class AsyncCompletionHandler(Protocol[P, ResponseT, ContravariantClientT]):
     """Protocol for asynchronous non-streaming completion handlers."""
 
     async def __call__(
         self,
         wrapped: Callable[P, Awaitable[ResponseT]],
-        client: ClientT,
+        client: ContravariantClientT,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> ResponseT: ...
 
 
-class AsyncStreamHandler(Protocol[P, StreamChunkT, MetadataT, ClientT]):
+class AsyncStreamHandler(Protocol[P, StreamChunkT, MetadataT, ContravariantClientT]):
     """Protocol for asynchronous streaming handlers."""
 
     async def __call__(
         self,
         wrapped: Callable[P, Awaitable[AsyncStreamProtocol[StreamChunkT]]],
-        client: ClientT,
+        client: ContravariantClientT,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> AsyncStreamWrapper[StreamChunkT, MetadataT]: ...
-
-
-class GetSpanAttributes(Protocol[ClientT]):
-    """Protocol for the `get_span_attributes` method."""
-
-    def __call__(
-        self,
-        kwargs: dict[str, Any],
-        client: ClientT,
-        operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
-    ) -> dict[str, AttributeValue]: ...
-
-
-class ProcessMessages(Protocol):
-    """Protocol for the `process_messages` method."""
-
-    def __call__(
-        self,
-        span: Span,
-        kwargs: dict[str, Any],
-    ) -> None: ...
-
-
-class ProcessResponse(Protocol[ContravariantResponseT]):
-    """Protocol for the `process_response` method."""
-
-    def __call__(
-        self,
-        span: Span,
-        response: ContravariantResponseT,
-    ) -> None: ...
 
 
 class CreateStreamWrapper(Protocol[StreamChunkT, MetadataT]):
@@ -116,3 +90,32 @@ class CreateAsyncStreamWrapper(Protocol[StreamChunkT, MetadataT]):
     def __call__(
         self, span: Span, stream: AsyncStreamProtocol[StreamChunkT]
     ) -> Awaitable[AsyncStreamWrapper[StreamChunkT, MetadataT]]: ...
+
+
+class ProviderUtilities(Protocol[ClientT, ResponseT, StreamChunkT, MetadataT]):
+    """Protocol for provider-specific utilities necessary for method wrapping."""
+
+    def get_span_attributes(
+        self,
+        kwargs: dict[str, Any],
+        client: ClientT,
+        operation_name: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value,
+    ) -> dict[str, AttributeValue]:
+        """The method for retrieving the span attributes."""
+        ...
+
+    def process_messages(
+        self,
+        span: Span,
+        kwargs: dict[str, Any],
+    ) -> None:
+        """The method for processing provider-specific messages."""
+        ...
+
+    def process_response(
+        self,
+        span: Span,
+        response: ResponseT,
+    ) -> None:
+        """The method for processing a provider-specific response."""
+        ...

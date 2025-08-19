@@ -12,7 +12,7 @@ from opentelemetry.sdk.trace import ReadableSpan
 from lilypad._internal.otel.utils import (
     BaseMetadata,
     ChoiceBuffer,
-    ChunkHandler,
+    # ChunkHandler,
     StreamWrapper,
     StreamProtocol,
     ToolCallBuffer,
@@ -83,21 +83,21 @@ class MockChunk:
         )
 
 
-class MockChunkHandler(ChunkHandler[MockChunk, MockMetadata]):
-    def extract_metadata(self, chunk: MockChunk, metadata: MockMetadata) -> None:
-        if chunk.usage:
-            metadata["prompt_tokens"] = chunk.usage.get("prompt_tokens")
-            metadata["completion_tokens"] = chunk.usage.get("completion_tokens")
-
-    def process_chunk(self, chunk: MockChunk, buffers: list[ChoiceBuffer]) -> None:
-        if not buffers:
-            buffers.append(ChoiceBuffer(0))
-
-        buffer = buffers[0]
-        if chunk.content:
-            buffer.append_text_content(chunk.content)
-        if chunk.finish_reason:
-            buffer.finish_reason = chunk.finish_reason
+# class MockChunkHandler(ChunkHandler[MockChunk, MockMetadata]):
+#     def extract_metadata(self, chunk: MockChunk, metadata: MockMetadata) -> None:
+#         if chunk.usage:
+#             metadata["prompt_tokens"] = chunk.usage.get("prompt_tokens")
+#             metadata["completion_tokens"] = chunk.usage.get("completion_tokens")
+#
+#     def process_chunk(self, chunk: MockChunk, buffers: list[ChoiceBuffer]) -> None:
+#         if not buffers:
+#             buffers.append(ChoiceBuffer(0))
+#
+#         buffer = buffers[0]
+#         if chunk.content:
+#             buffer.append_text_content(chunk.content)
+#         if chunk.finish_reason:
+#             buffer.finish_reason = chunk.finish_reason
 
 
 class MockStream(StreamProtocol[MockChunk]):

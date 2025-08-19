@@ -15,7 +15,7 @@
 #
 # Modifications copyright (C) 2025 Mirascope
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from types import TracebackType
 from typing import Any, Generic, TypeVar, Protocol, TypedDict
 from collections.abc import Callable, Iterator, AsyncIterator
@@ -120,16 +120,16 @@ class ChoiceBuffer:
                 buffer.append_arguments(arguments)
 
 
-class ChunkHandler(ABC, Generic[ChunkT, MetadataT]):
-    @abstractmethod
-    def extract_metadata(self, chunk: ChunkT, metadata: MetadataT) -> None:
-        """Extract metadata from chunk and update StreamMetadata"""
-        ...
+class ExtractMetadata(Protocol[ChunkT, MetadataT]):
+    """Protocol for extract_metadata method of ChunkHandler."""
 
-    @abstractmethod
-    def process_chunk(self, chunk: ChunkT, buffers: list[ChoiceBuffer]) -> None:
-        """Process chunk and update choice buffers"""
-        ...
+    def __call__(self, chunk: ChunkT, metadata: MetadataT) -> None: ...
+
+
+class ProcessChunk(Protocol[ChunkT]):
+    """Protocol for process_chunk method of ChunkHandler."""
+
+    def __call__(self, chunk: ChunkT, buffers: list[ChoiceBuffer]) -> None: ...
 
 
 class BaseStreamWrapper(ABC, Generic[ChunkT, MetadataT]):
@@ -137,7 +137,8 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, MetadataT]):
 
     span: Span
     metadata: MetadataT
-    chunk_handler: ChunkHandler[ChunkT, MetadataT]
+    extract_metadata: ExtractMetadata[ChunkT, MetadataT]
+    process_chunk: ProcessChunk[ChunkT]
     cleanup_handler: Callable[[Span, MetadataT, list[ChoiceBuffer]], None] | None
     choice_buffers: list[ChoiceBuffer]
     _span_started: bool
@@ -147,10 +148,10 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, MetadataT]):
         if not self._span_started:
             self._span_started = True
 
-    def process_chunk(self, chunk: ChunkT) -> None:
+    def process_chunk_and_metadata(self, chunk: ChunkT) -> None:
         """Process a single chunk from the stream."""
-        self.chunk_handler.extract_metadata(chunk, self.metadata)
-        self.chunk_handler.process_chunk(chunk, self.choice_buffers)
+        self.extract_metadata(chunk, self.metadata)
+        self.process_chunk(chunk, self.choice_buffers)
 
     def cleanup(self) -> None:
         """Clean up resources and finalize the span."""
@@ -171,14 +172,16 @@ class StreamWrapper(BaseStreamWrapper[ChunkT, MetadataT], Generic[ChunkT, Metada
         span: Span,
         stream: StreamProtocol[ChunkT],
         metadata: MetadataT,
-        chunk_handler: ChunkHandler[ChunkT, MetadataT],
+        extract_metadata: ExtractMetadata[ChunkT, MetadataT],
+        process_chunk: ProcessChunk[ChunkT],
         cleanup_handler: Callable[[Span, MetadataT, list[ChoiceBuffer]], None]
         | None = None,
     ) -> None:
         """Initialize the stream wrapper with telemetry components."""
         self.span = span
         self.stream = stream
-        self.chunk_handler = chunk_handler
+        self.extract_metadata = extract_metadata
+        self.process_chunk = process_chunk
         self.cleanup_handler = cleanup_handler
         self.metadata = metadata
         self.choice_buffers: list[ChoiceBuffer] = []
@@ -221,7 +224,7 @@ class StreamWrapper(BaseStreamWrapper[ChunkT, MetadataT], Generic[ChunkT, Metada
         """Get and process the next chunk from the stream."""
         try:
             chunk = next(self.stream)
-            self.process_chunk(chunk)
+            self.process_chunk_and_metadata(chunk)
             return chunk
         except StopIteration:
             self.cleanup()
@@ -255,14 +258,16 @@ class AsyncStreamWrapper(
         span: Span,
         stream: AsyncStreamProtocol[ChunkT],
         metadata: MetadataT,
-        chunk_handler: ChunkHandler[ChunkT, MetadataT],
+        extract_metadata: ExtractMetadata[ChunkT, MetadataT],
+        process_chunk: ProcessChunk[ChunkT],
         cleanup_handler: Callable[[Span, MetadataT, list[ChoiceBuffer]], None]
         | None = None,
     ) -> None:
         """Initialize the stream wrapper with telemetry components."""
         self.span = span
         self.stream = stream
-        self.chunk_handler = chunk_handler
+        self.extract_metadata = extract_metadata
+        self.process_chunk = process_chunk
         self.cleanup_handler = cleanup_handler
         self.metadata = metadata
         self.choice_buffers: list[ChoiceBuffer] = []
@@ -305,7 +310,7 @@ class AsyncStreamWrapper(
         """Get and process the next chunk from the async stream."""
         try:
             chunk = await self.stream.__anext__()
-            self.process_chunk(chunk)
+            self.process_chunk_and_metadata(chunk)
             return chunk
         except StopAsyncIteration:
             self.cleanup()

@@ -13,6 +13,10 @@ from opentelemetry.trace import get_tracer
 from opentelemetry.semconv.schemas import Schemas
 
 from . import _patch
+from ._patch import (
+    messages_stream_patch_factory,
+    messages_stream_async_patch_factory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +57,17 @@ def instrument_anthropic(client: Anthropic | AsyncAnthropic) -> None:
                 f"Failed to wrap AsyncMessages.create: {type(e).__name__}: {e}"
             )
 
+        try:
+            client.messages.stream = FunctionWrapper(
+                client.messages.stream,
+                messages_stream_async_patch_factory(tracer),
+            )
+            logger.debug("Successfully wrapped AsyncMessages.stream")
+        except Exception as e:
+            logger.warning(
+                f"Failed to wrap AsyncMessages.stream: {type(e).__name__}: {e}"
+            )
+
     else:
         try:
             client.messages.create = FunctionWrapper(
@@ -62,5 +77,14 @@ def instrument_anthropic(client: Anthropic | AsyncAnthropic) -> None:
             logger.debug("Successfully wrapped Messages.create")
         except Exception as e:
             logger.warning(f"Failed to wrap Messages.create: {type(e).__name__}: {e}")
+
+        try:
+            client.messages.stream = FunctionWrapper(
+                client.messages.stream,
+                messages_stream_patch_factory(tracer),
+            )
+            logger.debug("Successfully wrapped Messages.stream")
+        except Exception as e:
+            logger.warning(f"Failed to wrap Messages.stream: {type(e).__name__}: {e}")
 
     client._lilypad_instrumented = True  # pyright: ignore[reportAttributeAccessIssue]
