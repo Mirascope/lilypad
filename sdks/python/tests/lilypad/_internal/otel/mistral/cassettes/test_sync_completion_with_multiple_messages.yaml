@@ -1,0 +1,80 @@
+interactions:
+- request:
+    body: '{"model":"mistral-small-latest","messages":[{"content":"My name is Alice","role":"user"},{"content":"Nice
+      to meet you, Alice!","prefix":false,"role":"assistant"},{"content":"What''s
+      my name?","role":"user"}],"max_tokens":50,"stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '238'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/1.9.6
+    method: POST
+    uri: https://api.mistral.ai/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA0SQQU4CQRBFr9LUSieNAYYB7J2HcGHEkJqegmns7iJTNUFDSFy7duHOu3kCj2Bm
+        IW5fXvJf/glCAw6mzRRxufW0pXo+p7rG2aS+XflyNV1MFjMPFnxHqNSAmy6rqlqVVTm3kLihCA5S
+        EO0wjiVhjOOISqJgoRfcEbgTHDpOB90oP1MWcLOZBWXFeCFVZcFzOkTSwPmCy/Jsges9eQUHvkW9
+        +beGqJaDJwH3eIKQG3oBN7GwDTlIu+kIhTM4EOUDWEgkfz0dRwIHKBJEMQ+tyhw3HmMUcLmPcejJ
+        SnkYfuC+MxkTmSCmKO5i8FQU328fr9ybfS9qlGNjEo3Mz9fn+zqv89V9jiRiBuNIHZnhkpB3JpE1
+        IZtjG3xrPAo5U+xYfYuj4hrO56fzLwAAAP//AwC1C8iglAEAAA==
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 19 Aug 2025 06:05:35 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains
+      Transfer-Encoding:
+      - chunked
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      mistral-correlation-id:
+      - 0198c0ee-d758-71d7-b623-2f9adeccbe5c
+      x-envoy-upstream-service-time:
+      - '273'
+      x-kong-proxy-latency:
+      - '6'
+      x-kong-request-id:
+      - 0198c0ee-d758-71d7-b623-2f9adeccbe5c
+      x-kong-upstream-latency:
+      - '274'
+      x-ratelimit-limit-req-10-second:
+      - '60'
+      x-ratelimit-limit-tokens-minute:
+      - '2000000'
+      x-ratelimit-limit-tokens-month:
+      - '10000000000'
+      x-ratelimit-remaining-req-10-second:
+      - '56'
+      x-ratelimit-remaining-tokens-minute:
+      - '1999861'
+      x-ratelimit-remaining-tokens-month:
+      - '9999996945'
+      x-ratelimit-tokens-query-cost:
+      - '55'
+    status:
+      code: 200
+      message: OK
+version: 1

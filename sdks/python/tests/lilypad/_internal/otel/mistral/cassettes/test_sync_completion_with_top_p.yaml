@@ -1,0 +1,78 @@
+interactions:
+- request:
+    body: '{"model":"mistral-small-latest","messages":[{"content":"Write the number
+      42","role":"user"}],"top_p":0.9,"max_tokens":20,"stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '136'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/1.9.6
+    method: POST
+    uri: https://api.mistral.ai/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA0SOQU7DMBBFrxL9ZeRWaVKrxHsQB2BHUeUk08bgjCPPVAVVuTvKArp970v/3REG
+        OJxt723b7K2th721re9oqOywOze+ag5dDYM+k1ca4HYHa+1TY5vGYEoDRThMQTT7uJHJx7iJXkkU
+        BlfxF4K7Y85pmvWk6YtY4FoDTerjP6hbgz5NcyQNiR+4WgxS90m9wqEfvW4fq7VpTKEngXu/I/BA
+        33CVwTlwkPGUyUtiOETii44wmEj+gnKKBAcvEkQ9r7GaUjz1PkaB42uMaxEr8Xr9NlLB16mjXJTl
+        vi7LIkhxy0GVuPDijnzksnxJWX82ekur5+KZLzHIuF3lK2UqgmJZPpZfAAAA//8DADUx7bt0AQAA
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 19 Aug 2025 06:05:34 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains
+      Transfer-Encoding:
+      - chunked
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      mistral-correlation-id:
+      - 0198c0ee-d265-7e35-bc35-17b647594063
+      x-envoy-upstream-service-time:
+      - '312'
+      x-kong-proxy-latency:
+      - '12'
+      x-kong-request-id:
+      - 0198c0ee-d265-7e35-bc35-17b647594063
+      x-kong-upstream-latency:
+      - '313'
+      x-ratelimit-limit-req-10-second:
+      - '60'
+      x-ratelimit-limit-tokens-minute:
+      - '2000000'
+      x-ratelimit-limit-tokens-month:
+      - '10000000000'
+      x-ratelimit-remaining-req-10-second:
+      - '57'
+      x-ratelimit-remaining-tokens-minute:
+      - '1999916'
+      x-ratelimit-remaining-tokens-month:
+      - '9999997000'
+      x-ratelimit-tokens-query-cost:
+      - '29'
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,0 +1,56 @@
+interactions:
+- request:
+    body: '{"model":"invalid-model-xyz","messages":[{"content":"Hello","role":"user"}],"max_tokens":50,"stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '107'
+      content-type:
+      - application/json
+      host:
+      - api.mistral.ai
+      user-agent:
+      - mistral-client-python/1.9.6
+    method: POST
+    uri: https://api.mistral.ai/v1/chat/completions
+  response:
+    body:
+      string: '{"object":"error","message":"Invalid model: invalid-model-xyz","type":"invalid_model","param":null,"code":"1500"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '113'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 19 Aug 2025 06:05:36 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      mistral-correlation-id:
+      - 0198c0ee-de64-7ef2-a15b-d70013a674df
+      x-envoy-upstream-service-time:
+      - '44'
+      x-kong-proxy-latency:
+      - '7'
+      x-kong-request-id:
+      - 0198c0ee-de64-7ef2-a15b-d70013a674df
+      x-kong-upstream-latency:
+      - '45'
+    status:
+      code: 400
+      message: Bad Request
+version: 1
