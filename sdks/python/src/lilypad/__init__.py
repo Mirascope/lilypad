@@ -7,6 +7,7 @@ from .configuration import configure
 from .client import (
     Lilypad,
     AsyncLilypad,
+    get_client,
     get_sync_client,
     get_async_client,
     create_transport_client,
@@ -27,6 +28,7 @@ __all__ = [
     "configure",
     "create_transport_client",
     "get_async_client",
+    "get_client",
     "get_sync_client",
     "instrument_anthropic",
     "instrument_openai",
