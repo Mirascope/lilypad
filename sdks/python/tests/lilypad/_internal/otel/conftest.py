@@ -7,24 +7,10 @@ from typing import Generator
 
 import pytest
 from opentelemetry import trace
-from opentelemetry.trace import ProxyTracerProvider
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-
-from .test_utils import ReadOnlyPropertyMock, PartialReadOnlyPropertyMock
-
-
-@pytest.fixture
-def readonly_mock():
-    """Fixture providing a mock with all read-only properties."""
-    return ReadOnlyPropertyMock()
-
-
-@pytest.fixture
-def partial_readonly_mock():
-    """Fixture providing a mock with mixed writable and read-only properties."""
-    return PartialReadOnlyPropertyMock()
+from opentelemetry.trace import ProxyTracerProvider
 
 
 @pytest.fixture
@@ -49,8 +35,4 @@ def span_exporter() -> Generator[InMemorySpanExporter, None, None]:
     exporter.clear()
 
 
-__all__ = [
-    "partial_readonly_mock",
-    "readonly_mock",
-    "span_exporter",
-]
+__all__ = ["span_exporter"]

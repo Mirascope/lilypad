@@ -145,8 +145,6 @@ docstring-code-format = true
 "functools.lru_cache".msg = "This function does not retain type information for the wrapped function's arguments; The `lru_cache` function from `_utils` should be used instead"
 
 [tool.ruff.lint.isort]
-length-sort = true
-length-sort-straight = true
 combine-as-imports = true
 extra-standard-library = ["typing_extensions"]
 known-first-party = ["lilypad", "tests"]
