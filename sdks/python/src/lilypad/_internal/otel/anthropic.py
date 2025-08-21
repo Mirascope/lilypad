@@ -307,13 +307,10 @@ def instrument_anthropic(
 
     if isinstance(client, Anthropic | AnthropicBedrock | AnthropicVertex):
         instrumentor.instrument_generate(client.messages.create)
-        # TODO: add support for `.stream`, which has a context manager
-        # instrumentor.instrument_generate(client.messages.stream, handle_stream=True)
+        instrumentor.instrument_generate(client.messages.stream)
     else:
         instrumentor.instrument_async_generate(client.messages.create)
-        # TODO: add support for `.stream`, which has a context manager
-        # instrumentor.instrument_async_generate(
-        #     client.messages.stream, handle_stream=True
-        # )
+        # NOTE: this method is not awaitable, so we use the sync path for async context managers
+        instrumentor.instrument_generate(client.messages.stream)
 
     _utils.mark_client_as_instrumented(client)

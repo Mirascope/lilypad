@@ -243,11 +243,11 @@ class _OpenAIInstrumentor(
         chunk: ChatCompletionChunk,
     ) -> tuple[GenAIResponseAttributes, list[ChoiceDelta]]:
         """[MISSING DOCSTRING]"""
-        response_attributes = GenAIResponseAttributes(
-            GEN_AI_RESPONSE_ID=chunk.id,
-            GEN_AI_RESPONSE_MODEL=chunk.model,
-            GEN_AI_OPENAI_REQUEST_SERVICE_TIER=chunk.service_tier,
-        )
+        response_attributes = GenAIResponseAttributes()
+        choice_deltas: list[ChoiceDelta] = []
+        response_attributes.GEN_AI_RESPONSE_ID = chunk.id
+        response_attributes.GEN_AI_RESPONSE_MODEL = chunk.model
+        response_attributes.GEN_AI_OPENAI_REQUEST_SERVICE_TIER = chunk.service_tier
         if chunk.usage:
             response_attributes.GEN_AI_USAGE_INPUT_TOKENS = chunk.usage.prompt_tokens
             response_attributes.GEN_AI_USAGE_OUTPUT_TOKENS = (
@@ -255,7 +255,6 @@ class _OpenAIInstrumentor(
             )
 
         finish_reasons = []
-        choice_deltas = []
         for choice in chunk.choices:
             if choice.finish_reason:
                 finish_reasons.append(choice.finish_reason)
@@ -285,17 +284,15 @@ def instrument_openai(
 
     if isinstance(client, OpenAI | AzureOpenAI):
         instrumentor.instrument_generate(client.chat.completions.create)
-        # TODO: add support for `.stream`, which has a context manager
-        # instrumentor.instrument_generate(
-        #     client.chat.completions.stream, handle_stream=True
-        # )
         instrumentor.instrument_generate(client.chat.completions.parse)
+        # NOTE: we don't actually need to instrument `.stream` as it uses `.create` with
+        # `stream=True` under the hood, which we've already instrumented
+        # instrumentor.instrument_generate(client.chat.completions.stream)
     else:
         instrumentor.instrument_async_generate(client.chat.completions.create)
-        # TODO: add support for `.stream`, which has a context manager
-        # instrumentor.instrument_async_generate(
-        #     client.chat.completions.stream, handle_stream=True
-        # )
         instrumentor.instrument_async_generate(client.chat.completions.parse)
+        # NOTE: we don't actually need to instrument `.stream` as it uses `.create` with
+        # `stream=True` under the hood, which we've already instrumented
+        # instrumentor.instrument_generate(client.chat.completions.stream)
 
     _utils.mark_client_as_instrumented(client)

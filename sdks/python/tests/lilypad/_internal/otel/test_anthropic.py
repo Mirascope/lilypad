@@ -284,6 +284,117 @@ async def test_async_anthropic_streaming(
 
 
 @pytest.mark.vcr()
+def test_anthropic_streaming_with_context_manager(
+    client: Anthropic, span_exporter: InMemorySpanExporter
+) -> None:
+    """Test streaming with `.stream` context manager"""
+    stream_context_manager = client.messages.stream(
+        model="claude-3-5-sonnet-20241022",
+        messages=[{"role": "user", "content": "Hello, say 'Hi' back to me"}],
+        max_tokens=200,
+    )
+
+    with stream_context_manager as stream:
+        chunks = list(stream)
+    assert len(chunks) > 0
+
+    spans = span_exporter.get_finished_spans()
+    assert extract_span_data(spans[0]) == snapshot(
+        {
+            "name": "chat claude-3-5-sonnet-20241022",
+            "attributes": {
+                "gen_ai.system": "anthropic",
+                "gen_ai.operation.name": "chat",
+                "gen_ai.request.model": "claude-3-5-sonnet-20241022",
+                "gen_ai.request.max_tokens": 200,
+                "server.address": "api.anthropic.com",
+                "gen_ai.response.id": "msg_01EVsHjET3nRHxwr1bbuxK96",
+                "gen_ai.response.model": "claude-3-5-sonnet-20241022",
+                "gen_ai.response.finish_reasons": ("end_turn",),
+                "gen_ai.usage.input_tokens": 17,
+                "gen_ai.usage.output_tokens": 10,
+            },
+            "status": {"status_code": "UNSET", "description": None},
+            "events": [
+                {
+                    "name": "gen_ai.user.message",
+                    "attributes": {
+                        "gen_ai.system": "anthropic",
+                        "content": "Hello, say 'Hi' back to me",
+                    },
+                },
+                {
+                    "name": "gen_ai.choice",
+                    "attributes": {
+                        "gen_ai.system": "anthropic",
+                        "index": 0,
+                        "message": '{"role":"assistant","content":"Hi! How are you today?"}',
+                        "finish_reason": "end_turn",
+                    },
+                },
+            ],
+        }
+    )
+
+
+@pytest.mark.vcr()
+@pytest.mark.asyncio
+async def test_async_anthropic_streaming_with_context_manager(
+    async_client: AsyncAnthropic, span_exporter: InMemorySpanExporter
+) -> None:
+    """Test streaming with `.stream` context manager"""
+    async_stream_context_manager = async_client.messages.stream(
+        model="claude-3-5-sonnet-20241022",
+        messages=[{"role": "user", "content": "Hello, say 'Hi' back to me"}],
+        max_tokens=200,
+    )
+
+    chunks = []
+    async with async_stream_context_manager as stream:
+        async for chunk in stream:
+            chunks.append(chunk)
+    assert len(chunks) > 0
+
+    spans = span_exporter.get_finished_spans()
+    assert extract_span_data(spans[0]) == snapshot(
+        {
+            "name": "chat claude-3-5-sonnet-20241022",
+            "attributes": {
+                "gen_ai.system": "anthropic",
+                "gen_ai.operation.name": "chat",
+                "gen_ai.request.model": "claude-3-5-sonnet-20241022",
+                "gen_ai.request.max_tokens": 200,
+                "server.address": "api.anthropic.com",
+                "gen_ai.response.id": "msg_0148n4FQ8wNUD2Gsp1rqkgEf",
+                "gen_ai.response.model": "claude-3-5-sonnet-20241022",
+                "gen_ai.response.finish_reasons": ("end_turn",),
+                "gen_ai.usage.input_tokens": 17,
+                "gen_ai.usage.output_tokens": 9,
+            },
+            "status": {"status_code": "UNSET", "description": None},
+            "events": [
+                {
+                    "name": "gen_ai.user.message",
+                    "attributes": {
+                        "gen_ai.system": "anthropic",
+                        "content": "Hello, say 'Hi' back to me",
+                    },
+                },
+                {
+                    "name": "gen_ai.choice",
+                    "attributes": {
+                        "gen_ai.system": "anthropic",
+                        "index": 0,
+                        "message": '{"role":"assistant","content":"Hi! How are you?"}',
+                        "finish_reason": "end_turn",
+                    },
+                },
+            ],
+        }
+    )
+
+
+@pytest.mark.vcr()
 def test_anthropic_tool_message_resinsertion(
     client: Anthropic, span_exporter: InMemorySpanExporter
 ) -> None:

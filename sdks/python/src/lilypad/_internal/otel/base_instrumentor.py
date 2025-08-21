@@ -2,8 +2,8 @@
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Generic, cast, overload
 
@@ -12,9 +12,15 @@ from opentelemetry.semconv.schemas import Schemas
 from opentelemetry.trace import Span, SpanKind, Status, StatusCode, Tracer, get_tracer
 from wrapt import FunctionWrapper
 
-from .stream_wrappers import AsyncStream, AsyncStreamWrapper, Stream, StreamWrapper
+from .stream_wrappers import (
+    AsyncStream,
+    AsyncStreamWrapper,
+    Stream,
+    StreamWrapper,
+)
 from .types import (
     AsyncMethodWrapper,
+    AsyncStreamContextManager,
     BoundAsyncMethod,
     BoundMethod,
     ChoiceDelta,
@@ -28,6 +34,7 @@ from .types import (
     P,
     ResponseT,
     StreamChunkT,
+    StreamContextManager,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,10 +126,32 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
                 try:
                     response = wrapped(*args, **kwargs)
                     if isinstance(response, Stream):
-                        stream_wrapper = StreamWrapper[StreamChunkT](
+                        wrapped_stream = StreamWrapper[StreamChunkT](
                             span, response, self._process_chunk
                         )
-                        return cast(ResponseT, stream_wrapper)
+                        return cast(ResponseT, wrapped_stream)
+                    if isinstance(response, StreamContextManager):
+
+                        @contextmanager
+                        def stream_context_manager() -> Iterator[Stream]:
+                            with response as stream:
+                                yield StreamWrapper[StreamChunkT](
+                                    span, stream, self._process_chunk
+                                )
+
+                        return cast(ResponseT, stream_context_manager())
+                    if isinstance(response, AsyncStreamContextManager):
+
+                        @asynccontextmanager
+                        async def async_stream_context_manager() -> AsyncIterator[
+                            AsyncStream
+                        ]:
+                            async with response as async_stream:
+                                yield AsyncStreamWrapper[StreamChunkT](
+                                    span, async_stream, self._process_chunk
+                                )
+
+                        return cast(ResponseT, async_stream_context_manager())
                     if span.is_recording():
                         choice_events, response_attributes = self._process_response(
                             response
@@ -164,10 +193,10 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
                 try:
                     response = await wrapped(*args, **kwargs)
                     if isinstance(response, AsyncStream):
-                        async_stream_wrapper = AsyncStreamWrapper[StreamChunkT](
+                        wrapped_async_stream = AsyncStreamWrapper[StreamChunkT](
                             span, response, self._process_chunk
                         )
-                        return cast(ResponseT, async_stream_wrapper)
+                        return cast(ResponseT, wrapped_async_stream)
                     if span.is_recording():
                         choice_events, response_attributes = self._process_response(
                             response

@@ -1,7 +1,9 @@
 """Types for OpenTelemetry provider-agnostic LLM handling."""
 
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, fields
+from types import TracebackType
 from typing import (
     Any,
     Literal,
@@ -10,6 +12,7 @@ from typing import (
     Sequence,
     TypeAlias,
     TypeVar,
+    runtime_checkable,
 )
 from typing_extensions import Required, TypedDict
 
@@ -28,6 +31,7 @@ ResponseT = TypeVar("ResponseT")
 CovariantResponseT = TypeVar("CovariantResponseT", covariant=True, bound=object)
 StreamChunkT = TypeVar("StreamChunkT")
 KwargsT = TypeVar("KwargsT", bound="BaseKwargs")
+CovariantChunkT = TypeVar("CovariantChunkT", covariant=True)
 
 
 class FunctionCall(TypedDict):
@@ -469,3 +473,73 @@ class ToolMessageEvent(BaseMessageEvent):
 MessageEvent: TypeAlias = (
     SystemMessageEvent | UserMessageEvent | AssistantMessageEvent | ToolMessageEvent
 )
+
+
+@runtime_checkable
+class Stream(Protocol[CovariantChunkT]):
+    """Protocol for synchronous stream objects."""
+
+    def __iter__(self) -> Iterator[CovariantChunkT]:
+        """Returns an iterator for the stream."""
+        raise NotImplementedError
+
+    def __next__(self) -> CovariantChunkT:
+        """Get the next item from the stream."""
+        raise NotImplementedError
+
+    def close(self) -> None:
+        """Close the stream and release resources."""
+        raise NotImplementedError
+
+
+@runtime_checkable
+class StreamContextManager(Protocol[CovariantChunkT]):
+    """Protocol for context manager objects that yield synchronous stream objects."""
+
+    def __enter__(self) -> Stream[CovariantChunkT]:
+        """Enter the context and return a stream."""
+        raise NotImplementedError
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        """Exit the context and clean up resources."""
+        raise NotImplementedError
+
+
+@runtime_checkable
+class AsyncStream(Protocol[CovariantChunkT]):
+    """Protocol for asynchronous stream objects."""
+
+    def __aiter__(self) -> AsyncIterator[CovariantChunkT]:
+        """Returns an async iterator for the stream."""
+        raise NotImplementedError
+
+    async def __anext__(self) -> CovariantChunkT:
+        """Get the next item from the async stream."""
+        raise NotImplementedError
+
+    async def close(self) -> None:
+        """Close the async stream and release resources."""
+        raise NotImplementedError
+
+
+@runtime_checkable
+class AsyncStreamContextManager(Protocol[CovariantChunkT]):
+    """Protocol for async context manager objects that yield asynchronous stream objects."""
+
+    async def __aenter__(self) -> AsyncStream[CovariantChunkT]:
+        """Enter the async context and return an async stream."""
+        raise NotImplementedError
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        """Exit the async context and clean up resources."""
+        raise NotImplementedError
