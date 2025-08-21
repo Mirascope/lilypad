@@ -1,6 +1,7 @@
 """Configuration utilities for Lilypad SDK initialization and setup."""
 
 import logging
+import os
 from secrets import token_bytes
 
 from opentelemetry import trace

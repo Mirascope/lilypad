@@ -9,9 +9,11 @@ from concurrent.futures import ThreadPoolExecutor
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import SpanProcessor, ReadableSpan
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import SpanKind, get_current_span
 
 from .types import SpanStartEvent
 from .exporters import ImmediateStartExporter
+from .utils import format_span_id, format_trace_id
 
 
 class LLMSpanProcessor(SpanProcessor):
@@ -118,4 +120,30 @@ class LLMSpanProcessor(SpanProcessor):
         Returns:
             SpanStartEvent with minimal required data.
         """
-        raise NotImplementedError()
+        span_context = span.get_span_context()
+        parent_span_id = None
+        
+        if parent_context:
+            parent_span = get_current_span(parent_context)
+            if parent_span and parent_span.get_span_context().is_valid:
+                parent_span_id = format_span_id(parent_span.get_span_context().span_id)
+        elif span.parent:
+            parent_span_id = format_span_id(span.parent.span_id)
+        
+        kind_map = {
+            SpanKind.CLIENT: "CLIENT",
+            SpanKind.SERVER: "SERVER",
+            SpanKind.PRODUCER: "PRODUCER",
+            SpanKind.CONSUMER: "CONSUMER",
+            SpanKind.INTERNAL: "INTERNAL",
+        }
+        
+        return SpanStartEvent(
+            trace_id=format_trace_id(span_context.trace_id),
+            span_id=format_span_id(span_context.span_id),
+            parent_span_id=parent_span_id,
+            name=span.name,
+            start_time=span.start_time,
+            kind=kind_map.get(span.kind, "INTERNAL"),
+            attributes=dict(span.attributes or {})
+        )
