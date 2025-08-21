@@ -13,6 +13,7 @@ def format_trace_id(trace_id: int) -> str:
 
     Returns:
         Formatted trace ID as hex string.
+        32-character hexadecimal string representation.
     """
     return format(trace_id, "032x")
 
@@ -25,5 +26,6 @@ def format_span_id(span_id: int) -> str:
 
     Returns:
         Formatted span ID as hex string.
+        16-character hexadecimal string representation.
     """
     return format(span_id, "016x")

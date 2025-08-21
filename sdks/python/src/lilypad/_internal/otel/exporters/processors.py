@@ -9,9 +9,11 @@ from concurrent.futures import ThreadPoolExecutor
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import SpanProcessor, ReadableSpan
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import SpanKind, get_current_span
 
-from .types import SpanStartEvent
+from .types import SpanStartEvent, SpanKindLiteral
 from .exporters import ImmediateStartExporter
+from .utils import format_span_id, format_trace_id
 
 
 class LLMSpanProcessor(SpanProcessor):
@@ -66,8 +68,6 @@ class LLMSpanProcessor(SpanProcessor):
         if self._shutdown:
             return
 
-        # Note: _create_start_event is not implemented yet
-        # For now, pass the span directly to export_start_event
         self.executor.submit(self.start_exporter.export_start_event, span)
 
     def on_end(self, span: ReadableSpan) -> None:
@@ -118,4 +118,36 @@ class LLMSpanProcessor(SpanProcessor):
         Returns:
             SpanStartEvent with minimal required data.
         """
-        raise NotImplementedError()
+        span_context = span.get_span_context()
+        if not span_context:
+            raise ValueError("Span context is required")
+
+        parent_span_id = None
+
+        if parent_context:
+            parent_span = get_current_span(parent_context)
+            if parent_span and parent_span.get_span_context().is_valid:
+                parent_span_id = format_span_id(parent_span.get_span_context().span_id)
+        elif span.parent:
+            parent_span_id = format_span_id(span.parent.span_id)
+
+        kind_map: dict[SpanKind, SpanKindLiteral] = {
+            SpanKind.CLIENT: "CLIENT",
+            SpanKind.SERVER: "SERVER",
+            SpanKind.PRODUCER: "PRODUCER",
+            SpanKind.CONSUMER: "CONSUMER",
+            SpanKind.INTERNAL: "INTERNAL",
+        }
+
+        kind: SpanKindLiteral = kind_map.get(span.kind, "INTERNAL")
+        start_time = span.start_time or 0
+
+        return SpanStartEvent(
+            trace_id=format_trace_id(span_context.trace_id),
+            span_id=format_span_id(span_context.span_id),
+            parent_span_id=parent_span_id,
+            name=span.name,
+            start_time=start_time,
+            kind=kind,
+            attributes=dict(span.attributes or {}),
+        )
