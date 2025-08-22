@@ -1,0 +1,9 @@
+paths:
+  /api/v1/traces:
+    post:
+      x-fern-sdk-group-name: telemetry
+      x-fern-sdk-method-name: send_traces
+  /health:
+    get:
+      x-fern-sdk-group-name: health
+      x-fern-sdk-method-name: check

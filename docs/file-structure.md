@@ -9,6 +9,7 @@ lilypad/
 ├── src/                    # Frontend React application
 ├── worker/                 # Backend Cloudflare Workers
 ├── db/                     # Database configuration
+├── sdks/                   # Client SDKs
 ├── docs/                   # Documentation
 ├── public/                 # Static assets
 ├── docker/                 # Docker development environment
@@ -66,7 +67,9 @@ The serverless backend running on Cloudflare Workers that handles API requests a
 worker/
 ├── api/                  # API handlers
 │   ├── index.ts            # API route handlers
-│   └── router.ts           # API router configuration
+│   ├── router.ts           # API router configuration
+│   ├── traces.ts           # OpenTelemetry traces endpoint
+│   └── traces.test.ts      # Traces endpoint tests
 ├── auth/                 # Authentication handlers
 │   ├── middleware/         # Auth middleware
 │   │   ├── index.ts          # Middleware exports
@@ -147,6 +150,34 @@ db/
 - **Schema-first design**: Organized table definitions with proper foreign key relationships
 - **Migration system**: Version-controlled database schema changes
 - **Vitest**: Test runner with comprehensive test coverage and isolated test environment
+
+## Client SDKs (`sdks/`)
+
+Auto-generated client SDKs for interacting with the Lilypad API.
+
+```text
+sdks/
+├── fern/                  # Fern configuration and OpenAPI specs
+│   ├── fern.config.json      # Fern CLI configuration
+│   ├── generators.yml        # SDK generator configuration
+│   ├── openapi.json          # OpenAPI specification (generated)
+│   └── openapi-overrides.yml # SDK method name overrides
+└─── python/                # Python SDK
+    ├── src/
+    │   └── lilypad/
+    │       ├── _generated/   # Generated SDK code
+    │       ├── _internal/    # Internal instrumentation code
+    │       ├── api_client.py # Public API wrapper
+    │       └── client.py     # Main client module
+    ├── examples/           # Example usage scripts
+    └── tests/              # SDK tests
+```
+
+**Tooling Choices**:
+
+- **Fern**: SDK generation from OpenAPI specification
+- **OpenAPI 3.1**: API specification format
+- **Automatic generation**: CI/CD validation of SDK generation
 
 ## Static Assets (`public/`)
 

@@ -36,6 +36,10 @@
     "lint:ci": "bun run codespell; bun run lint; bun run lint:python-sdk",
     "fix": "bun run format; bun run lint:eslint:fix",
     "fix:python-sdk": "cd sdks/python && uv run ruff check --fix . && uv run ruff format .",
+    "sdk:extract-openapi": "curl -s http://localhost:3000/openapi.json | npx prettier --parser json > sdks/fern/openapi.json",
+    "sdk:generate": "cd sdks/fern && npx fern generate --group python-sdk --local --force && bun run fix:python-sdk",
+    "sdk:validate": "bun run sdk:extract-openapi && git diff --exit-code sdks/fern/openapi.json",
+    "sdk:generate-all": "bun run sdk:extract-openapi && bun run sdk:generate",
     "prepare": "husky",
     "pre-commit": "lint-staged"
   },
@@ -78,6 +82,7 @@
     "drizzle-kit": "^0.31.4",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",
+    "fern-api": "^0.66.21",
     "globals": "^16.3.0",
     "husky": "^9.1.7",
     "jsdom": "^26.0.0",
