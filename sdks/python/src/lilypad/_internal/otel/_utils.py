@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 
 @runtime_checkable
 class InstrumentedClient(Protocol):
-    """[MISSING DOCSTRING]"""
+    """Protocol for clients that have been instrumented for telemetry."""
 
     __lilypad_instrumented_client__: bool
 
 
 def client_is_already_instrumented(client: Any) -> bool:
-    """[MISSING DOCSTRING]"""
+    """Returns whether a client has already been instrumented."""
     if (
         isinstance(client, InstrumentedClient)
         and client.__lilypad_instrumented_client__
@@ -30,12 +30,12 @@ def client_is_already_instrumented(client: Any) -> bool:
 
 
 def mark_client_as_instrumented(client: Any) -> None:
-    """[MISSING DOCSTRING]"""
+    """Marks a client as already instrumented for telemetry."""
     cast(InstrumentedClient, client).__lilypad_instrumented_client__ = True
 
 
 def serialize_attribute_value(value: Any) -> AttributeValue | None:
-    """[MISSING DOCSTRING]"""
+    """Returns a serialized attribute value suitable for OpenTelemetry."""
     if value is None:
         return None
 

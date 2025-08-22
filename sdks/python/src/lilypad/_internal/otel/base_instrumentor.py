@@ -41,13 +41,13 @@ logger = logging.getLogger(__name__)
 
 
 class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
-    """[MISSING DOCSTRING]"""
+    """Abstract base class for instrumenting LLM provider clients with OpenTelemetry."""
 
     tracer: Tracer
-    """[MISSING DOCSTRING]"""
+    """OpenTelemetry tracer instance for creating spans."""
 
     def __init__(self) -> None:
-        """[MISSING DOCSTRING]"""
+        """Initializes the instrumentor with a configured tracer."""
         try:
             lilypad_version = version("lilypad-sdk")
         except PackageNotFoundError:  # pragma: no cover
@@ -62,7 +62,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
 
     @contextmanager
     def _span(self, attributes: GenAIRequestAttributes) -> Iterator[Span]:
-        """[MISSING DOCSTRING]"""
+        """Yields a configured span for the LLM operation."""
         with self.tracer.start_as_current_span(
             name=f"{attributes.GEN_AI_OPERATION_NAME} {attributes.GEN_AI_REQUEST_MODEL or 'unknown'}",
             kind=SpanKind.CLIENT,
@@ -77,7 +77,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
         method: BoundMethod[P, ResponseT],
         wrapper: MethodWrapper[P, ResponseT, ClientT],
     ) -> None:
-        """[MISSING DOCSTRING]"""
+        """Wraps a synchronous method with instrumentation."""
         ...
 
     @overload
@@ -86,7 +86,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
         method: BoundAsyncMethod[P, ResponseT],
         wrapper: AsyncMethodWrapper[P, ResponseT, ClientT],
     ) -> None:
-        """[MISSING DOCSTRING]"""
+        """Wraps an asynchronous method with instrumentation."""
         ...
 
     @staticmethod
@@ -95,7 +95,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
         wrapper: MethodWrapper[P, ResponseT, ClientT]
         | AsyncMethodWrapper[P, ResponseT, ClientT],
     ) -> None:
-        """[MISSING DOCSTRING]"""
+        """Wraps a method with the provided wrapper function."""
         parent = method.__self__
         name = method.__name__
         target = f"{parent.__class__.__name__}.{name}"
@@ -109,7 +109,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
         self,
         method: BoundMethod[P, ResponseT],
     ) -> None:
-        """[MISSING DOCSTRING]"""
+        """Instruments a synchronous generation method with telemetry."""
 
         def wrapper(
             wrapped: BoundMethod[P, ResponseT],
@@ -176,7 +176,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
         self,
         method: BoundAsyncMethod[P, ResponseT],
     ) -> None:
-        """[MISSING DOCSTRING]"""
+        """Instruments an asynchronous generation method with telemetry."""
 
         async def wrapper(
             wrapped: BoundAsyncMethod[P, ResponseT],
@@ -223,7 +223,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
         kwargs: KwargsT,
         client: ClientT,
     ) -> GenAIRequestAttributes:
-        """[MISSING DOCSTRING]"""
+        """Returns request attributes extracted from provider kwargs."""
         raise NotImplementedError
 
     @staticmethod
@@ -231,7 +231,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
     def _process_messages(
         kwargs: KwargsT,
     ) -> list[MessageEvent]:
-        """[MISSING DOCSTRING]"""
+        """Returns standardized message events from provider kwargs."""
         raise NotImplementedError
 
     @staticmethod
@@ -239,7 +239,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
     def _process_response(
         response: ResponseT,
     ) -> tuple[list[ChoiceEvent], GenAIResponseAttributes]:
-        """[MISSING DOCSTRING]"""
+        """Returns choice events and response attributes from provider response."""
         raise NotImplementedError
 
     @staticmethod
@@ -247,5 +247,5 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
     def _process_chunk(
         chunk: StreamChunkT,
     ) -> tuple[GenAIResponseAttributes, list[ChoiceDelta]]:
-        """[MISSING DOCSTRING]"""
+        """Returns response attributes and choice deltas from streaming chunk."""
         raise NotImplementedError
