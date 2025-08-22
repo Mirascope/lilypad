@@ -29,9 +29,11 @@ ClientT = TypeVar("ClientT")
 ContravariantClientT = TypeVar("ContravariantClientT", contravariant=True)
 ResponseT = TypeVar("ResponseT")
 CovariantResponseT = TypeVar("CovariantResponseT", covariant=True, bound=object)
-StreamChunkT = TypeVar("StreamChunkT")
-KwargsT = TypeVar("KwargsT", bound="BaseKwargs")
+ChunkT = TypeVar("ChunkT")
 CovariantChunkT = TypeVar("CovariantChunkT", covariant=True)
+ContravariantChunkT = TypeVar("ContravariantChunkT", contravariant=True)
+KwargsT = TypeVar("KwargsT", bound="BaseKwargs")
+StreamT = TypeVar("StreamT", bound="Stream | AsyncStream")
 
 
 class FunctionCall(TypedDict):

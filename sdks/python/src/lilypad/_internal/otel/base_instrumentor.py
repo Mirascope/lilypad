@@ -23,6 +23,7 @@ from .types import (
     AsyncStreamContextManager,
     BoundAsyncMethod,
     BoundMethod,
+    ChunkT,
     ChoiceDelta,
     ChoiceEvent,
     ClientT,
@@ -33,14 +34,13 @@ from .types import (
     MethodWrapper,
     P,
     ResponseT,
-    StreamChunkT,
     StreamContextManager,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
+class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, ChunkT], ABC):
     """Abstract base class for instrumenting LLM provider clients with OpenTelemetry."""
 
     tracer: Tracer
@@ -126,7 +126,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
                 try:
                     response = wrapped(*args, **kwargs)
                     if isinstance(response, Stream):
-                        wrapped_stream = StreamWrapper[StreamChunkT](
+                        wrapped_stream = StreamWrapper[ChunkT](
                             span, response, self._process_chunk
                         )
                         return cast(ResponseT, wrapped_stream)
@@ -135,7 +135,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
                         @contextmanager
                         def stream_context_manager() -> Iterator[Stream]:
                             with response as stream:
-                                yield StreamWrapper[StreamChunkT](
+                                yield StreamWrapper[ChunkT](
                                     span, stream, self._process_chunk
                                 )
 
@@ -147,7 +147,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
                             AsyncStream
                         ]:
                             async with response as async_stream:
-                                yield AsyncStreamWrapper[StreamChunkT](
+                                yield AsyncStreamWrapper[ChunkT](
                                     span, async_stream, self._process_chunk
                                 )
 
@@ -193,7 +193,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
                 try:
                     response = await wrapped(*args, **kwargs)
                     if isinstance(response, AsyncStream):
-                        wrapped_async_stream = AsyncStreamWrapper[StreamChunkT](
+                        wrapped_async_stream = AsyncStreamWrapper[ChunkT](
                             span, response, self._process_chunk
                         )
                         return cast(ResponseT, wrapped_async_stream)
@@ -245,7 +245,7 @@ class BaseInstrumentor(Generic[ClientT, KwargsT, ResponseT, StreamChunkT], ABC):
     @staticmethod
     @abstractmethod
     def _process_chunk(
-        chunk: StreamChunkT,
+        chunk: ChunkT,
     ) -> tuple[GenAIResponseAttributes, list[ChoiceDelta]]:
         """Returns response attributes and choice deltas from streaming chunk."""
         raise NotImplementedError

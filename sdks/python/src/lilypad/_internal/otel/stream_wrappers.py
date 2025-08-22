@@ -19,31 +19,29 @@ import logging
 from abc import ABC
 from collections.abc import AsyncIterator, Iterator
 from types import TracebackType
-from typing import Generic, Protocol, TypeVar
+from typing import Generic, Protocol
 
 from opentelemetry.semconv.attributes import error_attributes
 from opentelemetry.trace import Span, Status, StatusCode
 
-logger = logging.getLogger(__name__)
 from .types import (
     AsyncStream,
     ChoiceDelta,
     ChoiceEvent,
+    ChunkT,
+    ContravariantChunkT,
     FunctionCall,
     GenAIResponseAttributes,
     Message,
     SpanEvent,
     Stream,
+    StreamT,
     ToolCall,
     ToolCallDelta,
     ToolCallDeltaProtocol,
 )
 
-T = TypeVar("T")
-ChunkT = TypeVar("ChunkT")
-CovariantChunkT = TypeVar("CovariantChunkT", covariant=True)
-ContravariantChunkT = TypeVar("ContravariantChunkT", contravariant=True)
-StreamT = TypeVar("StreamT", bound="Stream | AsyncStream")
+logger = logging.getLogger(__name__)
 
 
 class ToolCallBuffer:
