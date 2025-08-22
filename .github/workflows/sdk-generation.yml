@@ -1,0 +1,143 @@
+name: SDK Generation Validation
+
+on:
+  pull_request:
+    paths:
+      - 'worker/**'
+      - 'sdks/fern/**'
+      - '.github/workflows/sdk-generation.yml'
+  push:
+    branches:
+      - main
+      - v1
+
+concurrency:
+  group: sdk-generation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      ENVIRONMENT: ci
+      SITE_URL: http://localhost:3000
+      GITHUB_CLIENT_ID: dummy
+      GITHUB_CLIENT_SECRET: dummy
+      GOOGLE_CLIENT_ID: dummy
+      GOOGLE_CLIENT_SECRET: dummy
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create .dev.vars file
+        run: |
+          cat > .dev.vars << EOF
+          DATABASE_URL=${{ env.DATABASE_URL }}
+          ENVIRONMENT=${{ env.ENVIRONMENT }}
+          SITE_URL=${{ env.SITE_URL }}
+          GITHUB_CLIENT_ID=${{ env.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET=${{ env.GITHUB_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID=${{ env.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ env.GOOGLE_CLIENT_SECRET }}
+          EOF
+
+      - name: Start server with health check
+        run: |
+          NODE_ENV=development bun run dev &
+          echo $! > server.pid
+
+          echo "Waiting for server to be ready..."
+          for i in {1..30}; do
+            if curl -f -s http://localhost:3000/openapi.json > /dev/null 2>&1; then
+              echo "Server is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+          if [ $i -eq 30 ]; then
+            echo "Server failed to start within 60 seconds"
+            if [ -f server.pid ]; then
+              kill $(cat server.pid) 2>/dev/null || true
+            fi
+            exit 1
+          fi
+
+      - name: Extract OpenAPI spec
+        run: bun run sdk:extract-openapi
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) 2>/dev/null || echo "Server already stopped"
+            rm -f server.pid
+          fi
+
+      - name: Check OpenAPI spec diff
+        run: |
+          if git diff --exit-code sdks/fern/openapi.json; then
+            echo "OpenAPI spec is up to date"
+          else
+            echo "OpenAPI spec has changed. Please run 'bun run sdk:extract-openapi' and commit the changes."
+            git diff sdks/fern/openapi.json
+            exit 1
+          fi
+
+      - name: Generate Python SDK
+        run: bun run sdk:generate
+
+      - name: Verify generated SDK is valid
+        run: |
+          cd sdks/python
+          uv sync --dev
+          uv run python -c "from lilypad._generated import Lilypad; print('✅ SDK import successful')"
+
+      - name: Check SDK diff
+        run: |
+          if git diff --exit-code sdks/python/src/lilypad/_generated; then
+            echo "SDK is up to date"
+          else
+            echo "Generated SDK has changed. Please run 'bun run sdk:generate' and commit the changes."
+            git diff --stat sdks/python/src/lilypad/_generated
+            exit 1
+          fi
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdk-generation-artifacts
+          path: |
+            sdks/fern/openapi.json
+            sdks/python/src/lilypad/_generated/
+          retention-days: 7
