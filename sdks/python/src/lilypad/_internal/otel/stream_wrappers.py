@@ -19,19 +19,21 @@ import logging
 from abc import ABC
 from collections.abc import AsyncIterator, Iterator
 from types import TracebackType
-from typing import Generic, Protocol, TypeVar, runtime_checkable
+from typing import Generic, Protocol, TypeVar
 
 from opentelemetry.semconv.attributes import error_attributes
 from opentelemetry.trace import Span, Status, StatusCode
 
 logger = logging.getLogger(__name__)
 from .types import (
+    AsyncStream,
     ChoiceDelta,
     ChoiceEvent,
     FunctionCall,
     GenAIResponseAttributes,
     Message,
     SpanEvent,
+    Stream,
     ToolCall,
     ToolCallDelta,
     ToolCallDeltaProtocol,
@@ -42,40 +44,6 @@ ChunkT = TypeVar("ChunkT")
 CovariantChunkT = TypeVar("CovariantChunkT", covariant=True)
 ContravariantChunkT = TypeVar("ContravariantChunkT", contravariant=True)
 StreamT = TypeVar("StreamT", bound="Stream | AsyncStream")
-
-
-@runtime_checkable
-class Stream(Protocol[CovariantChunkT]):
-    """Protocol for synchronous stream objects."""
-
-    def __iter__(self) -> Iterator[CovariantChunkT]:
-        """Returns an iterator for the stream."""
-        raise NotImplementedError
-
-    def __next__(self) -> CovariantChunkT:
-        """Get the next item from the stream."""
-        raise NotImplementedError
-
-    def close(self) -> None:
-        """Close the stream and release resources."""
-        raise NotImplementedError
-
-
-@runtime_checkable
-class AsyncStream(Protocol[CovariantChunkT]):
-    """Protocol for asynchronous stream objects."""
-
-    async def __aiter__(self) -> AsyncIterator[CovariantChunkT]:
-        """Returns an async iterator for the stream."""
-        raise NotImplementedError
-
-    async def __anext__(self) -> CovariantChunkT:
-        """Get the next item from the async stream."""
-        raise NotImplementedError
-
-    async def close(self) -> None:
-        """Close the async stream and release resources."""
-        raise NotImplementedError
 
 
 class ToolCallBuffer:
@@ -207,6 +175,9 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
         """Initialize the stream wrapper with telemetry components."""
         self.span = span
         self.stream = stream
+        # NOTE: this is for OpenAI stream context manager support
+        if response := getattr(stream, "response", None):
+            self.response = response
         self.process_chunk = process_chunk
         self.response_attributes = GenAIResponseAttributes()
         self.choice_buffers: list[ChoiceBuffer] = []
@@ -333,7 +304,7 @@ class AsyncStreamWrapper(
         await self.stream.close()
         self._cleanup()
 
-    def __aiter__(self) -> "AsyncStreamWrapper[ChunkT]":
+    def __aiter__(self) -> AsyncIterator[ChunkT]:
         """Returns self as an async iterator."""
         return self
 

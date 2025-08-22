@@ -353,6 +353,115 @@ def test_openai_parse(client: OpenAI, span_exporter: InMemorySpanExporter) -> No
 
 
 @pytest.mark.vcr()
+def test_openai_streaming_with_context_manager(
+    client: OpenAI, span_exporter: InMemorySpanExporter
+) -> None:
+    """Test streaming with `.stream` context manager"""
+    stream_context_manager = client.chat.completions.stream(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Hello, say 'Hi' back to me"}],
+        max_tokens=200,
+    )
+
+    with stream_context_manager as stream:
+        chunks = list(stream)
+    assert len(chunks) > 0
+
+    spans = span_exporter.get_finished_spans()
+    assert extract_span_data(spans[0]) == snapshot(
+        {
+            "name": "chat gpt-4o-mini",
+            "attributes": {
+                "gen_ai.system": "openai",
+                "gen_ai.operation.name": "chat",
+                "gen_ai.request.model": "gpt-4o-mini",
+                "gen_ai.request.max_tokens": 200,
+                "server.address": "api.openai.com",
+                "gen_ai.response.id": "chatcmpl-C75of9t9mw2bHivO4QXBrARF2bArh",
+                "gen_ai.response.model": "gpt-4o-mini-2024-07-18",
+                "gen_ai.response.finish_reasons": ("stop",),
+                "gen_ai.openai.request.service_tier": "default",
+            },
+            "status": {"status_code": "UNSET", "description": None},
+            "events": [
+                {
+                    "name": "gen_ai.user.message",
+                    "attributes": {
+                        "gen_ai.system": "openai",
+                        "content": "Hello, say 'Hi' back to me",
+                    },
+                },
+                {
+                    "name": "gen_ai.choice",
+                    "attributes": {
+                        "gen_ai.system": "openai",
+                        "index": 0,
+                        "message": '{"role":"assistant","content":"Hi! How can I assist you today?"}',
+                        "finish_reason": "stop",
+                    },
+                },
+            ],
+        }
+    )
+
+
+@pytest.mark.vcr()
+@pytest.mark.asyncio
+async def test_async_openai_streaming_with_context_manager(
+    async_client: AsyncOpenAI, span_exporter: InMemorySpanExporter
+) -> None:
+    """Test streaming with `.stream` context manager"""
+    async_stream_context_manager = async_client.chat.completions.stream(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Hello, say 'Hi' back to me"}],
+        max_tokens=200,
+    )
+
+    chunks = []
+    async with async_stream_context_manager as stream:
+        async for chunk in stream:
+            chunks.append(chunk)
+    assert len(chunks) > 0
+
+    spans = span_exporter.get_finished_spans()
+    assert extract_span_data(spans[0]) == snapshot(
+        {
+            "name": "chat gpt-4o-mini",
+            "attributes": {
+                "gen_ai.system": "openai",
+                "gen_ai.operation.name": "chat",
+                "gen_ai.request.model": "gpt-4o-mini",
+                "gen_ai.request.max_tokens": 200,
+                "server.address": "api.openai.com",
+                "gen_ai.response.id": "chatcmpl-C75q393ZLGsfaJfHN5jgzJm4jyUGU",
+                "gen_ai.response.model": "gpt-4o-mini-2024-07-18",
+                "gen_ai.response.finish_reasons": ("stop",),
+                "gen_ai.openai.request.service_tier": "default",
+            },
+            "status": {"status_code": "UNSET", "description": None},
+            "events": [
+                {
+                    "name": "gen_ai.user.message",
+                    "attributes": {
+                        "gen_ai.system": "openai",
+                        "content": "Hello, say 'Hi' back to me",
+                    },
+                },
+                {
+                    "name": "gen_ai.choice",
+                    "attributes": {
+                        "gen_ai.system": "openai",
+                        "index": 0,
+                        "message": '{"role":"assistant","content":"Hi! How can I assist you today?"}',
+                        "finish_reason": "stop",
+                    },
+                },
+            ],
+        }
+    )
+
+
+@pytest.mark.vcr()
 def test_openai_tool_message_resinsertion(
     client: OpenAI, span_exporter: InMemorySpanExporter
 ) -> None:
