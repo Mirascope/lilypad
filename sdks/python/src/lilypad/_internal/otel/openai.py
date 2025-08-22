@@ -123,14 +123,14 @@ class _OpenAIInstrumentor(
         ChatCompletionChunk,
     ]
 ):
-    """[MISSING DOCSTRING]"""
+    """OpenAI client instrumentor for telemetry and tracing."""
 
     @staticmethod
     def _get_request_attributes(
         kwargs: OpenAIKwargs,
         client: OpenAIClient,
     ) -> GenAIRequestAttributes:
-        """[MISSING DOCSTRING]"""
+        """Returns request attributes extracted from OpenAI chat completion kwargs."""
         stop_sequences = kwargs.get("stop")
         if isinstance(stop_sequences, str):
             stop_sequences = [stop_sequences]
@@ -164,7 +164,7 @@ class _OpenAIInstrumentor(
     def _process_messages(
         kwargs: OpenAIKwargs,
     ) -> list[MessageEvent]:
-        """[MISSING DOCSTRING]"""
+        """Returns standardized message events converted from OpenAI messages."""
         message_events: list[MessageEvent] = []
         for message in kwargs.get("messages", []):
             match message["role"]:
@@ -205,7 +205,7 @@ class _OpenAIInstrumentor(
     def _process_response(
         response: ChatCompletion | ParsedChatCompletion,
     ) -> tuple[list[ChoiceEvent], GenAIResponseAttributes]:
-        """[MISSING DOCSTRING]"""
+        """Returns the choice events list and response attributes from OpenAI response."""
         choice_events: list[ChoiceEvent] = []
         finish_reasons: list[str] = []
         for choice in response.choices:
@@ -242,7 +242,7 @@ class _OpenAIInstrumentor(
     def _process_chunk(
         chunk: ChatCompletionChunk,
     ) -> tuple[GenAIResponseAttributes, list[ChoiceDelta]]:
-        """[MISSING DOCSTRING]"""
+        """Returns response attributes and choice deltas from OpenAI streaming chunk."""
         response_attributes = GenAIResponseAttributes()
         choice_deltas: list[ChoiceDelta] = []
         response_attributes.GEN_AI_RESPONSE_ID = chunk.id
@@ -276,7 +276,7 @@ class _OpenAIInstrumentor(
 def instrument_openai(
     client: OpenAIClient,
 ) -> None:
-    """[MISSING DOCSTRING]"""
+    """Instruments an OpenAI client for telemetry collection."""
     if _utils.client_is_already_instrumented(client):
         return
 

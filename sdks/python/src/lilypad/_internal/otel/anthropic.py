@@ -87,7 +87,7 @@ class AnthropicKwargs(BaseKwargs, total=False):
 def _process_user_message(
     message: MessageParam,
 ) -> tuple[UserMessageEvent, list[ToolMessageEvent]]:
-    """[MISSING DOCSTRING]"""
+    """Returns user message event and any tool message events from Anthropic message."""
     content = message["content"]
     if isinstance(content, str):
         return UserMessageEvent(system=ANTHROPIC_SYSTEM, content=content), []
@@ -114,7 +114,7 @@ def _process_user_message(
 def _process_assistant_message(
     message: MessageParam | AnthropicMessage,
 ) -> tuple[str, list[ToolCall]]:
-    """[MISSING DOCSTRING]"""
+    """Returns content string and tool calls from Anthropic assistant message."""
     if isinstance(message, AnthropicMessage):
         message = cast(MessageParam, message.model_dump())
     content = message["content"]
@@ -161,14 +161,14 @@ class AnthropicInstrumentor(
         MessageStreamEvent,
     ]
 ):
-    """[MISSING DOCSTRING]"""
+    """Anthropic client instrumentor for telemetry and tracing."""
 
     @staticmethod
     def _get_request_attributes(
         kwargs: AnthropicKwargs,
         client: AnthropicClient,
     ) -> GenAIRequestAttributes:
-        """[MISSING DOCSTRING]"""
+        """Returns request attributes extracted from Anthropic message kwargs."""
         return GenAIRequestAttributes(
             GEN_AI_SYSTEM=ANTHROPIC_SYSTEM,
             SERVER_ADDRESS=client._client.base_url.host,
@@ -185,7 +185,7 @@ class AnthropicInstrumentor(
     def _process_messages(
         kwargs: AnthropicKwargs,
     ) -> list[MessageEvent]:
-        """[MISSING DOCSTRING]"""
+        """Returns standardized message events converted from Anthropic messages."""
         message_events: list[MessageEvent] = []
         if system_content := kwargs.get("system"):
             message_events.append(
@@ -215,7 +215,7 @@ class AnthropicInstrumentor(
     def _process_response(
         response: AnthropicMessage,
     ) -> tuple[list[ChoiceEvent], GenAIResponseAttributes]:
-        """[MISSING DOCSTRING]"""
+        """Returns the choice events list and response attributes from Anthropic response."""
         content, tool_calls = _process_assistant_message(response)
         choice_event = ChoiceEvent(
             system=ANTHROPIC_SYSTEM,
@@ -240,7 +240,7 @@ class AnthropicInstrumentor(
     def _process_chunk(
         chunk: MessageStreamEvent,
     ) -> tuple[GenAIResponseAttributes, list[ChoiceDelta]]:
-        """[MISSING DOCSTRING]"""
+        """Returns response attributes and choice deltas from Anthropic streaming chunk."""
         response_attributes = GenAIResponseAttributes()
         choice_delta = ChoiceDelta(
             system=ANTHROPIC_SYSTEM,
@@ -299,7 +299,7 @@ class AnthropicInstrumentor(
 def instrument_anthropic(
     client: AnthropicClient,
 ) -> None:
-    """[MISSING DOCSTRING]"""
+    """Instruments an Anthropic client for telemetry collection."""
     if _utils.client_is_already_instrumented(client):
         return
 

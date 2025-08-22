@@ -61,7 +61,7 @@ class ToolCallBuffer:
         self.arguments += arguments
 
     def dump(self) -> ToolCall:
-        """[MISSING DOCSTRING]"""
+        """Returns the accumulated tool call data as a `ToolCall`."""
         return ToolCall(
             id=self.tool_call_id,
             type="function",
@@ -118,7 +118,7 @@ class ChoiceBuffer:
         buffer.append_arguments(tool_call.function.arguments or "")
 
     def dump(self) -> SpanEvent:
-        """[MISSING DOCSTRING]"""
+        """Returns the accumulated choice data as a span event."""
         message: Message = {"role": "assistant"}
         if self.content:
             message["content"] = self.content
@@ -136,13 +136,13 @@ class ChoiceBuffer:
 
 
 class ProcessChunk(Protocol[ContravariantChunkT]):
-    """[MISSING DOCSTRING]"""
+    """Protocol for processing streaming chunks into attributes and deltas."""
 
     def __call__(
         self,
         chunk: ContravariantChunkT,
     ) -> tuple[GenAIResponseAttributes, list[ChoiceDelta]]:
-        """[MISSING DOCSTRING]"""
+        """Returns response attributes and choice deltas from the chunk."""
         raise NotImplementedError
 
 
@@ -150,19 +150,19 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
     """Base wrapper for handling streaming responses with telemetry."""
 
     span: Span
-    """[MISSING DOCSTRING]"""
+    """The OpenTelemetry span for this stream."""
 
     response_attributes: GenAIResponseAttributes
-    """[MISSING DOCSTRING]"""
+    """Accumulated response attributes from the stream."""
 
     process_chunk: ProcessChunk[ChunkT]
-    """[MISSING DOCSTRING]"""
+    """Function to process individual chunks."""
 
     choice_buffers: list[ChoiceBuffer]
-    """[MISSING DOCSTRING]"""
+    """Buffers for accumulating streaming choice data."""
 
     stream: StreamT
-    """[MISSING DOCSTRING]"""
+    """The underlying stream being wrapped."""
 
     _span_started: bool
 
@@ -194,7 +194,7 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
         response_attributes: GenAIResponseAttributes,
         choice_deltas: list[ChoiceDelta],
     ) -> None:
-        """[MISSING DOCSTRING]"""
+        """Updates response attributes with new chunk data."""
         self.response_attributes.update(response_attributes)
         for delta in choice_deltas:
             while len(self.choice_buffers) <= delta.index:

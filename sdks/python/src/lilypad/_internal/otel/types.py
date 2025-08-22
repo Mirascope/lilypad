@@ -125,22 +125,22 @@ class ToolCallDelta:
 
 @dataclass
 class ChoiceDelta:
-    """[MISSING DOCSTRING]"""
+    """Represents a streaming choice delta from LLM provider response."""
 
     system: str
-    """[MISSING DOCSTRING]"""
+    """The LLM system identifier."""
 
     index: int
-    """[MISSING DOCSTRING]"""
+    """The index of this choice in the response."""
 
     content: str | None
-    """[MISSING DOCSTRING]"""
+    """The content delta for this streaming chunk."""
 
     tool_calls: Sequence[ToolCallDelta | ToolCallDeltaProtocol] | None
-    """[MISSING DOCSTRING]"""
+    """The tool call deltas if any."""
 
     finish_reason: str | None
-    """[MISSING DOCSTRING]"""
+    """The reason for finishing this choice, if finished."""
 
 
 class Message(TypedDict, total=False):
@@ -154,24 +154,24 @@ class Message(TypedDict, total=False):
 
 
 class BaseKwargs(TypedDict):
-    """[MISSING DOCSTRING]"""
+    """Base TypedDict for LLM provider kwargs."""
 
 
 class SpanEvent(TypedDict, total=False):
-    """[MISSING DOCSTRING]"""
+    """TypedDict for OpenTelemetry span events."""
 
     name: Required[str]
-    """[MISSING DOCSTRING]"""
+    """The name of the span event."""
 
     attributes: dict[str, AttributeValue] | None
-    """[MISSING DOCSTRING]"""
+    """The attributes for the span event."""
 
     timestamp: int | None
-    """[MISSING DOCSTRING]"""
+    """The timestamp for the span event."""
 
 
 class BoundMethod(Protocol[P, CovariantResponseT]):
-    """[MISSING DOCSTRING]"""
+    """Protocol for bound synchronous methods."""
 
     @property
     def __self__(self) -> object: ...
@@ -180,12 +180,12 @@ class BoundMethod(Protocol[P, CovariantResponseT]):
     def __name__(self) -> str: ...
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> CovariantResponseT:
-        """[MISSING DOCSTRING]"""
+        """Calls the bound method."""
         raise NotImplementedError
 
 
 class BoundAsyncMethod(Protocol[P, CovariantResponseT]):
-    """[MISSING DOCSTRING]"""
+    """Protocol for bound asynchronous methods."""
 
     @property
     def __self__(self) -> object: ...
@@ -194,12 +194,12 @@ class BoundAsyncMethod(Protocol[P, CovariantResponseT]):
     def __name__(self) -> str: ...
 
     async def __call__(self, *args: P.args, **kwargs: P.kwargs) -> CovariantResponseT:
-        """[MISSING DOCSTRING]"""
+        """Calls the bound async method."""
         raise NotImplementedError
 
 
 class MethodWrapper(Protocol[P, ResponseT, ContravariantClientT]):
-    """[MISSING DOCSTRING]"""
+    """Protocol for method wrapper functions."""
 
     def __call__(
         self,
@@ -208,12 +208,12 @@ class MethodWrapper(Protocol[P, ResponseT, ContravariantClientT]):
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> ResponseT:
-        """[MISSING DOCSTRING]"""
+        """Calls the wrapper with the method and arguments."""
         raise NotImplementedError
 
 
 class AsyncMethodWrapper(Protocol[P, ResponseT, ContravariantClientT]):
-    """[MISSING DOCSTRING]"""
+    """Protocol for async method wrapper functions."""
 
     async def __call__(
         self,
@@ -222,61 +222,61 @@ class AsyncMethodWrapper(Protocol[P, ResponseT, ContravariantClientT]):
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
     ) -> ResponseT:
-        """[MISSING DOCSTRING]"""
+        """Calls the async wrapper with the method and arguments."""
         raise NotImplementedError
 
 
 @dataclass(kw_only=True)
 class GenAIRequestAttributes:
-    """[MISSING DOCSTRING]"""
+    """Dataclass for LLM request attributes used in OpenTelemetry spans."""
 
     GEN_AI_SYSTEM: str
-    """[MISSING DOCSTRING]"""
+    """The LLM system identifier."""
 
     GEN_AI_OPERATION_NAME: str = gen_ai_attributes.GenAiOperationNameValues.CHAT.value
-    """[MISSING DOCSTRING]"""
+    """The name of the LLM operation."""
 
     SERVER_ADDRESS: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The server address for the LLM service."""
 
     SERVER_PORT: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The server port for the LLM service."""
 
     GEN_AI_REQUEST_MODEL: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The model name for the LLM request."""
 
     GEN_AI_REQUEST_TEMPERATURE: float | None = None
-    """[MISSING DOCSTRING]"""
+    """The temperature parameter for the LLM request."""
 
     GEN_AI_REQUEST_TOP_P: float | None = None
-    """[MISSING DOCSTRING]"""
+    """The top_p parameter for the LLM request."""
 
     GEN_AI_REQUEST_TOP_K: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The top_k parameter for the LLM request."""
 
     GEN_AI_REQUEST_MAX_TOKENS: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The maximum tokens for the LLM request."""
 
     GEN_AI_REQUEST_PRESENCE_PENALTY: float | None = None
-    """[MISSING DOCSTRING]"""
+    """The presence penalty for the LLM request."""
 
     GEN_AI_REQUEST_FREQUENCY_PENALTY: float | None = None
-    """[MISSING DOCSTRING]"""
+    """The frequency penalty for the LLM request."""
 
     GEN_AI_REQUEST_STOP_SEQUENCES: list[str] | None = None
-    """[MISSING DOCSTRING]"""
+    """The stop sequences for the LLM request."""
 
     GEN_AI_OPENAI_REQUEST_RESPONSE_FORMAT: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The OpenAI response format for the request."""
 
     GEN_AI_OPENAI_REQUEST_SEED: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The OpenAI seed for the request."""
 
     GEN_AI_OPENAI_RESPONSE_SERVICE_TIER: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The OpenAI service tier for the response."""
 
     def dump(self) -> dict[str, AttributeValue]:
-        """[MISSING DOCSTRING]"""
+        """Returns the attributes as a dictionary suitable for OpenTelemetry spans."""
         attributes: dict[str, AttributeValue] = {}
 
         if self.SERVER_ADDRESS:
@@ -299,28 +299,28 @@ class GenAIRequestAttributes:
 
 @dataclass(kw_only=True)
 class GenAIResponseAttributes:
-    """[MISSING DOCSTRING]"""
+    """Dataclass for LLM response attributes used in OpenTelemetry spans."""
 
     GEN_AI_RESPONSE_ID: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The unique identifier for the LLM response."""
 
     GEN_AI_RESPONSE_MODEL: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The model used for the LLM response."""
 
     GEN_AI_RESPONSE_FINISH_REASONS: list[str] | None = None
-    """[MISSING DOCSTRING]"""
+    """The finish reasons for the LLM response choices."""
 
     GEN_AI_OPENAI_REQUEST_SERVICE_TIER: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The OpenAI service tier for the request."""
 
     GEN_AI_USAGE_INPUT_TOKENS: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The number of input tokens used in the LLM request."""
 
     GEN_AI_USAGE_OUTPUT_TOKENS: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The number of output tokens generated by the LLM."""
 
     def dump(self) -> dict[str, AttributeValue]:
-        """[MISSING DOCSTRING]"""
+        """Returns the attributes as a dictionary suitable for OpenTelemetry spans."""
         return {
             getattr(gen_ai_attributes, field.name): value
             for field in fields(self)
@@ -328,7 +328,7 @@ class GenAIResponseAttributes:
         }
 
     def update(self, attributes: "GenAIResponseAttributes") -> None:
-        """[MISSING DOCSTRING]"""
+        """Updates this instance with non-null values from another `GenAIResponseAttributes`."""
         for field in fields(attributes):
             if not getattr(self, field.name):
                 setattr(self, field.name, getattr(attributes, field.name))
@@ -336,28 +336,28 @@ class GenAIResponseAttributes:
 
 @dataclass(kw_only=True)
 class ChoiceEvent:
-    """[MISSING DOCSTRING]"""
+    """Represents a choice event from LLM response for OpenTelemetry spans."""
 
     system: str
-    """[MISSING DOCSTRING]"""
+    """The LLM system identifier."""
 
     index: int
-    """[MISSING DOCSTRING]"""
+    """The index of this choice in the response."""
 
     message: Message
-    """[MISSING DOCSTRING]"""
+    """The message content for this choice."""
 
     finish_reason: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The reason for finishing this choice."""
 
     tool_calls: list[ToolCall] | None = None
-    """[MISSING DOCSTRING]"""
+    """The tool calls made in this choice."""
 
     timestamp: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The timestamp for this choice event."""
 
     def dump(self) -> SpanEvent:
-        """[MISSING DOCSTRING]"""
+        """Returns the choice event as a span event for OpenTelemetry."""
         attributes: dict[str, AttributeValue] = {
             gen_ai_attributes.GEN_AI_SYSTEM: self.system
         }
@@ -378,22 +378,22 @@ class ChoiceEvent:
 
 @dataclass(kw_only=True)
 class BaseMessageEvent(ABC):
-    """[MISSING DOCSTRING]"""
+    """Abstract base class for LLM message events in OpenTelemetry spans."""
 
     @property
     @abstractmethod
     def role(self) -> str:
-        """[MISSING DOCSTRING]"""
+        """Returns the role of this message event."""
         ...
 
     system: str
-    """[MISSING DOCSTRING]"""
+    """The LLM system identifier."""
 
     timestamp: int | None = None
-    """[MISSING DOCSTRING]"""
+    """The timestamp for this message event."""
 
     def dump(self) -> SpanEvent:
-        """[MISSING DOCSTRING]"""
+        """Returns the message event as a span event for OpenTelemetry."""
         attributes: dict[str, AttributeValue] = {
             gen_ai_attributes.GEN_AI_SYSTEM: self.system,
         }
@@ -414,60 +414,60 @@ class BaseMessageEvent(ABC):
 
 @dataclass(kw_only=True)
 class SystemMessageEvent(BaseMessageEvent):
-    """[MISSING DOCSTRING]"""
+    """Represents a system message event for OpenTelemetry spans."""
 
     @property
     def role(self) -> Literal["system"]:
-        """[MISSING DOCSTRING]"""
+        """Returns 'system' as the role for this message event."""
         return "system"
 
     content: Any | None = None
-    """[MISSING DOCSTRING]"""
+    """The content of the system message."""
 
 
 @dataclass(kw_only=True)
 class UserMessageEvent(BaseMessageEvent):
-    """[MISSING DOCSTRING]"""
+    """Represents a user message event for OpenTelemetry spans."""
 
     @property
     def role(self) -> Literal["user"]:
-        """[MISSING DOCSTRING]"""
+        """Returns 'user' as the role for this message event."""
         return "user"
 
     content: Any | None = None
-    """[MISSING DOCSTRING]"""
+    """The content of the user message."""
 
 
 @dataclass(kw_only=True)
 class AssistantMessageEvent(BaseMessageEvent):
-    """[MISSING DOCSTRING]"""
+    """Represents an assistant message event for OpenTelemetry spans."""
 
     @property
     def role(self) -> Literal["assistant"]:
-        """[MISSING DOCSTRING]"""
+        """Returns 'assistant' as the role for this message event."""
         return "assistant"
 
     content: Any | None = None
-    """[MISSING DOCSTRING]"""
+    """The content of the assistant message."""
 
     tool_calls: list[ToolCall] | None = None
-    """[MISSING DOCSTRING]"""
+    """The tool calls made by the assistant."""
 
 
 @dataclass(kw_only=True)
 class ToolMessageEvent(BaseMessageEvent):
-    """[MISSING DOCSTRING]"""
+    """Represents a tool message event for OpenTelemetry spans."""
 
     @property
     def role(self) -> Literal["tool"]:
-        """[MISSING DOCSTRING]"""
+        """Returns 'tool' as the role for this message event."""
         return "tool"
 
     content: Any | None = None
-    """[MISSING DOCSTRING]"""
+    """The content of the tool message."""
 
     id: str | None = None
-    """[MISSING DOCSTRING]"""
+    """The identifier for the tool call."""
 
 
 MessageEvent: TypeAlias = (
