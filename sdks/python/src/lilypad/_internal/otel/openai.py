@@ -45,12 +45,12 @@ from .types import (
     UserMessageEvent,
 )
 
-OPENAI_SYSTEM = gen_ai_attributes.GenAiSystemValues.OPENAI.value
+_OPENAI_SYSTEM = gen_ai_attributes.GenAiSystemValues.OPENAI.value
 
 OpenAIClient: TypeAlias = OpenAI | AsyncOpenAI | AsyncAzureOpenAI | AzureOpenAI
 
 
-class OpenAIKwargs(BaseKwargs, total=False):
+class _OpenAIKwargs(BaseKwargs, total=False):
     """TypedDict for OpenAI chat completion parameters."""
 
     # REQUIRED
@@ -118,7 +118,7 @@ def _get_tool_call_params(
 class _OpenAIInstrumentor(
     BaseInstrumentor[
         OpenAIClient,
-        OpenAIKwargs,
+        _OpenAIKwargs,
         ChatCompletion | ParsedChatCompletion,
         ChatCompletionChunk,
     ]
@@ -127,7 +127,7 @@ class _OpenAIInstrumentor(
 
     @staticmethod
     def _get_request_attributes(
-        kwargs: OpenAIKwargs,
+        kwargs: _OpenAIKwargs,
         client: OpenAIClient,
     ) -> GenAIRequestAttributes:
         """Returns request attributes extracted from OpenAI chat completion kwargs."""
@@ -145,7 +145,7 @@ class _OpenAIInstrumentor(
         if service_tier == "auto":
             service_tier = None
         return GenAIRequestAttributes(
-            GEN_AI_SYSTEM=OPENAI_SYSTEM,
+            GEN_AI_SYSTEM=_OPENAI_SYSTEM,
             SERVER_ADDRESS=client._client.base_url.host,
             SERVER_PORT=client._client.base_url.port,
             GEN_AI_REQUEST_MODEL=kwargs.get("model"),
@@ -162,7 +162,7 @@ class _OpenAIInstrumentor(
 
     @staticmethod
     def _process_messages(
-        kwargs: OpenAIKwargs,
+        kwargs: _OpenAIKwargs,
     ) -> list[MessageEvent]:
         """Returns standardized message events converted from OpenAI messages."""
         message_events: list[MessageEvent] = []
@@ -171,21 +171,21 @@ class _OpenAIInstrumentor(
                 case "system":
                     message_events.append(
                         SystemMessageEvent(
-                            system=OPENAI_SYSTEM,
+                            system=_OPENAI_SYSTEM,
                             content=message["content"],
                         )
                     )
                 case "user":
                     message_events.append(
                         UserMessageEvent(
-                            system=OPENAI_SYSTEM,
+                            system=_OPENAI_SYSTEM,
                             content=message["content"],
                         )
                     )
                 case "assistant":
                     message_events.append(
                         AssistantMessageEvent(
-                            system=OPENAI_SYSTEM,
+                            system=_OPENAI_SYSTEM,
                             content=message.get("content"),
                             tool_calls=_get_tool_call_params(message) or None,
                         )
@@ -193,7 +193,7 @@ class _OpenAIInstrumentor(
                 case "tool":
                     message_events.append(
                         ToolMessageEvent(
-                            system=OPENAI_SYSTEM,
+                            system=_OPENAI_SYSTEM,
                             content=message["content"],
                             id=message["tool_call_id"],
                         )
@@ -212,7 +212,7 @@ class _OpenAIInstrumentor(
             finish_reasons.append(choice.finish_reason)
             choice_events.append(
                 ChoiceEvent(
-                    system=OPENAI_SYSTEM,
+                    system=_OPENAI_SYSTEM,
                     index=choice.index,
                     message=cast(
                         Message,
@@ -260,7 +260,7 @@ class _OpenAIInstrumentor(
                 finish_reasons.append(choice.finish_reason)
             choice_deltas.append(
                 ChoiceDelta(
-                    system=OPENAI_SYSTEM,
+                    system=_OPENAI_SYSTEM,
                     index=choice.index,
                     content=choice.delta.content,
                     tool_calls=choice.delta.tool_calls,

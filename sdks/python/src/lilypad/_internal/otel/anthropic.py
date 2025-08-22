@@ -50,7 +50,7 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
-ANTHROPIC_SYSTEM = gen_ai_attributes.GenAiSystemValues.ANTHROPIC.value
+_ANTHROPIC_SYSTEM = gen_ai_attributes.GenAiSystemValues.ANTHROPIC.value
 
 AnthropicClient: TypeAlias = (
     Anthropic
@@ -62,7 +62,7 @@ AnthropicClient: TypeAlias = (
 )
 
 
-class AnthropicKwargs(BaseKwargs, total=False):
+class _AnthropicKwargs(BaseKwargs, total=False):
     """TypedDict for Anthropic message creation parameters."""
 
     # REQUIRED
@@ -90,7 +90,7 @@ def _process_user_message(
     """Returns user message event and any tool message events from Anthropic message."""
     content = message["content"]
     if isinstance(content, str):
-        return UserMessageEvent(system=ANTHROPIC_SYSTEM, content=content), []
+        return UserMessageEvent(system=_ANTHROPIC_SYSTEM, content=content), []
     text, tool_message_events = "", []
     for block in content:
         if not isinstance(block, dict):
@@ -102,12 +102,14 @@ def _process_user_message(
             elif block["type"] == "tool_result":
                 tool_message_events.append(
                     ToolMessageEvent(
-                        system=ANTHROPIC_SYSTEM,
+                        system=_ANTHROPIC_SYSTEM,
                         content=block.get("content"),
                         id=block.get("tool_use_id"),
                     )
                 )
-    user_message_event = UserMessageEvent(system=ANTHROPIC_SYSTEM, content=text or None)
+    user_message_event = UserMessageEvent(
+        system=_ANTHROPIC_SYSTEM, content=text or None
+    )
     return user_message_event, tool_message_events
 
 
@@ -153,10 +155,10 @@ def _process_assistant_message(
     return text, tool_calls
 
 
-class AnthropicInstrumentor(
+class _AnthropicInstrumentor(
     BaseInstrumentor[
         AnthropicClient,
-        AnthropicKwargs,
+        _AnthropicKwargs,
         AnthropicMessage,
         MessageStreamEvent,
     ]
@@ -165,12 +167,12 @@ class AnthropicInstrumentor(
 
     @staticmethod
     def _get_request_attributes(
-        kwargs: AnthropicKwargs,
+        kwargs: _AnthropicKwargs,
         client: AnthropicClient,
     ) -> GenAIRequestAttributes:
         """Returns request attributes extracted from Anthropic message kwargs."""
         return GenAIRequestAttributes(
-            GEN_AI_SYSTEM=ANTHROPIC_SYSTEM,
+            GEN_AI_SYSTEM=_ANTHROPIC_SYSTEM,
             SERVER_ADDRESS=client._client.base_url.host,
             SERVER_PORT=client._client.base_url.port,
             GEN_AI_REQUEST_MODEL=kwargs.get("model"),
@@ -183,13 +185,13 @@ class AnthropicInstrumentor(
 
     @staticmethod
     def _process_messages(
-        kwargs: AnthropicKwargs,
+        kwargs: _AnthropicKwargs,
     ) -> list[MessageEvent]:
         """Returns standardized message events converted from Anthropic messages."""
         message_events: list[MessageEvent] = []
         if system_content := kwargs.get("system"):
             message_events.append(
-                SystemMessageEvent(system=ANTHROPIC_SYSTEM, content=system_content)
+                SystemMessageEvent(system=_ANTHROPIC_SYSTEM, content=system_content)
             )
         for message in kwargs.get("messages", []):
             match message["role"]:
@@ -203,7 +205,7 @@ class AnthropicInstrumentor(
                     content, tool_calls = _process_assistant_message(message)
                     message_events.append(
                         AssistantMessageEvent(
-                            system=ANTHROPIC_SYSTEM,
+                            system=_ANTHROPIC_SYSTEM,
                             content=content,
                             tool_calls=tool_calls or None,
                         )
@@ -218,7 +220,7 @@ class AnthropicInstrumentor(
         """Returns the choice events list and response attributes from Anthropic response."""
         content, tool_calls = _process_assistant_message(response)
         choice_event = ChoiceEvent(
-            system=ANTHROPIC_SYSTEM,
+            system=_ANTHROPIC_SYSTEM,
             index=0,
             message=Message(role="assistant", content=content),
             finish_reason=response.stop_reason,
@@ -243,7 +245,7 @@ class AnthropicInstrumentor(
         """Returns response attributes and choice deltas from Anthropic streaming chunk."""
         response_attributes = GenAIResponseAttributes()
         choice_delta = ChoiceDelta(
-            system=ANTHROPIC_SYSTEM,
+            system=_ANTHROPIC_SYSTEM,
             index=0,
             content=None,
             tool_calls=None,
@@ -303,7 +305,7 @@ def instrument_anthropic(
     if _utils.client_is_already_instrumented(client):
         return
 
-    instrumentor = AnthropicInstrumentor()
+    instrumentor = _AnthropicInstrumentor()
 
     if isinstance(client, Anthropic | AnthropicBedrock | AnthropicVertex):
         instrumentor.instrument_generate(client.messages.create)

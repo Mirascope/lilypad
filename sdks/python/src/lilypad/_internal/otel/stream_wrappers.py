@@ -44,7 +44,7 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
-class ToolCallBuffer:
+class _ToolCallBuffer:
     """Buffer for accumulating tool call information."""
 
     def __init__(self, index: int, tool_call_id: str, function_name: str) -> None:
@@ -67,7 +67,7 @@ class ToolCallBuffer:
         )
 
 
-class ChoiceBuffer:
+class _ChoiceBuffer:
     """Buffer for accumulating streaming choice content."""
 
     __slots__ = (
@@ -84,7 +84,7 @@ class ChoiceBuffer:
         self.index = index
         self.finish_reason: str | None = None
         self.content: str = ""
-        self.tool_calls_buffers: list[ToolCallBuffer | None] = []
+        self.tool_calls_buffers: list[_ToolCallBuffer | None] = []
 
     def append_content(self, content: str) -> None:
         """Append text content to the buffer."""
@@ -108,7 +108,7 @@ class ChoiceBuffer:
             return
 
         if not (buffer := self.tool_calls_buffers[index]):
-            buffer = ToolCallBuffer(
+            buffer = _ToolCallBuffer(
                 self.index, tool_call.id or "", tool_call.function.name or ""
             )
             self.tool_calls_buffers[index] = buffer
@@ -133,7 +133,7 @@ class ChoiceBuffer:
         return choice_event.dump()
 
 
-class ProcessChunk(Protocol[ContravariantChunkT]):
+class _ProcessChunk(Protocol[ContravariantChunkT]):
     """Protocol for processing streaming chunks into attributes and deltas."""
 
     def __call__(
@@ -144,7 +144,7 @@ class ProcessChunk(Protocol[ContravariantChunkT]):
         raise NotImplementedError
 
 
-class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
+class _BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
     """Base wrapper for handling streaming responses with telemetry."""
 
     span: Span
@@ -153,10 +153,10 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
     response_attributes: GenAIResponseAttributes
     """Accumulated response attributes from the stream."""
 
-    process_chunk: ProcessChunk[ChunkT]
+    process_chunk: _ProcessChunk[ChunkT]
     """Function to process individual chunks."""
 
-    choice_buffers: list[ChoiceBuffer]
+    choice_buffers: list[_ChoiceBuffer]
     """Buffers for accumulating streaming choice data."""
 
     stream: StreamT
@@ -168,7 +168,7 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
         self,
         span: Span,
         stream: StreamT,
-        process_chunk: ProcessChunk[ChunkT],
+        process_chunk: _ProcessChunk[ChunkT],
     ) -> None:
         """Initialize the stream wrapper with telemetry components."""
         self.span = span
@@ -178,7 +178,7 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
             self.response = response
         self.process_chunk = process_chunk
         self.response_attributes = GenAIResponseAttributes()
-        self.choice_buffers: list[ChoiceBuffer] = []
+        self.choice_buffers: list[_ChoiceBuffer] = []
         self._span_started = False
         self._setup()
 
@@ -197,7 +197,7 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
         for delta in choice_deltas:
             while len(self.choice_buffers) <= delta.index:
                 self.choice_buffers.append(
-                    ChoiceBuffer(delta.system, len(self.choice_buffers))
+                    _ChoiceBuffer(delta.system, len(self.choice_buffers))
                 )
 
             if delta.finish_reason:
@@ -217,7 +217,7 @@ class BaseStreamWrapper(ABC, Generic[ChunkT, StreamT]):
             self._span_started = False
 
 
-class StreamWrapper(BaseStreamWrapper[ChunkT, Stream[ChunkT]], Generic[ChunkT]):
+class StreamWrapper(_BaseStreamWrapper[ChunkT, Stream[ChunkT]], Generic[ChunkT]):
     """Synchronous stream wrapper with context manager support."""
 
     def __enter__(self) -> "StreamWrapper[ChunkT]":  # pragma: no cover
@@ -271,7 +271,7 @@ class StreamWrapper(BaseStreamWrapper[ChunkT, Stream[ChunkT]], Generic[ChunkT]):
 
 
 class AsyncStreamWrapper(
-    BaseStreamWrapper[ChunkT, AsyncStream[ChunkT]], Generic[ChunkT]
+    _BaseStreamWrapper[ChunkT, AsyncStream[ChunkT]], Generic[ChunkT]
 ):
     """Asynchronous stream wrapper with async context manager support."""
 
