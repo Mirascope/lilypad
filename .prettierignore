@@ -8,5 +8,6 @@ coverage
 src/routeTree.gen.ts
 .venv
 sdks/**/.venv
+sdks/python/src/lilypad/_generated/**/*.md
 sdks/python/tests/**/cassettes/*.yaml
 **/*.map

@@ -42,6 +42,7 @@
         "drizzle-kit": "^0.31.4",
         "eslint": "^9.29.0",
         "eslint-config-prettier": "^10.1.5",
+        "fern-api": "^0.66.21",
         "globals": "^16.3.0",
         "husky": "^9.1.7",
         "jsdom": "^26.0.0",
@@ -695,6 +696,8 @@
     "fastq": ["fastq@1.19.1", "", { "dependencies": { "reusify": "^1.0.4" } }, "sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ=="],
 
     "fdir": ["fdir@6.4.6", "", { "peerDependencies": { "picomatch": "^3 || ^4" }, "optionalPeers": ["picomatch"] }, "sha512-hiFoqpyZcfNm1yc4u8oWCf9A2c4D3QjCrks3zmoVKVxpQRzmPNar1hUJcBG2RQHvEVGDN+Jm81ZheVLAQMK6+w=="],
+
+    "fern-api": ["fern-api@0.66.23", "", { "bin": { "fern": "cli.cjs" } }, "sha512-25fkbyMGDGvKQJUIozypP77B0DAmz1iz4QYGnl6wKzJ38QlrTp4umIOkfb/FHxPvD6HpVPdFOI6VIrWDBkEn0g=="],
 
     "fetch-blob": ["fetch-blob@3.2.0", "", { "dependencies": { "node-domexception": "^1.0.0", "web-streams-polyfill": "^3.0.3" } }, "sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ=="],
 

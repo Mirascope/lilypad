@@ -25,6 +25,7 @@ dependencies = [
     "opentelemetry-instrumentation>=0.57b0",
     "opentelemetry-sdk>=1.36.0",
     "orjson>=3.10.0",
+    "pydantic>=2.11.7",
     "rich>=13.0.0",
     "wrapt>=1.17.2",
 ]
@@ -86,6 +87,8 @@ target-version = "py310"
 "__init__.py" = ["F401"]
 "tests/**.py" = ["T201", "T203", "ANN", "UP007"]
 "examples/**.py" = ["T201", "T203"]
+"src/lilypad/_generated/**/*.py" = ["ANN", "D", "E501", "UP045"]
+"src/lilypad/api_client.py" = ["ANN201"]
 
 [tool.ruff.lint]
 select = [
@@ -154,6 +157,7 @@ pythonVersion = "3.10"
 venvPath = "."
 venv = ".venv"
 include = ["src", "tests", "examples"]
+ignore = ["src/lilypad/_generated/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

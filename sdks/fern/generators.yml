@@ -1,0 +1,19 @@
+default-group: python-sdk
+api:
+  path: openapi.json
+  overrides: openapi-overrides.yml
+groups:
+  python-sdk:
+    generators:
+      - name: fernapi/fern-python-sdk
+        version: 4.21.2
+        output:
+          location: local-file-system
+          path: ../python/src/lilypad/_generated
+        smart-casing: true
+        config:
+          client_class_name: Lilypad
+          package_name: lilypad._generated
+          pydantic_config:
+            use_str_enums: false
+          timeout_in_seconds: 180

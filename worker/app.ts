@@ -24,14 +24,17 @@ app.doc('/openapi.json', {
     {
       url: 'https://v1.lilypad.mirascope.com',
       description: 'Production server',
+      'x-fern-server-name': 'production',
     },
     {
       url: 'https://staging.lilypad.mirascope.com',
       description: 'Staging server',
+      'x-fern-server-name': 'staging',
     },
     {
       url: 'http://localhost:3000',
       description: 'Local development server',
+      'x-fern-server-name': 'local',
     },
   ],
   tags: [
