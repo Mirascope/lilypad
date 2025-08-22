@@ -13,7 +13,7 @@ from openai.types.chat import ChatCompletion
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import BaseModel
 
-from lilypad._internal.otel._utils import InstrumentedClient
+from lilypad._internal.otel._utils import client_is_already_instrumented
 from lilypad._internal.otel.openai import instrument_openai
 
 from .test_utils import (
@@ -551,14 +551,13 @@ def test_openai_instrumentation_idempotent() -> None:
     """Test that instrumentation is truly idempotent."""
     client = OpenAI(api_key="test")
 
-    assert not isinstance(client, InstrumentedClient)
+    assert not client_is_already_instrumented(client)
 
     instrument_openai(client)
     first_create = client.chat.completions.create
     first_parse = client.chat.completions.parse
 
-    assert isinstance(client, InstrumentedClient)
-    assert client.__lilypad_instrumented_client__
+    assert client_is_already_instrumented(client)
 
     instrument_openai(client)
     second_create = client.chat.completions.create

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @runtime_checkable
-class InstrumentedClient(Protocol):
+class _InstrumentedClient(Protocol):
     """Protocol for clients that have been instrumented for telemetry."""
 
     __lilypad_instrumented_client__: bool
@@ -21,7 +21,7 @@ class InstrumentedClient(Protocol):
 def client_is_already_instrumented(client: Any) -> bool:
     """Returns whether a client has already been instrumented."""
     if (
-        isinstance(client, InstrumentedClient)
+        isinstance(client, _InstrumentedClient)
         and client.__lilypad_instrumented_client__
     ):
         logger.debug(f"{type(client).__name__} has already been instrumented, skipping")
@@ -31,7 +31,7 @@ def client_is_already_instrumented(client: Any) -> bool:
 
 def mark_client_as_instrumented(client: Any) -> None:
     """Marks a client as already instrumented for telemetry."""
-    cast(InstrumentedClient, client).__lilypad_instrumented_client__ = True
+    cast(_InstrumentedClient, client).__lilypad_instrumented_client__ = True
 
 
 def serialize_attribute_value(value: Any) -> AttributeValue | None:

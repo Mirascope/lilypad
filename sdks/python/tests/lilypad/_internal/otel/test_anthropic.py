@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from inline_snapshot import snapshot
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from lilypad._internal.otel._utils import InstrumentedClient
+from lilypad._internal.otel._utils import client_is_already_instrumented
 from lilypad._internal.otel.anthropic import instrument_anthropic
 
 from .test_utils import (
@@ -615,13 +615,12 @@ def test_anthropic_instrumentation_idempotent() -> None:
     """Test that instrumentation is truly idempotent."""
     client = Anthropic(api_key="test")
 
-    assert not isinstance(client, InstrumentedClient)
+    assert not client_is_already_instrumented(client)
 
     instrument_anthropic(client)
     first_create = client.messages.create
 
-    assert isinstance(client, InstrumentedClient)
-    assert client.__lilypad_instrumented_client__
+    assert client_is_already_instrumented(client)
 
     instrument_anthropic(client)
     second_create = client.messages.create
