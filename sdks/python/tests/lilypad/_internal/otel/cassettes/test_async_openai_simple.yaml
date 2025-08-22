@@ -1,0 +1,89 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"system","content":"You greet people"},{"role":"user","content":"Hello,
+      say ''Hi'' back to me"}],"model":"gpt-4o-mini","service_tier":"auto","stop":"Hi!"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '173'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.98.0
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-package-version:
+      - 1.98.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//jJJPT+QwDMXv/RSRz1M0/4edK0hc9rIcEAKhKk3cNpDGIXHZRWi+O0o7
+        TMsuK3HpwT+/l2fXb5kQYDTsBahGsmq9zS+2Lz9Dg3fzu4tw9ayaX6vb8urGq+sfq9+XMEsKKh9R
+        8YfqTFHrLbIhN2AVUDIm18Vus9ltt+vtqgctabRJVnvO15S3xpl8OV+u8/kuX5wf1Q0ZhRH24j4T
+        Qoi3/ptyOo1/YC/ms49KizHKGmF/ahICAtlUARmjiSwdw2yEihyj66NPywGrLsoUzXXWToB0jlim
+        0fpAD0dyOEWwVPtAZfxLCpVxJjZFQBnJpecik4eeHjIhHvpRu0/pwQdqPRdMT9g/t1wNdjAueAKP
+        jImlnZQ3sy/MCo0sjY2TTYGSqkE9Kse1yk4bmoBsMvK/Wb7yHsY2rv6O/QiUQs+oCx9QG/V53rEt
+        YLq+/7WdVtwHhojhxSgs2GBIv0FjJTs73ATE18jYFpVxNQYfzHAYlS82C12er2UlS8gO2TsAAAD/
+        /wMAT1aXqyYDAAA=
+    headers:
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 08:54:23 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-processing-ms:
+      - '203'
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '441'
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-limit-tokens:
+      - '4000000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-remaining-tokens:
+      - '3999986'
+      x-ratelimit-reset-requests:
+      - 12ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1

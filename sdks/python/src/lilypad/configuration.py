@@ -2,9 +2,10 @@
 
 import logging
 from secrets import token_bytes
+
 from opentelemetry import trace
-from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
 from opentelemetry.sdk.trace.id_generator import IdGenerator
+from opentelemetry.trace import INVALID_SPAN_ID, INVALID_TRACE_ID
 from rich.logging import RichHandler
 
 DEFAULT_LOG_LEVEL: int = logging.INFO
