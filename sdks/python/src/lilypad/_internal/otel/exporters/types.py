@@ -30,6 +30,7 @@ class SpanEvent(TypedDict):
     """Nanoseconds since epoch (OTel standard)."""
     attributes: dict[str, AttributeValue]
 
+StatusCode = Literal["UNSET", "OK", "ERROR"]
 
 class Status(TypedDict):
     """Status representation for serialization."""
