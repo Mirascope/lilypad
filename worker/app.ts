@@ -43,6 +43,10 @@ app.doc('/openapi.json', {
       name: 'API',
       description: 'Core API endpoints',
     },
+    {
+      name: 'Telemetry',
+      description: 'OpenTelemetry trace collection endpoints (debug)',
+    },
   ],
 });
 

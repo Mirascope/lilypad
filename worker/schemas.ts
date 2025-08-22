@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@hono/zod-openapi';
 
 // Health endpoint schemas
 export const HealthResponseSchema = z.object({

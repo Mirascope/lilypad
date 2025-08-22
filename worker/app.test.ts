@@ -45,6 +45,10 @@ describe('OpenAPI documentation', () => {
         name: 'API',
         description: 'Core API endpoints',
       },
+      {
+        name: 'Telemetry',
+        description: 'OpenTelemetry trace collection endpoints (debug)',
+      },
     ]);
 
     expect(spec.paths).toBeDefined();
