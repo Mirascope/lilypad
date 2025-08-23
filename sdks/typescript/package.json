@@ -1,9 +1,32 @@
 {
   "name": "@mirascope/lilypad-sdk",
   "version": "1.0.0-alpha.0",
-  "description": "The official Python library for the Lilypad API",
+  "description": "The official TypeScript library for Lilypad",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "README.md",
-    "package.json"
-  ]
+    "package.json",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "npm run build",
+    "example": "bun run example.ts"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/core": "^1.25.0",
+    "@opentelemetry/sdk-trace-base": "^1.25.0",
+    "@opentelemetry/sdk-trace-node": "^1.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "openai": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0"
+  }
 }
