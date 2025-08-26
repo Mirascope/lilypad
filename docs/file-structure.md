@@ -165,10 +165,17 @@ sdks/
 └─── python/                # Python SDK
     ├── src/
     │   └── lilypad/
-    │       ├── _generated/   # Generated SDK code
-    │       ├── _internal/    # Internal instrumentation code
+    │       ├── _generated/   # Generated SDK code (DO NOT MODIFY)
+    │       │   ├── client.py    # Fern-generated base client
+    │       │   ├── errors/      # API error classes
+    │       │   └── telemetry/   # Telemetry API clients
+    │       ├── _internal/    # Internal utilities
+    │       │   ├── errors.py    # Custom error classes
+    │       │   ├── otel/        # OpenTelemetry instrumentation
+    │       │   └── settings.py  # SDK settings management
     │       ├── api_client.py # Public API wrapper
-    │       └── client.py     # Main client module
+    │       ├── client.py     # Enhanced client with caching
+    │       └── configuration.py # SDK configuration utilities
     ├── examples/           # Example usage scripts
     └── tests/              # SDK tests
 ```
