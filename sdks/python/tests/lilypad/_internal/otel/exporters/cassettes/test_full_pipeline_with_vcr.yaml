@@ -1,0 +1,202 @@
+interactions:
+- request:
+    body: '{"resourceSpans":[{"resource":{"attributes":[{"key":"telemetry.sdk.language","value":{"stringValue":"python"}},{"key":"telemetry.sdk.name","value":{"stringValue":"opentelemetry"}},{"key":"telemetry.sdk.version","value":{"stringValue":"1.36.0"}},{"key":"service.name","value":{"stringValue":"unknown_service"}}]},"scopeSpans":[{"scope":{"name":"full-pipeline-tracer","version":"1.0.0"},"spans":[{"traceId":"dde9644f4dff503efeb485f3f102a47e","spanId":"1f1a22d85d1b36d9","name":"parent-operation","kind":0.0,"startTimeUnixNano":"1756295012944416000","endTimeUnixNano":"0","status":{"code":0.0,"message":""}}]}]}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '610'
+      content-type:
+      - application/json
+      host:
+      - localhost:3000
+      user-agent:
+      - python-httpx/0.28.1
+      x-fern-language:
+      - Python
+    method: POST
+    uri: http://localhost:3000/api/v1/traces
+  response:
+    body:
+      string: '{"partialSuccess":{}}'
+    headers:
+      Connection:
+      - keep-alive
+      Date:
+      - Wed, 27 Aug 2025 11:43:32 GMT
+      Keep-Alive:
+      - timeout=5
+      access-control-allow-credentials:
+      - 'true'
+      content-length:
+      - '21'
+      content-type:
+      - application/json
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"resourceSpans":[{"resource":{"attributes":[{"key":"telemetry.sdk.language","value":{"stringValue":"python"}},{"key":"telemetry.sdk.name","value":{"stringValue":"opentelemetry"}},{"key":"telemetry.sdk.version","value":{"stringValue":"1.36.0"}},{"key":"service.name","value":{"stringValue":"unknown_service"}}]},"scopeSpans":[{"scope":{"name":"full-pipeline-tracer","version":"1.0.0"},"spans":[{"traceId":"dde9644f4dff503efeb485f3f102a47e","spanId":"51a3cad9311131f6","parentSpanId":"1f1a22d85d1b36d9","name":"child-operation-1","kind":0.0,"startTimeUnixNano":"1756295012945349000","endTimeUnixNano":"0","status":{"code":0.0,"message":""}}]}]}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '645'
+      content-type:
+      - application/json
+      host:
+      - localhost:3000
+      user-agent:
+      - python-httpx/0.28.1
+      x-fern-language:
+      - Python
+    method: POST
+    uri: http://localhost:3000/api/v1/traces
+  response:
+    body:
+      string: '{"partialSuccess":{}}'
+    headers:
+      Connection:
+      - keep-alive
+      Date:
+      - Wed, 27 Aug 2025 11:43:32 GMT
+      Keep-Alive:
+      - timeout=5
+      access-control-allow-credentials:
+      - 'true'
+      content-length:
+      - '21'
+      content-type:
+      - application/json
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"resourceSpans":[{"resource":{"attributes":[{"key":"telemetry.sdk.language","value":{"stringValue":"python"}},{"key":"telemetry.sdk.name","value":{"stringValue":"opentelemetry"}},{"key":"telemetry.sdk.version","value":{"stringValue":"1.36.0"}},{"key":"service.name","value":{"stringValue":"unknown_service"}}]},"scopeSpans":[{"scope":{"name":"full-pipeline-tracer","version":"1.0.0"},"spans":[{"traceId":"dde9644f4dff503efeb485f3f102a47e","spanId":"51a3cad9311131f6","parentSpanId":"1f1a22d85d1b36d9","name":"child-operation-1","kind":0.0,"startTimeUnixNano":"1756295012945349000","endTimeUnixNano":"1756295012947561000","attributes":[{"key":"operation.type","value":{"stringValue":"child"}},{"key":"child.index","value":{"intValue":"1"}}],"status":{"code":0.0,"message":""}},{"traceId":"dde9644f4dff503efeb485f3f102a47e","spanId":"dd6882252fc9e6c6","parentSpanId":"1f1a22d85d1b36d9","name":"child-operation-2","kind":0.0,"startTimeUnixNano":"1756295012947604000","endTimeUnixNano":"1756295012948885000","attributes":[{"key":"operation.type","value":{"stringValue":"child"}},{"key":"child.index","value":{"intValue":"2"}}],"status":{"code":0.0,"message":""}},{"traceId":"dde9644f4dff503efeb485f3f102a47e","spanId":"1f1a22d85d1b36d9","name":"parent-operation","kind":0.0,"startTimeUnixNano":"1756295012944416000","endTimeUnixNano":"1756295012948897000","attributes":[{"key":"operation.type","value":{"stringValue":"parent"}},{"key":"test.framework","value":{"stringValue":"pytest"}}],"status":{"code":0.0,"message":""}}]}]}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1525'
+      content-type:
+      - application/json
+      host:
+      - localhost:3000
+      user-agent:
+      - python-httpx/0.28.1
+      x-fern-language:
+      - Python
+    method: POST
+    uri: http://localhost:3000/api/v1/traces
+  response:
+    body:
+      string: '{"partialSuccess":{}}'
+    headers:
+      Connection:
+      - keep-alive
+      Date:
+      - Wed, 27 Aug 2025 11:43:32 GMT
+      Keep-Alive:
+      - timeout=5
+      access-control-allow-credentials:
+      - 'true'
+      content-length:
+      - '21'
+      content-type:
+      - application/json
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"resourceSpans":[{"resource":{"attributes":[{"key":"telemetry.sdk.language","value":{"stringValue":"python"}},{"key":"telemetry.sdk.name","value":{"stringValue":"opentelemetry"}},{"key":"telemetry.sdk.version","value":{"stringValue":"1.36.0"}},{"key":"service.name","value":{"stringValue":"unknown_service"}}]},"scopeSpans":[{"scope":{"name":"full-pipeline-tracer","version":"1.0.0"},"spans":[{"traceId":"dde9644f4dff503efeb485f3f102a47e","spanId":"dd6882252fc9e6c6","parentSpanId":"1f1a22d85d1b36d9","name":"child-operation-2","kind":0.0,"startTimeUnixNano":"1756295012947604000","endTimeUnixNano":"1756295012948885000","attributes":[{"key":"operation.type","value":{"stringValue":"child"}},{"key":"child.index","value":{"intValue":"2"}}],"status":{"code":0.0,"message":""}}]}]}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '782'
+      content-type:
+      - application/json
+      host:
+      - localhost:3000
+      user-agent:
+      - python-httpx/0.28.1
+      x-fern-language:
+      - Python
+    method: POST
+    uri: http://localhost:3000/api/v1/traces
+  response:
+    body:
+      string: '{"partialSuccess":{}}'
+    headers:
+      Connection:
+      - keep-alive
+      Date:
+      - Wed, 27 Aug 2025 11:43:32 GMT
+      Keep-Alive:
+      - timeout=5
+      access-control-allow-credentials:
+      - 'true'
+      content-length:
+      - '21'
+      content-type:
+      - application/json
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
