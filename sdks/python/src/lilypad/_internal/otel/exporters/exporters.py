@@ -54,9 +54,31 @@ class ImmediateStartExporter:
         Returns:
             True if the event was sent successfully, False otherwise.
         """
-        # Implementation will extract start event data from span
-        # and send via transport.export() with special flag
-        raise NotImplementedError()
+        if self._shutdown:
+            return False
+
+        import time
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        attempts = 0
+        delay = self.retry_delay
+
+        while attempts < self.max_retry_attempts:
+            try:
+                result = self.transport.export([span])
+                if result == SpanExportResult.SUCCESS:
+                    return True
+                elif result == SpanExportResult.FAILURE:
+                    return False
+            except Exception:
+                pass
+
+            attempts += 1
+            if attempts < self.max_retry_attempts:
+                time.sleep(delay)
+                delay *= 2
+
+        return False
 
     def shutdown(self) -> None:
         """Mark the exporter as shutdown.

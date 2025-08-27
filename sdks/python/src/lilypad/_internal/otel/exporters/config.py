@@ -36,4 +36,46 @@ def configure_exporters(
     Returns:
         Configured LLMSpanProcessor ready for use with OpenTelemetry.
     """
-    raise NotImplementedError()
+    from concurrent.futures import ThreadPoolExecutor
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    from .transport import TelemetryTransport, TelemetryConfig
+    from .exporters import ImmediateStartExporter, LilypadOTLPExporter
+
+    telemetry_config = TelemetryConfig(
+        timeout=config.timeout,
+        max_retry_attempts=config.max_retry_attempts,
+    )
+
+    transport = TelemetryTransport(
+        client=config.client,
+        config=telemetry_config,
+    )
+
+    start_exporter = ImmediateStartExporter(
+        transport=transport,
+        max_retry_attempts=config.max_retry_attempts,
+    )
+
+    otlp_exporter = LilypadOTLPExporter(
+        transport=transport,
+        timeout=config.timeout,
+    )
+
+    batch_processor = BatchSpanProcessor(
+        span_exporter=otlp_exporter,
+        max_queue_size=2048,
+        schedule_delay_millis=5000,
+        export_timeout_millis=30000,
+        max_export_batch_size=512,
+    )
+
+    executor = ThreadPoolExecutor(
+        max_workers=2,
+        thread_name_prefix="llm-span-processor",
+    )
+
+    return LLMSpanProcessor(
+        start_exporter=start_exporter,
+        batch_processor=batch_processor,
+        executor=executor,
+    )

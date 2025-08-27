@@ -106,12 +106,36 @@ class TelemetryTransport:
         try:
             otlp_data = self._convert_spans_to_otlp(spans)
 
-            self.client.telemetry.send_traces(resource_spans=otlp_data)
+            if not hasattr(self.client, "telemetry"):
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.warning("Lilypad client does not have telemetry endpoint")
+                return SpanExportResult.SUCCESS
+
+            response = self.client.telemetry.send_traces(resource_spans=otlp_data)
+
+            if (
+                response
+                and hasattr(response, "partial_success")
+                and response.partial_success
+            ):
+                partial_success = response.partial_success
+                if hasattr(partial_success, "rejected_spans"):
+                    rejected = partial_success.rejected_spans
+                    if rejected is not None and rejected > 0:
+                        return SpanExportResult.FAILURE
 
             return SpanExportResult.SUCCESS
 
         except Exception as e:
-            raise NetworkError(f"Failed to export spans: {e}") from e
+            import logging
+            import traceback
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to export spans: {e}")
+            logger.error(f"Traceback:\n{traceback.format_exc()}")
+            return SpanExportResult.FAILURE
 
     def _convert_spans_to_otlp(self, spans: Sequence[ReadableSpan]) -> list:
         """Convert OpenTelemetry spans to OTLP format.
@@ -125,11 +149,9 @@ class TelemetryTransport:
         resource_spans_map = {}
 
         for span in spans:
-            # Get resource key (simplified - in production, properly serialize resource)
             resource_key = id(span.resource) if span.resource else "default"
 
             if resource_key not in resource_spans_map:
-                # Create resource
                 resource = None
                 if span.resource:
                     resource_attrs = []
@@ -150,7 +172,6 @@ class TelemetryTransport:
                     "scope_spans": {},
                 }
 
-            # Get instrumentation scope key
             scope_key = (
                 span.instrumentation_scope.name
                 if span.instrumentation_scope
@@ -158,7 +179,6 @@ class TelemetryTransport:
             )
 
             if scope_key not in resource_spans_map[resource_key]["scope_spans"]:
-                # Create instrumentation scope
                 scope = None
                 if span.instrumentation_scope:
                     scope = (
@@ -173,13 +193,11 @@ class TelemetryTransport:
                     "spans": [],
                 }
 
-            # Convert span
             otlp_span = self._convert_span(span)
             resource_spans_map[resource_key]["scope_spans"][scope_key]["spans"].append(
                 otlp_span
             )
 
-        # Build final structure
         result = []
         for resource_data in resource_spans_map.values():
             scope_spans = []
@@ -205,7 +223,6 @@ class TelemetryTransport:
     ) -> TelemetrySendTracesRequestResourceSpansItemScopeSpansItemSpansItem:
         """Convert a single ReadableSpan to OTLP format."""
 
-        # Convert attributes
         attributes = []
         if span.attributes:
             for key, value in span.attributes.items():
@@ -217,39 +234,41 @@ class TelemetryTransport:
                     )
                 )
 
-        # Convert status
         status = None
         if span.status:
             status = TelemetrySendTracesRequestResourceSpansItemScopeSpansItemSpansItemStatus(
                 code=span.status.status_code.value,
-                message=span.status.description,
+                message=span.status.description or "",
             )
 
-        # Get context
         context = span.get_span_context()
         if not context:
-            # This shouldn't happen for valid spans, but handle gracefully
             trace_id = "00000000000000000000000000000000"
             span_id = "0000000000000000"
         else:
             trace_id = format(context.trace_id, "032x")
             span_id = format(context.span_id, "016x")
 
+        kwargs = {
+            "trace_id": trace_id,
+            "span_id": span_id,
+            "name": span.name,
+            "kind": span.kind.value if span.kind else 0,
+            "start_time_unix_nano": str(span.start_time) if span.start_time else "0",
+            "end_time_unix_nano": str(span.end_time) if span.end_time else "0",
+        }
+
+        if attributes:
+            kwargs["attributes"] = attributes
+
+        if span.parent and span.parent.span_id:
+            kwargs["parent_span_id"] = format(span.parent.span_id, "016x")
+
+        if status:
+            kwargs["status"] = status
+
         return TelemetrySendTracesRequestResourceSpansItemScopeSpansItemSpansItem(
-            trace_id=trace_id,
-            span_id=span_id,
-            parent_span_id=(
-                format(span.parent.span_id, "016x")
-                if span.parent and span.parent.span_id
-                else None
-            ),
-            name=span.name,
-            kind=span.kind.value if span.kind else 0,
-            start_time_unix_nano=str(span.start_time) if span.start_time else "0",
-            end_time_unix_nano=str(span.end_time) if span.end_time else "0",
-            attributes=attributes,
-            status=status,
-            # Events and links could be added here
+            **kwargs
         )
 
     def _convert_attribute_value(
@@ -257,7 +276,6 @@ class TelemetryTransport:
     ) -> TelemetrySendTracesRequestResourceSpansItemScopeSpansItemSpansItemAttributesItemValue:
         """Convert Python value to OTLP AttributeValue for span attributes."""
 
-        # Handle different value types
         if isinstance(value, bool):
             return TelemetrySendTracesRequestResourceSpansItemScopeSpansItemSpansItemAttributesItemValue(
                 bool_value=value
@@ -275,13 +293,10 @@ class TelemetryTransport:
                 string_value=value
             )
         elif isinstance(value, Sequence) and not isinstance(value, str):
-            # For arrays, convert to string representation for now
-            # In a full implementation, use arrayValue
             return TelemetrySendTracesRequestResourceSpansItemScopeSpansItemSpansItemAttributesItemValue(
                 string_value=str(list(value))
             )
         else:
-            # Default to string representation
             return TelemetrySendTracesRequestResourceSpansItemScopeSpansItemSpansItemAttributesItemValue(
                 string_value=str(value)
             )
