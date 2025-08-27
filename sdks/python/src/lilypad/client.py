@@ -257,11 +257,21 @@ def close_cached_clients() -> None:
     _async_singleton.cache_clear()
 
 
+# Temporary Function for this PR.
+def get_client(
+    api_key: str | None = None,
+    base_url: str | None = None,
+    timeout: float = 30.0,
+) -> Lilypad:
+    return get_sync_client(api_key=api_key, base_url=base_url)
+
+
 __all__ = [
     "AsyncLilypad",
     "Lilypad",
     "close_cached_clients",
     "create_transport_client",
     "get_async_client",
+    "get_client",
     "get_sync_client",
 ]
