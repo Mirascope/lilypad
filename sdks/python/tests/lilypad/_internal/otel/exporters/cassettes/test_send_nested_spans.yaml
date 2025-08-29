@@ -1,0 +1,52 @@
+interactions:
+- request:
+    body: '{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"test-service"}}]},"scopeSpans":[{"scope":{"name":"test-tracer","version":"1.0.0"},"spans":[{"traceId":"123456789abcdef0123456789abcdef0","spanId":"1111111111111111","name":"parent-span","kind":0.0,"startTimeUnixNano":"1000000000000000000","endTimeUnixNano":"1000000001000000000","status":{"code":0.0,"message":""}}]}]},{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"test-service"}}]},"scopeSpans":[{"scope":{"name":"test-tracer","version":"1.0.0"},"spans":[{"traceId":"123456789abcdef0123456789abcdef0","spanId":"2222222222222222","parentSpanId":"1111111111111111","name":"child-span-1","kind":0.0,"startTimeUnixNano":"1000000000000000000","endTimeUnixNano":"1000000001000000000","status":{"code":0.0,"message":""}}]}]},{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"test-service"}}]},"scopeSpans":[{"scope":{"name":"test-tracer","version":"1.0.0"},"spans":[{"traceId":"123456789abcdef0123456789abcdef0","spanId":"3333333333333333","parentSpanId":"1111111111111111","name":"child-span-2","kind":0.0,"startTimeUnixNano":"1000000000000000000","endTimeUnixNano":"1000000001000000000","status":{"code":0.0,"message":""}}]}]}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1265'
+      content-type:
+      - application/json
+      host:
+      - localhost:3000
+      user-agent:
+      - python-httpx/0.28.1
+      x-fern-language:
+      - Python
+    method: POST
+    uri: http://localhost:3000/api/v1/traces
+  response:
+    body:
+      string: '{"partialSuccess":{}}'
+    headers:
+      Connection:
+      - keep-alive
+      Date:
+      - Wed, 27 Aug 2025 11:43:24 GMT
+      Keep-Alive:
+      - timeout=5
+      access-control-allow-credentials:
+      - 'true'
+      content-length:
+      - '21'
+      content-type:
+      - application/json
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

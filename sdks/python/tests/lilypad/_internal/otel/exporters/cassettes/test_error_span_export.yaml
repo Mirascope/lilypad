@@ -1,0 +1,54 @@
+interactions:
+- request:
+    body: '{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"error-service"}}]},"scopeSpans":[{"scope":{"name":"error-tracer","version":"1.0.0"},"spans":[{"traceId":"0abcdef123456789abcdef1234567890","spanId":"1234567890abcdef","name":"error-operation","kind":2.0,"startTimeUnixNano":"3000000000000000000","endTimeUnixNano":"3000000001000000000","attributes":[{"key":"error.type","value":{"stringValue":"ValueError"}},{"key":"error.message","value":{"stringValue":"Test
+      error message"}},{"key":"http.status_code","value":{"intValue":"500"}}],"status":{"code":2.0,"message":"Internal
+      Server Error"}}]}]}]}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '634'
+      content-type:
+      - application/json
+      host:
+      - localhost:3000
+      user-agent:
+      - python-httpx/0.28.1
+      x-fern-language:
+      - Python
+    method: POST
+    uri: http://localhost:3000/api/v1/traces
+  response:
+    body:
+      string: '{"partialSuccess":{}}'
+    headers:
+      Connection:
+      - keep-alive
+      Date:
+      - Wed, 27 Aug 2025 11:43:32 GMT
+      Keep-Alive:
+      - timeout=5
+      access-control-allow-credentials:
+      - 'true'
+      content-length:
+      - '21'
+      content-type:
+      - application/json
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
