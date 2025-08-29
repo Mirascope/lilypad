@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Protocol, runtime_checkable
+
+from opentelemetry import context as otel_context
+from opentelemetry import trace as otel_trace
+from opentelemetry.trace import Status, StatusCode
+
+logger = logging.getLogger("lilypad")
+_warned_noop = False
 
 
 @runtime_checkable
@@ -112,8 +120,10 @@ class Span(SpanProtocol):
             name: Name for the span.
         """
         self._name = name
+        self._span: otel_trace.Span | None = None
+        self._token: object | None = None
         self._is_noop = True
-        self._span_id: str | None = None
+        self._finished = False
 
     def __enter__(self) -> Span:
         """Enter the span context.
@@ -121,6 +131,25 @@ class Span(SpanProtocol):
         Returns:
             This span instance for use within the context.
         """
+        tracer = otel_trace.get_tracer("lilypad")
+        self._span = tracer.start_span(self._name)
+
+        if self._span.__class__.__name__ == "NonRecordingSpan":
+            self._is_noop = True
+            self._span = None
+            global _warned_noop
+            if not _warned_noop:
+                logger.warning(
+                    f"Lilypad tracing is not configured; Span('{self._name}') is a no-op."
+                )
+                _warned_noop = True
+        else:
+            self._is_noop = False
+            self._span.set_attribute("lilypad.type", "trace")
+            self._token = otel_context.attach(
+                otel_trace.set_span_in_context(self._span)
+            )
+
         return self
 
     def __exit__(
@@ -133,7 +162,11 @@ class Span(SpanProtocol):
             exc: Exception instance if an exception was raised.
             tb: Traceback if an exception was raised.
         """
-        self.finish()
+        if self._span and not self._finished:
+            if exc is not None:
+                self._span.record_exception(exc)
+                self._span.set_status(Status(StatusCode.ERROR))
+            self.finish()
 
     def set(self, **attributes: Any) -> None:
         """Set attributes on the current span.
@@ -141,7 +174,14 @@ class Span(SpanProtocol):
         Args:
             **attributes: Key-value pairs to set as span attributes.
         """
-        raise NotImplementedError("Span.set not yet implemented")
+        if self._span and not self._finished:
+            import json
+
+            for key, value in attributes.items():
+                if isinstance(value, (dict, list)):
+                    self._span.set_attribute(key, json.dumps(value))
+                else:
+                    self._span.set_attribute(key, value)
 
     def event(self, name: str, **attributes: Any) -> None:
         """Record an event within the span.
@@ -150,7 +190,16 @@ class Span(SpanProtocol):
             name: Name of the event.
             **attributes: Event attributes as key-value pairs.
         """
-        raise NotImplementedError("Span.event not yet implemented")
+        if self._span and not self._finished:
+            import json
+
+            serialized_attrs = {}
+            for key, value in attributes.items():
+                if isinstance(value, (dict, list)):
+                    serialized_attrs[key] = json.dumps(value)
+                else:
+                    serialized_attrs[key] = value
+            self._span.add_event(name, attributes=serialized_attrs)
 
     def metadata(self, **attributes: Any) -> None:
         """Set metadata attributes on the span.
@@ -158,7 +207,7 @@ class Span(SpanProtocol):
         Args:
             **attributes: Metadata key-value pairs.
         """
-        raise NotImplementedError("Span.metadata not yet implemented")
+        self.set(**attributes)
 
     def debug(self, message: str, **fields: Any) -> None:
         """Log a debug message within the span.
@@ -167,7 +216,8 @@ class Span(SpanProtocol):
             message: Debug message text.
             **fields: Additional structured fields for the log entry.
         """
-        raise NotImplementedError("Span.debug not yet implemented")
+        attrs = {"message": message, "level": "debug", **fields}
+        self.event("debug", **attrs)
 
     def info(self, message: str, **fields: Any) -> None:
         """Log an info message within the span.
@@ -176,7 +226,8 @@ class Span(SpanProtocol):
             message: Info message text.
             **fields: Additional structured fields for the log entry.
         """
-        raise NotImplementedError("Span.info not yet implemented")
+        attrs = {"message": message, "level": "info", **fields}
+        self.event("info", **attrs)
 
     def warning(self, message: str, **fields: Any) -> None:
         """Log a warning message within the span.
@@ -185,7 +236,8 @@ class Span(SpanProtocol):
             message: Warning message text.
             **fields: Additional structured fields for the log entry.
         """
-        raise NotImplementedError("Span.warning not yet implemented")
+        attrs = {"message": message, "level": "warning", **fields}
+        self.event("warning", **attrs)
 
     def error(self, message: str, **fields: Any) -> None:
         """Log an error message within the span.
@@ -194,7 +246,10 @@ class Span(SpanProtocol):
             message: Error message text.
             **fields: Additional structured fields for the log entry.
         """
-        raise NotImplementedError("Span.error not yet implemented")
+        attrs = {"message": message, "level": "error", **fields}
+        self.event("error", **attrs)
+        if self._span and not self._finished:
+            self._span.set_status(Status(StatusCode.ERROR))
 
     def critical(self, message: str, **fields: Any) -> None:
         """Log a critical message within the span.
@@ -203,11 +258,20 @@ class Span(SpanProtocol):
             message: Critical message text.
             **fields: Additional structured fields for the log entry.
         """
-        raise NotImplementedError("Span.critical not yet implemented")
+        attrs = {"message": message, "level": "critical", **fields}
+        self.event("critical", **attrs)
+        if self._span and not self._finished:
+            self._span.set_status(Status(StatusCode.ERROR))
 
     def finish(self) -> None:
         """Explicitly finish the span."""
-        raise NotImplementedError("Span.finish not yet implemented")
+        if not self._finished:
+            self._finished = True
+            if self._span:
+                self._span.end()
+            if self._token:
+                otel_context.detach(self._token)
+                self._token = None
 
     @property
     def span_id(self) -> str | None:
@@ -216,7 +280,11 @@ class Span(SpanProtocol):
         Returns:
             The span ID or None if not available.
         """
-        return self._span_id
+        if self._span:
+            sc = self._span.get_span_context()
+            if sc and sc.span_id:
+                return f"{sc.span_id:016x}"
+        return None
 
     @property
     def is_noop(self) -> bool:
