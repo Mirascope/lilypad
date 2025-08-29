@@ -3,6 +3,8 @@
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import Mock
+
 import pytest
 from opentelemetry.sdk.trace import TracerProvider, ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExportResult
@@ -279,9 +281,8 @@ def test_concurrent_exports(lilypad_client):
     """Test concurrent span exports."""
     transport = TelemetryTransport(client=lilypad_client, config=TelemetryConfig())
 
-    from unittest.mock import Mock
-
-    def create_and_export_span(index: int) -> SpanExportResult:
+    spans = []
+    for index in range(5):
         span = Mock(spec=ReadableSpan)
         span.name = f"concurrent-span-{index}"
         span.get_span_context.return_value = Mock(
@@ -304,11 +305,13 @@ def test_concurrent_exports(lilypad_client):
         span.instrumentation_scope = Mock()
         span.instrumentation_scope.name = "concurrent-tracer"
         span.instrumentation_scope.version = "1.0.0"
+        spans.append(span)
 
+    def export_span(span: ReadableSpan) -> SpanExportResult:
         return transport.export([span])
 
     with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = [executor.submit(create_and_export_span, i) for i in range(5)]
+        futures = [executor.submit(export_span, span) for span in spans]
         results = [future.result() for future in futures]
 
     assert all(result == SpanExportResult.SUCCESS for result in results)
