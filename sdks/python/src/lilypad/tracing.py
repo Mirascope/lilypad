@@ -2,11 +2,55 @@
 
 from __future__ import annotations
 
+import functools
+import inspect
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Generic, ParamSpec, Protocol, TypeVar, overload
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Generic,
+    ParamSpec,
+    TypeVar,
+    cast,
+    overload,
+    Protocol,
+)
+
+from .spans import Span
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+def _get_qualname(fn: Callable) -> str:
+    """Get simplified qualified name for a function.
+
+    Args:
+        fn: The function to get the name from.
+
+    Returns:
+        Simplified qualified name without <locals> prefix.
+    """
+    qualname = getattr(
+        fn, "__qualname__", fn.__name__ if hasattr(fn, "__name__") else "unknown"
+    )
+    if "<locals>." in qualname:
+        parts = qualname.split("<locals>.")
+        return parts[-1]
+    return qualname
+
+
+def _is_async(fn: Callable) -> bool:
+    """Check if a function is async.
+
+    Args:
+        fn: The function to check.
+
+    Returns:
+        True if the function is async, False otherwise.
+    """
+    return inspect.iscoroutinefunction(fn)
 
 
 @dataclass
@@ -23,15 +67,19 @@ class TraceResult(Generic[R]):
     tagging, and assignment within a specific trace span context.
     """
 
-    def __init__(self, response: R) -> None:
+    def __init__(
+        self, response: R, span_id: str | None = None, trace_id: str | None = None
+    ) -> None:
         """Initialize a trace result with the wrapped response.
 
         Args:
             response: The actual function response.
+            span_id: Optional span ID from the trace.
+            trace_id: Optional trace ID from the trace.
         """
         self.response = response
-        self._span_id: str | None = None
-        self._trace_id: str | None = None
+        self._span_id = span_id
+        self._trace_id = trace_id
         self._function_uuid: str | None = None
 
     def annotate(
@@ -148,12 +196,74 @@ class _TraceWrapper(Generic[P, R]):
         """
         self._fn = fn
         self._cfg = cfg
-        self.__name__ = getattr(fn, "__name__", "unknown")
-        self.__qualname__ = getattr(fn, "__qualname__", "unknown")
-        self.__module__ = getattr(fn, "__module__", "")
-        self.__doc__ = fn.__doc__
-        self.__annotations__ = getattr(fn, "__annotations__", {})
-        self.__wrapped__ = fn
+        self._is_async = _is_async(fn)
+        self._span_name = _get_qualname(fn)
+
+        functools.update_wrapper(self, fn)
+
+    def _execute_sync(
+        self, *args: P.args, **kwargs: P.kwargs
+    ) -> tuple[R, str | None, str | None]:
+        """Execute synchronous function with span context.
+
+        Returns:
+            Tuple of (result, span_id, trace_id).
+        """
+        with Span(self._span_name) as s:
+            attributes = {
+                "lilypad.type": "trace",
+                "lilypad.fn.qualname": _get_qualname(self._fn),
+                "lilypad.fn.module": getattr(self._fn, "__module__", ""),
+                "lilypad.fn.is_async": self._is_async,
+            }
+            if self._cfg.tags:
+                attributes["lilypad.trace.tags"] = self._cfg.tags
+
+            s.set(**attributes)
+            result = self._fn(*args, **kwargs)
+
+            span_id = s.span_id
+            trace_id = None
+            # Get trace_id from OTel span context if available
+            span_obj = getattr(s, "_span", None)
+            if span_obj and hasattr(span_obj, "get_span_context"):
+                context = span_obj.get_span_context()
+                if context and hasattr(context, "trace_id"):
+                    trace_id = format(context.trace_id, "032x")
+
+            return result, span_id, trace_id
+
+    async def _execute_async(
+        self, *args: P.args, **kwargs: P.kwargs
+    ) -> tuple[Any, str | None, str | None]:
+        """Execute asynchronous function with span context.
+
+        Returns:
+            Tuple of (result, span_id, trace_id).
+        """
+        with Span(self._span_name) as s:
+            attributes = {
+                "lilypad.type": "trace",
+                "lilypad.fn.qualname": _get_qualname(self._fn),
+                "lilypad.fn.module": getattr(self._fn, "__module__", ""),
+                "lilypad.fn.is_async": self._is_async,
+            }
+            if self._cfg.tags:
+                attributes["lilypad.trace.tags"] = self._cfg.tags
+
+            s.set(**attributes)
+            result = await cast(Awaitable[Any], self._fn(*args, **kwargs))
+
+            span_id = s.span_id
+            trace_id = None
+            # Get trace_id from OTel span context if available
+            span_obj = getattr(s, "_span", None)
+            if span_obj and hasattr(span_obj, "get_span_context"):
+                context = span_obj.get_span_context()
+                if context and hasattr(context, "trace_id"):
+                    trace_id = format(context.trace_id, "032x")
+
+            return result, span_id, trace_id
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """Execute the traced function normally.
@@ -165,7 +275,16 @@ class _TraceWrapper(Generic[P, R]):
         Returns:
             The original function's return value.
         """
-        raise NotImplementedError("_TraceWrapper.__call__ not yet implemented")
+        if self._is_async:
+
+            async def async_wrapper() -> R:
+                result, _, _ = await self._execute_async(*args, **kwargs)
+                return result
+
+            return cast(R, async_wrapper())
+        else:
+            result, _, _ = self._execute_sync(*args, **kwargs)
+            return result
 
     def wrap(self, *args: P.args, **kwargs: P.kwargs) -> Any:
         """Execute with trace wrapping.
@@ -175,9 +294,19 @@ class _TraceWrapper(Generic[P, R]):
             **kwargs: Keyword arguments for the wrapped function.
 
         Returns:
-            TraceResult containing the response and trace operations.
+            TraceResult containing the response and trace operations for sync functions,
+            or Awaitable[TraceResult] for async functions.
         """
-        raise NotImplementedError("_TraceWrapper.wrap not yet implemented")
+        if self._is_async:
+
+            async def async_wrapper() -> TraceResult:
+                result, span_id, trace_id = await self._execute_async(*args, **kwargs)
+                return TraceResult(result, span_id=span_id, trace_id=trace_id)
+
+            return async_wrapper()
+        else:
+            result, span_id, trace_id = self._execute_sync(*args, **kwargs)
+            return TraceResult(result, span_id=span_id, trace_id=trace_id)
 
     def annotate(
         self,
@@ -304,8 +433,9 @@ def trace(
         Returns:
             A traced wrapper around the function.
         """
-        config = _TraceConfig(tags=tuple(tags or []))
-        return _TraceWrapper(func, config)
+        normalized_tags = tuple(sorted(set(tags or [])))
+        config = _TraceConfig(tags=normalized_tags)
+        return cast(Any, _TraceWrapper(func, config))
 
     if fn is None:
         return _decorator
