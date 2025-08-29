@@ -20,9 +20,24 @@ with suppress(ImportError):
 with suppress(ImportError):
     from ._internal.otel import instrument_anthropic
 
+from .tracing import trace
+from .spans import span
+from .errors import (
+    LilypadException,
+    SpanNotFoundError,
+    RemoteExecutionError,
+    VersionResolutionError,
+    ConfigurationError,
+)
+
 __all__ = [
     "AsyncLilypad",
+    "ConfigurationError",
     "Lilypad",
+    "LilypadException",
+    "RemoteExecutionError",
+    "SpanNotFoundError",
+    "VersionResolutionError",
     "close_cached_clients",
     "configuration",
     "configure",
@@ -32,4 +47,6 @@ __all__ = [
     "get_sync_client",
     "instrument_anthropic",
     "instrument_openai",
+    "span",
+    "trace",
 ]
